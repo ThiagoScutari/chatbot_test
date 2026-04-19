@@ -24,7 +24,7 @@ def test_inicio_retorna_boas_vindas():
 
 def test_aguarda_nome_salva_nome_e_exibe_menu():
     sessao = {"nome": None, "estado": AGUARDA_NOME}
-    resposta, estado, acao = handle("Ana", sessao)
+    resposta, estado, _ = handle("Ana", sessao)
 
     assert sessao["nome"] == "Ana"
     assert estado == MENU
@@ -34,7 +34,7 @@ def test_aguarda_nome_salva_nome_e_exibe_menu():
 
 def test_aguarda_nome_vazio_permanece_no_estado():
     sessao = {"nome": None, "estado": AGUARDA_NOME}
-    resposta, estado, acao = handle("", sessao)
+    _, estado, _ = handle("", sessao)
 
     assert estado == AGUARDA_NOME
     assert sessao["nome"] is None
@@ -42,7 +42,7 @@ def test_aguarda_nome_vazio_permanece_no_estado():
 
 def test_aguarda_nome_so_espacos_permanece_no_estado():
     sessao = {"nome": None, "estado": AGUARDA_NOME}
-    resposta, estado, acao = handle("   ", sessao)
+    _, estado, _ = handle("   ", sessao)
 
     assert estado == AGUARDA_NOME
 
@@ -51,7 +51,7 @@ def test_aguarda_nome_so_espacos_permanece_no_estado():
 
 def test_menu_opcao_1_vai_para_aguarda_pedido():
     sessao = {"nome": "Ana", "estado": MENU}
-    resposta, estado, acao = handle("1", sessao)
+    _, estado, acao = handle("1", sessao)
 
     assert estado == AGUARDA_PEDIDO
     assert acao is None
@@ -59,7 +59,7 @@ def test_menu_opcao_1_vai_para_aguarda_pedido():
 
 def test_menu_opcao_2_vai_para_fim_e_aciona_catalogo():
     sessao = {"nome": "Ana", "estado": MENU}
-    resposta, estado, acao = handle("2", sessao)
+    _, estado, acao = handle("2", sessao)
 
     assert estado == FIM
     assert acao == "enviar_catalogo"
@@ -67,7 +67,7 @@ def test_menu_opcao_2_vai_para_fim_e_aciona_catalogo():
 
 def test_menu_opcao_invalida_permanece_no_menu():
     sessao = {"nome": "Ana", "estado": MENU}
-    resposta, estado, acao = handle("9", sessao)
+    _, estado, acao = handle("9", sessao)
 
     assert estado == MENU
     assert acao is None
@@ -75,7 +75,7 @@ def test_menu_opcao_invalida_permanece_no_menu():
 
 def test_menu_opcao_invalida_exibe_mensagem_de_erro():
     sessao = {"nome": "Ana", "estado": MENU}
-    resposta, estado, acao = handle("abc", sessao)
+    resposta, _, _ = handle("abc", sessao)
 
     assert "inválid" in resposta.lower()
 
@@ -84,14 +84,14 @@ def test_menu_opcao_invalida_exibe_mensagem_de_erro():
 
 def test_aguarda_pedido_texto_nao_numerico_permanece():
     sessao = {"nome": "Ana", "estado": AGUARDA_PEDIDO}
-    resposta, estado, acao = handle("abc", sessao)
+    _, estado, _ = handle("abc", sessao)
 
     assert estado == AGUARDA_PEDIDO
 
 
 def test_aguarda_pedido_invalido_exibe_mensagem_de_erro():
     sessao = {"nome": "Ana", "estado": AGUARDA_PEDIDO}
-    resposta, estado, acao = handle("abc", sessao)
+    resposta, _, _ = handle("abc", sessao)
 
     assert "inválido" in resposta.lower() or "inválid" in resposta.lower()
 
@@ -114,7 +114,7 @@ def test_aguarda_pedido_valido_retorna_detalhes_e_vai_para_fim():
 def test_aguarda_pedido_inexistente_permanece():
     sessao = {"nome": "Ana", "estado": AGUARDA_PEDIDO}
     with patch("core.handlers.buscar_pedido", return_value=None):
-        resposta, estado, acao = handle("9999", sessao)
+        resposta, estado, _ = handle("9999", sessao)
 
     assert estado == AGUARDA_PEDIDO
     assert "não encontrado" in resposta.lower()
@@ -124,7 +124,7 @@ def test_aguarda_pedido_inexistente_permanece():
 
 def test_catalogo_inclui_nome_na_despedida():
     sessao = {"nome": "Carlos", "estado": MENU}
-    resposta, estado, acao = handle("2", sessao)
+    resposta, _, _ = handle("2", sessao)
 
     assert "Carlos" in resposta
 
@@ -136,6 +136,6 @@ def test_pedido_encontrado_inclui_nome_na_despedida():
         "quantidade": 2, "status": "Em separação", "data_pedido": "2026-04-10"
     }
     with patch("core.handlers.buscar_pedido", return_value=pedido_mock):
-        resposta, estado, acao = handle("1003", sessao)
+        resposta, _, _ = handle("1003", sessao)
 
     assert "Maria" in resposta
