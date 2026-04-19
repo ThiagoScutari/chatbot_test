@@ -4,9 +4,9 @@ import sys
 
 # Garante que stdout/stderr usam UTF-8 para suportar emoji e caracteres especiais
 if hasattr(sys.stdout, "reconfigure"):
-    sys.stdout.reconfigure(encoding="utf-8")
+    sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[union-attr]
 if hasattr(sys.stderr, "reconfigure"):
-    sys.stderr.reconfigure(encoding="utf-8")
+    sys.stderr.reconfigure(encoding="utf-8")  # type: ignore[union-attr]
 
 # Adiciona a raiz do projeto ao sys.path para que "import core.xxx" funcione
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
