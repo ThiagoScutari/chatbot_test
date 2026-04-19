@@ -1,0 +1,8 @@
+# Etapa 2 — Web
+flask>=3.0
+
+# Etapa 3 — Telegram
+python-telegram-bot>=20.0
+
+# Testes
+pytest>=8.0
