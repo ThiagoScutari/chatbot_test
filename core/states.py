@@ -1,0 +1,5 @@
+INICIO         = "inicio"
+AGUARDA_NOME   = "aguarda_nome"
+MENU           = "menu"
+AGUARDA_PEDIDO = "aguarda_pedido"
+FIM            = "fim"
