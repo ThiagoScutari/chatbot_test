@@ -1,5 +1,4 @@
 # tests/test_database.py
-import pytest
 import core.database as db
 
 
