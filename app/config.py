@@ -1,4 +1,5 @@
 from pathlib import Path
+from pydantic import model_validator
 from pydantic_settings import BaseSettings
 
 
@@ -20,6 +21,20 @@ class Settings(BaseSettings):
     CAMPAIGNS_JSON_PATH: Path = Path("app/knowledge/campaigns.json")
 
     model_config = {"env_file": ".env", "extra": "ignore"}
+
+    @model_validator(mode="after")
+    def validate_secret_lengths(self) -> "Settings":
+        if self.APP_ENV == "production":
+            if len(self.ADMIN_TOKEN) < 32:
+                raise ValueError(
+                    "ADMIN_TOKEN deve ter pelo menos 32 caracteres em produção. "
+                    "Gere com: python -c \"import secrets; print(secrets.token_hex(32))\""
+                )
+            if len(self.WHATSAPP_APP_SECRET) < 32:
+                raise ValueError(
+                    "WHATSAPP_APP_SECRET deve ter pelo menos 32 caracteres em produção."
+                )
+        return self
 
 
 settings = Settings()
