@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.db
+test/dados_instagram/
+test/data/*.db
+test/docs/Catalogo.pdf
+**/__pycache__/
+**/.pytest_cache/
+.env
+.claude/settings.local.json

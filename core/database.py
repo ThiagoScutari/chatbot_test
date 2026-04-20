@@ -3,7 +3,8 @@ import os
 import sqlite3
 
 # Caminho padrão do banco — pode ser sobrescrito em testes com monkeypatch
-DB_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "pedidos.db")
+_default_db = os.path.join(os.path.dirname(__file__), "..", "data", "pedidos.db")
+DB_PATH = os.environ.get("CHATBOT_DB_PATH", _default_db)
 
 # Dados fictícios inseridos na primeira inicialização
 _PEDIDOS_INICIAIS = [
