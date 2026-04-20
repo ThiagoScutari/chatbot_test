@@ -12,3 +12,4 @@ test/docs/Catalogo.pdf
 .claude/settings.local.json
 .coverage
 htmlcov/
+catalogo/
