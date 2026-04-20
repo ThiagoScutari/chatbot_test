@@ -1,0 +1,142 @@
+{
+  "version": "1.0",
+  "intents": [
+    {
+      "id": "preco_polo",
+      "priority": 10,
+      "patterns": [
+        "\\b(pre[çc]o|valor|quanto)\\b.*\\bpolo\\b",
+        "\\bpolo\\b.*\\b(pre[çc]o|valor|quanto)\\b",
+        "\\bcami[sz]a?\\s+polo\\b"
+      ],
+      "response": {
+        "type": "text",
+        "body": "Olá! A nossa *Polo em malha Piquet* custa:\n• *R$ 45,00* no varejo\n• *R$ 42,00* no atacado (12+ peças)\n\nFazemos bordado da sua logo sem pedido mínimo. Deseja um orçamento?"
+      },
+      "follow_up_state": "menu"
+    },
+    {
+      "id": "preco_jaleco",
+      "priority": 10,
+      "patterns": [
+        "\\b(pre[çc]o|valor|quanto)\\b.*\\bjaleco\\b",
+        "\\bjaleco\\b.*\\b(pre[çc]o|valor|quanto)\\b"
+      ],
+      "response": {
+        "type": "text",
+        "body": "*Jalecos Camisart (gabardine):*\n• Tradicional — *R$ 120,00*\n• Premium (amarração em laço + botões) — *R$ 145,00*\n\nIndicado para saúde, odonto, estética. Fazemos bordado da sua logo. Deseja um orçamento?"
+      },
+      "follow_up_state": "menu"
+    },
+    {
+      "id": "endereco",
+      "priority": 5,
+      "patterns": [
+        "\\b(endere[çc]o|onde|local|localiza)\\b"
+      ],
+      "response": {
+        "type": "text",
+        "body": "*Camisart Belém*\n📍 Av. Magalhães Barata, 445 (altos da Só Modas)\n📞 (91) 99180-0637\n📦 Entregamos para todo o Brasil"
+      }
+    },
+    {
+      "id": "bordado_prazo",
+      "priority": 5,
+      "patterns": [
+        "\\bbordad",
+        "\\bprazo\\b.*\\bborda",
+        "\\bbordao\\b"
+      ],
+      "response": {
+        "type": "text",
+        "body": "✅ *Bordado Camisart*\n• Prazo: *5 dias úteis*\n• Pedido mínimo: *nenhum* (bordamos 1 peça só)\n• Preço: varia conforme o desenho — me envie a logo?"
+      }
+    },
+    {
+      "id": "pedido_minimo",
+      "priority": 8,
+      "patterns": [
+        "\\b(pedido\\s+m[íi]nimo|m[íi]nimo\\s+de\\s+pe[çc]as|m[íi]nimo\\s+pra|quantas\\s+pe[çc]as\\s+m[íi]nimo)\\b",
+        "\\bcomprar\\s+(1|uma|s[oó]\\s+uma)\\s+pe[çc]a\\b",
+        "\\btem\\s+m[íi]nimo\\b"
+      ],
+      "response": {
+        "type": "text",
+        "body": "✅ *Pedido Mínimo Camisart*\n\n• Vendas avulsas: *sem mínimo* (compramos 1 peça)\n• Bordado: *sem mínimo*\n• Serigrafia: *mínimo 40 peças*\n• Preço de atacado: a partir de *12 peças*\n\nQuer um orçamento?"
+      },
+      "follow_up_state": "menu"
+    },
+    {
+      "id": "prazo_entrega",
+      "priority": 8,
+      "patterns": [
+        "\\b(prazo|demora|quanto\\s+tempo|quando\\s+fica|dias\\s+para|entrega\\s+em)\\b",
+        "\\b(urgente|r[áa]pido|preciso\\s+para\\s+amanh[ãa]|preciso\\s+logo)\\b"
+      ],
+      "response": {
+        "type": "buttons",
+        "body": "⏱️ *Prazos Camisart*\n\n• Sem bordado: *2-3 dias úteis*\n• Com bordado: *5 dias úteis*\n• Entrega nacional: +prazo dos Correios\n\nSeu pedido é:",
+        "buttons": [
+          { "id": "prazo_normal",  "title": "🗓️ Prazo normal" },
+          { "id": "prazo_urgente", "title": "⚡ É urgente" }
+        ]
+      },
+      "follow_up_state": "menu"
+    },
+    {
+      "id": "entrega_nacional",
+      "priority": 7,
+      "patterns": [
+        "\\b(entrega|envi[ao]|manda|frete|correios|sedex)\\b",
+        "\\b(fora\\s+de\\s+bel[ée]m|outro\\s+estado|s[ãa]o\\s+paulo|rio|brasil)\\b"
+      ],
+      "response": {
+        "type": "text",
+        "body": "📦 *Entregamos para todo o Brasil!*\n\nVia Correios (PAC/SEDEX) ou transportadora.\nO frete é calculado pelo CEP de destino.\n\nQuer um orçamento com frete incluso?"
+      },
+      "follow_up_state": "menu"
+    },
+    {
+      "id": "tamanhos_disponiveis",
+      "priority": 6,
+      "patterns": [
+        "\\b(tamanho|tamanhos|tam|n[úu]mero|talla|grade|gg|plus\\s+size|g[0-9]|xl)\\b",
+        "\\b(tem\\s+(P|M|G|GG)|serve\\s+em|numeros\\s+que)\\b"
+      ],
+      "response": {
+        "type": "buttons",
+        "body": "📏 *Tamanhos disponíveis:* P, M, G, GG\n\nAlgumas peças têm G1, G2, G3. Para qual produto você precisa de tamanhos?",
+        "buttons": [
+          { "id": "tam_polo",   "title": "👕 Polo" },
+          { "id": "tam_jaleco", "title": "🥼 Jaleco" },
+          { "id": "tam_basica", "title": "👚 Básica" }
+        ]
+      },
+      "follow_up_state": "menu"
+    },
+    {
+      "id": "instagram_referencia",
+      "priority": 4,
+      "patterns": [
+        "\\b(instagram|insta|@camisart|vi\\s+no\\s+insta|vi\\s+nas\\s+foto)\\b",
+        "\\b(foto\\s+que\\s+vi|modelo\\s+do\\s+post|aquele\\s+uniforme)\\b"
+      ],
+      "response": {
+        "type": "text",
+        "body": "📸 Que bom que viu a gente no Instagram!\n\nMe descreva o modelo que você viu (ou me envie o print da foto) que eu te passo as informações de preço e prazo. 😊"
+      },
+      "follow_up_state": "menu"
+    }
+  ],
+  "fallback": {
+    "response": {
+      "type": "buttons",
+      "body": "Não entendi sua mensagem 😊 Como posso ajudar?",
+      "buttons": [
+        { "id": "consultar_pedido", "title": "📦 Meu pedido" },
+        { "id": "ver_catalogo",     "title": "👕 Ver catálogo" },
+        { "id": "falar_humano",     "title": "🧑 Falar com atendente" }
+      ]
+    }
+  }
+}

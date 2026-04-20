@@ -1,0 +1,83 @@
+{
+  "version": "1.0",
+  "products": [
+    {
+      "id": "polo_piquet",
+      "nome": "Camisa Polo",
+      "tecido": "Malha Piquet",
+      "precos": {"varejo": 45.00, "atacado_12": 42.00},
+      "tamanhos": ["P", "M", "G", "GG"],
+      "segmentos": ["corporativo", "industria", "agro", "varejo"],
+      "personalizacoes": ["bordado", "serigrafia_40+"]
+    },
+    {
+      "id": "basica_algodao",
+      "nome": "Básica Algodão",
+      "tecido": "100% Algodão",
+      "precos": {"a_partir_de": 29.00},
+      "tamanhos": ["P", "M", "G"],
+      "segmentos": ["varejo", "atacado", "igrejas", "esportes"]
+    },
+    {
+      "id": "basica_pv",
+      "nome": "Básica PV",
+      "tecido": "Poliéster + Viscose",
+      "precos": {},
+      "tamanhos": ["P", "M", "G", "GG"],
+      "segmentos": ["industria", "sublimacao"],
+      "observacao": "Recomendada para sublimação"
+    },
+    {
+      "id": "jaleco_tradicional",
+      "nome": "Jaleco Tradicional",
+      "tecido": "Gabardine",
+      "precos": {"unidade": 120.00},
+      "segmentos": ["saude"],
+      "nichos": ["odonto", "medicina", "estetica"]
+    },
+    {
+      "id": "jaleco_premium",
+      "nome": "Jaleco Premium",
+      "tecido": "Gabardine",
+      "precos": {"unidade": 145.00},
+      "detalhes": "Amarração em laço + botões",
+      "segmentos": ["saude"]
+    },
+    {
+      "id": "uniforme_domestica",
+      "nome": "Uniforme Doméstica",
+      "tecido": "UniOffice Camisaria",
+      "precos": {"unidade": 120.00},
+      "segmentos": ["domestica"],
+      "observacao": "Babás, faxineiras, cuidadoras"
+    },
+    {
+      "id": "regata",
+      "nome": "Regata",
+      "tecido": "100% Algodão",
+      "precos": {"unidade": 20.00},
+      "variantes": ["masculina", "feminina"]
+    }
+  ],
+  "servicos": [
+    {
+      "id": "bordado",
+      "nome": "Bordado de Logo",
+      "prazo_dias_uteis": 5,
+      "pedido_minimo": 1,
+      "observacao": "Preço variável conforme desenho"
+    },
+    {
+      "id": "serigrafia",
+      "nome": "Serigrafia",
+      "pedido_minimo": 40,
+      "observacao": "Ideal para eventos e grupos grandes"
+    },
+    {
+      "id": "sublimacao",
+      "nome": "Sublimação",
+      "tecido_obrigatorio": "malha_pv",
+      "observacao": "Necessita camisa PV"
+    }
+  ]
+}
