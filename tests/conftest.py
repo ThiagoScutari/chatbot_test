@@ -21,6 +21,12 @@ from sqlalchemy.orm import sessionmaker
 from app.database import Base, get_db
 from app.main import app
 
+# Import models para registrá-los no Base.metadata
+import app.models.session  # noqa: F401
+import app.models.message  # noqa: F401
+import app.models.lead  # noqa: F401
+import app.models.audit_log  # noqa: F401
+
 
 TEST_DATABASE_URL = os.environ["TEST_DATABASE_URL"]
 test_engine = create_engine(TEST_DATABASE_URL)
