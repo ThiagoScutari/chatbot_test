@@ -25,6 +25,14 @@ async def lifespan(app: FastAPI):
     campaign_engine = CampaignEngine(settings.CAMPAIGNS_JSON_PATH)
     campaign_engine.reload()
     faq_engine = FAQEngine(settings.FAQ_JSON_PATH, campaign_engine=campaign_engine)
+
+    # Registro condicional do adapter Telegram (só se token configurado)
+    if settings.TELEGRAM_BOT_TOKEN:
+        from app.adapters.telegram.routes import router as telegram_router
+
+        app.include_router(telegram_router)
+        logger.info("Telegram adapter registered.")
+
     logger.info("Camisart AI started — ENV=%s", settings.APP_ENV)
     yield
 

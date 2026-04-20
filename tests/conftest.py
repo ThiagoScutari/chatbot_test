@@ -35,9 +35,44 @@ TestingSessionLocal = sessionmaker(
 )
 
 
+_TRIGGER_SQL = """
+CREATE OR REPLACE FUNCTION set_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = clock_timestamp();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_trigger WHERE tgname = 'trg_sessions_updated_at'
+    ) THEN
+        CREATE TRIGGER trg_sessions_updated_at
+        BEFORE UPDATE ON sessions
+        FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_trigger WHERE tgname = 'trg_leads_updated_at'
+    ) THEN
+        CREATE TRIGGER trg_leads_updated_at
+        BEFORE UPDATE ON leads
+        FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+    END IF;
+END $$;
+"""
+
+
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_db():
+    from sqlalchemy import text
+
     Base.metadata.create_all(bind=test_engine)
+    with test_engine.connect() as conn:
+        conn.execute(text(_TRIGGER_SQL))
+        conn.commit()
     yield
     Base.metadata.drop_all(bind=test_engine)
 

@@ -2,6 +2,19 @@
   "version": "1.0",
   "intents": [
     {
+      "id": "start_command",
+      "priority": 100,
+      "patterns": [
+        "^/start$",
+        "^/start@\\w+$"
+      ],
+      "response": {
+        "type": "text",
+        "body": "👋 Olá! Sou o assistente virtual da *Camisart Belém* — sua loja de uniformes!\n\nFaço orçamentos, respondo sobre preços, prazos e bordados. Para começar, qual é o seu nome? 😊"
+      },
+      "follow_up_state": "aguarda_nome"
+    },
+    {
       "id": "preco_polo",
       "priority": 10,
       "patterns": [

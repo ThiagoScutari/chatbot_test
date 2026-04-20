@@ -114,74 +114,74 @@ class WhatsAppCloudAdapter(ChannelAdapter):
             raw_payload=raw_payload,
         )
 
-    async def send(self, outbound: OutboundMessage) -> str:
-        """Converte OutboundMessage em payload da Meta e envia via client."""
+    def _build_meta_payload(self, outbound: OutboundMessage) -> dict:
         response = outbound.response
         r_type = response.get("type", "text")
-        body = response.get("body", "")
+        to = outbound.channel_user_id
 
-        if r_type == "text":
-            payload = {
-                "messaging_product": "whatsapp",
-                "to": outbound.channel_user_id,
-                "type": "text",
-                "text": {"body": body},
-            }
-        elif r_type == "buttons":
-            buttons = response.get("buttons") or []
-            payload = {
-                "messaging_product": "whatsapp",
-                "to": outbound.channel_user_id,
-                "type": "interactive",
-                "interactive": {
-                    "type": "button",
-                    "body": {"text": body},
-                    "action": {
-                        "buttons": [
-                            {
-                                "type": "reply",
-                                "reply": {"id": b["id"], "title": b["title"]},
-                            }
-                            for b in buttons
-                        ]
-                    },
+        if r_type == "buttons" and response.get("buttons"):
+            interactive: dict[str, Any] = {
+                "type": "button",
+                "body": {"text": response["body"]},
+                "action": {
+                    "buttons": [
+                        {
+                            "type": "reply",
+                            "reply": {"id": b["id"], "title": b["title"][:20]},
+                        }
+                        for b in response["buttons"][:3]
+                    ]
                 },
             }
-        elif r_type == "list":
-            list_items = response.get("list_items") or []
-            list_button_label = response.get("list_button_label", "Ver opções")
-            payload = {
+            if response.get("footer"):
+                interactive["footer"] = {"text": response["footer"]}
+            return {
                 "messaging_product": "whatsapp",
-                "to": outbound.channel_user_id,
+                "to": to,
+                "type": "interactive",
+                "interactive": interactive,
+            }
+
+        if r_type == "list" and response.get("list_items"):
+            return {
+                "messaging_product": "whatsapp",
+                "to": to,
                 "type": "interactive",
                 "interactive": {
                     "type": "list",
-                    "body": {"text": body},
+                    "body": {"text": response["body"]},
                     "action": {
-                        "button": list_button_label,
+                        "button": response.get("list_button_label", "Ver opções")[:20],
                         "sections": [
                             {
-                                "title": "Opções",
                                 "rows": [
                                     {
-                                        "id": it["id"],
-                                        "title": it["title"],
+                                        "id": item["id"],
+                                        "title": item["title"][:24],
                                         **(
-                                            {"description": it["description"]}
-                                            if it.get("description")
+                                            {"description": item["description"][:72]}
+                                            if item.get("description")
                                             else {}
                                         ),
                                     }
-                                    for it in list_items
-                                ],
+                                    for item in response["list_items"][:10]
+                                ]
                             }
                         ],
                     },
                 },
             }
-        else:
-            raise ValueError(f"Unknown response type: {r_type}")
 
+        return {
+            "messaging_product": "whatsapp",
+            "to": to,
+            "type": "text",
+            "text": {"body": response.get("body", "")},
+        }
+
+    async def send(self, outbound: OutboundMessage) -> str:
+        """Converte OutboundMessage em payload da Meta e envia via client."""
+        payload = self._build_meta_payload(outbound)
         return await client.send_message(
             settings.WHATSAPP_PHONE_NUMBER_ID, payload
         )

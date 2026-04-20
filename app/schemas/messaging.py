@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 class InboundMessage(BaseModel):
     """Mensagem canônica canal-agnóstica — entrada no MessagePipeline."""
 
-    channel_id: Literal["whatsapp_cloud", "kommo", "instagram_dm"]
+    channel_id: Literal["whatsapp_cloud", "kommo", "instagram_dm", "telegram"]
     channel_message_id: str
     channel_user_id: str
     display_name: str | None = None

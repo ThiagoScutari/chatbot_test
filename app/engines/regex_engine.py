@@ -50,9 +50,9 @@ class FAQIntent(BaseModel):
     priority: int = 0
     patterns: list[str]
     response: FAQResponse
-    follow_up_state: Literal["menu", "aguarda_pedido", "aguarda_orcamento"] | None = (
-        None
-    )
+    follow_up_state: Literal[
+        "menu", "aguarda_pedido", "aguarda_orcamento", "aguarda_nome"
+    ] | None = None
 
 
 class FAQFallback(BaseModel):

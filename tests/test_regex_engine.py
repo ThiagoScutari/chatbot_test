@@ -115,3 +115,22 @@ def test_fallback_is_buttons_with_three(engine):
     assert fb.type == "buttons"
     assert fb.buttons is not None
     assert len(fb.buttons) == 3
+
+
+def test_start_command_match(engine):
+    m = engine.match("/start")
+    assert m is not None
+    assert m.intent_id == "start_command"
+
+
+def test_start_command_with_botname(engine):
+    m = engine.match("/start@camisart_dev_bot")
+    assert m is not None
+    assert m.intent_id == "start_command"
+
+
+def test_start_command_priority_over_others(engine):
+    # /start must never fall to fallback
+    m = engine.match("/start")
+    assert m is not None
+    assert m.follow_up_state == "aguarda_nome"
