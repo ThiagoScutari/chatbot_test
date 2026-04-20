@@ -135,15 +135,25 @@ def handle(
                 next_state=next_state,
                 matched_intent_id=faq_match.intent_id,
             )
-        # Roteamento por id de botão
-        if texto == "consultar_pedido":
+
+        # Roteamento: aceita tanto o id original do botão (WhatsApp Interactive)
+        # quanto o número da posição (1/2/3) para canais que renderizam como
+        # lista numerada (Telegram) ou para clientes que digitam livre.
+        menu_alias = {
+            "1": "consultar_pedido",
+            "2": "ver_catalogo",
+            "3": "falar_humano",
+        }
+        acao_id = menu_alias.get(texto, texto)
+
+        if acao_id == "consultar_pedido":
             return HandleResult(
                 response=_text(
                     "Informe o número do pedido (ex: 1001):"
                 ),
                 next_state=AGUARDA_PEDIDO,
             )
-        if texto == "ver_catalogo":
+        if acao_id == "ver_catalogo":
             return HandleResult(
                 response=_text(
                     "Enviando nosso catálogo em PDF 👕"
@@ -151,7 +161,7 @@ def handle(
                 next_state=ENVIA_CATALOGO,
                 action="send_catalog",
             )
-        if texto == "falar_humano":
+        if acao_id == "falar_humano":
             return HandleResult(
                 response=_text(
                     "Beleza! Vou te transferir para um atendente humano. "

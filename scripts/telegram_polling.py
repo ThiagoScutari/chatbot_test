@@ -39,6 +39,10 @@ from app.engines.regex_engine import FAQEngine  # noqa: E402
 from app.pipeline.message_pipeline import MessagePipeline  # noqa: E402
 
 
+TELEGRAM_LONGPOLL_TIMEOUT = 30
+CLIENT_READ_TIMEOUT = TELEGRAM_LONGPOLL_TIMEOUT + 10  # folga para latência de rede
+
+
 async def get_updates(offset: int) -> list[dict]:
     url = (
         f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}/getUpdates"
@@ -46,8 +50,8 @@ async def get_updates(offset: int) -> list[dict]:
     async with httpx.AsyncClient() as client:
         resp = await client.get(
             url,
-            params={"offset": offset, "timeout": 30},
-            timeout=35.0,
+            params={"offset": offset, "timeout": TELEGRAM_LONGPOLL_TIMEOUT},
+            timeout=CLIENT_READ_TIMEOUT,
         )
         resp.raise_for_status()
         return resp.json().get("result", [])
@@ -88,8 +92,11 @@ async def main() -> None:
                             await adapter.send(outbound)
                     finally:
                         db.close()
-        except Exception as exc:  # noqa: BLE001
-            logger.error("Polling error: %s", exc)
+        except httpx.ReadTimeout:
+            # Long-polling expirou sem mensagens — comportamento esperado
+            logger.debug("Long-poll timeout (sem mensagens), reconectando…")
+        except Exception:  # noqa: BLE001
+            logger.exception("Polling error — traceback completo:")
             await asyncio.sleep(3)
 
 
