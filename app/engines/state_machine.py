@@ -26,8 +26,57 @@ MENU = "menu"
 AGUARDA_PEDIDO = "aguarda_pedido"
 ENVIA_CATALOGO = "envia_catalogo"
 COLETA_ORCAMENTO_SEGMENTO = "coleta_orcamento_segmento"
+COLETA_ORCAMENTO_PRODUTO = "coleta_orcamento_produto"
+COLETA_ORCAMENTO_QTD = "coleta_orcamento_qtd"
+COLETA_ORCAMENTO_PERSONALIZACAO = "coleta_orcamento_personalizacao"
+COLETA_ORCAMENTO_PRAZO = "coleta_orcamento_prazo"
+CONFIRMACAO_ORCAMENTO = "confirmacao_orcamento"
+LEAD_CAPTURADO = "lead_capturado"
 ENCAMINHAR_HUMANO = "encaminhar_humano"
+AGUARDA_RETORNO_HUMANO = "aguarda_retorno_humano"
 FIM = "fim"
+
+
+KNOWN_STATES = {
+    INICIO,
+    AGUARDA_NOME,
+    MENU,
+    AGUARDA_PEDIDO,
+    ENVIA_CATALOGO,
+    COLETA_ORCAMENTO_SEGMENTO,
+    COLETA_ORCAMENTO_PRODUTO,
+    COLETA_ORCAMENTO_QTD,
+    COLETA_ORCAMENTO_PERSONALIZACAO,
+    COLETA_ORCAMENTO_PRAZO,
+    CONFIRMACAO_ORCAMENTO,
+    LEAD_CAPTURADO,
+    ENCAMINHAR_HUMANO,
+    AGUARDA_RETORNO_HUMANO,
+    FIM,
+}
+
+
+HANDOFF_MESSAGE = (
+    "👤 Estou te conectando com um dos nossos consultores!\n\n"
+    "Nosso horário de atendimento é *segunda a sexta, das 8h às 18h*.\n"
+    "Em breve alguém vai te responder aqui. 😊\n\n"
+    "_Você pode continuar me fazendo perguntas enquanto aguarda._"
+)
+
+
+AGUARDA_RETORNO_MESSAGE = (
+    "Já avisamos nossa equipe! Em breve um consultor vai te atender. 🕐\n\n"
+    "Posso ajudar com mais alguma coisa enquanto isso?"
+)
+
+
+PRODUTOS_POR_SEGMENTO: dict[str, list[str]] = {
+    "corporativo": ["Camisa Polo", "Básica Algodão"],
+    "saude": ["Jaleco Tradicional", "Jaleco Premium"],
+    "industria": ["Camisa Polo", "Básica PV"],
+    "domestica": ["Uniforme Doméstica"],
+    "outro": ["Camisa Polo", "Básica Algodão", "Regata"],
+}
 
 
 class HandleResult(BaseModel):
@@ -202,10 +251,21 @@ def handle(
 
     if estado_atual == ENCAMINHAR_HUMANO:
         return HandleResult(
-            response=_text(
-                "Já encaminhei ao atendente humano. Aguarde um instante 🙏"
-            ),
-            next_state=ENCAMINHAR_HUMANO,
+            response=_text(HANDOFF_MESSAGE),
+            next_state=AGUARDA_RETORNO_HUMANO,
+            action="forward_to_human",
+        )
+
+    if estado_atual == AGUARDA_RETORNO_HUMANO:
+        if faq_match is not None:
+            return HandleResult(
+                response=faq_match.response,
+                next_state=AGUARDA_RETORNO_HUMANO,
+                matched_intent_id=faq_match.intent_id,
+            )
+        return HandleResult(
+            response=_text(AGUARDA_RETORNO_MESSAGE),
+            next_state=AGUARDA_RETORNO_HUMANO,
         )
 
     if estado_atual == ENVIA_CATALOGO:
@@ -214,8 +274,8 @@ def handle(
             next_state=MENU,
         )
 
-    # Estado desconhecido — volta ao menu
+    # Estado desconhecido — reseta para INICIO (defensive)
     return HandleResult(
-        response=_menu_buttons(),
-        next_state=MENU,
+        response=_text(_greeting(session, campaign_engine)),
+        next_state=INICIO,
     )
