@@ -14,7 +14,7 @@ from app.engines.campaign_engine import CampaignEngine
 from app.engines.regex_engine import FAQEngine
 from app.engines.state_machine import HandleResult, handle
 from app.schemas.messaging import InboundMessage, OutboundMessage
-from app.services import message_service, session_service
+from app.services import lead_service, message_service, session_service
 
 
 logger = logging.getLogger(__name__)
@@ -86,6 +86,26 @@ class MessagePipeline:
 
         # Atualiza estado da sessão
         session_service.update_state(db, session, result.next_state)
+
+        # Ação: captura de lead (grava Lead + audit_log antes do commit)
+        if result.action == "capture_lead":
+            data = session.session_data or {}
+            lead_service.capture(
+                db,
+                session=session,
+                nome_cliente=session.nome_cliente or "cliente",
+                telefone=inbound.channel_user_id,
+                segmento=data.get("orcamento_segmento"),
+                produto=data.get("orcamento_produto"),
+                quantidade=data.get("orcamento_quantidade"),
+                personalizacao=data.get("orcamento_personalizacao"),
+                prazo_desejado=data.get("orcamento_prazo"),
+            )
+            # Limpa chaves orcamento_* após captura
+            for key in list(data.keys()):
+                if key.startswith("orcamento_"):
+                    data.pop(key, None)
+            session.session_data = data
 
         # Persiste outbound
         message_service.record_outbound(
