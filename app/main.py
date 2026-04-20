@@ -31,6 +31,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Camisart AI", version="1.0.0", lifespan=lifespan)
 
+from app.adapters.whatsapp_cloud.routes import router as whatsapp_router  # noqa: E402
 from app.api.health import router as health_router  # noqa: E402
 
 app.include_router(health_router)
+app.include_router(whatsapp_router)

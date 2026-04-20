@@ -1,0 +1,106 @@
+{
+  "text_message": {
+    "object": "whatsapp_business_account",
+    "entry": [
+      {
+        "id": "WABA_ID",
+        "changes": [
+          {
+            "value": {
+              "messaging_product": "whatsapp",
+              "metadata": {
+                "display_phone_number": "5591999999999",
+                "phone_number_id": "PHONE_NUMBER_ID"
+              },
+              "contacts": [
+                {
+                  "profile": { "name": "TEST_Cliente" },
+                  "wa_id": "5591991800637"
+                }
+              ],
+              "messages": [
+                {
+                  "from": "5591991800637",
+                  "id": "wamid.text001",
+                  "timestamp": "1713628800",
+                  "type": "text",
+                  "text": { "body": "qual o preço da polo?" }
+                }
+              ]
+            },
+            "field": "messages"
+          }
+        ]
+      }
+    ]
+  },
+  "button_reply": {
+    "object": "whatsapp_business_account",
+    "entry": [
+      {
+        "id": "WABA_ID",
+        "changes": [
+          {
+            "value": {
+              "messaging_product": "whatsapp",
+              "metadata": {
+                "display_phone_number": "5591999999999",
+                "phone_number_id": "PHONE_NUMBER_ID"
+              },
+              "contacts": [
+                {
+                  "profile": { "name": "TEST_Cliente" },
+                  "wa_id": "5591991800637"
+                }
+              ],
+              "messages": [
+                {
+                  "from": "5591991800637",
+                  "id": "wamid.button001",
+                  "timestamp": "1713628900",
+                  "type": "interactive",
+                  "interactive": {
+                    "type": "button_reply",
+                    "button_reply": {
+                      "id": "ver_catalogo",
+                      "title": "👕 Ver catálogo"
+                    }
+                  }
+                }
+              ]
+            },
+            "field": "messages"
+          }
+        ]
+      }
+    ]
+  },
+  "status_update": {
+    "object": "whatsapp_business_account",
+    "entry": [
+      {
+        "id": "WABA_ID",
+        "changes": [
+          {
+            "value": {
+              "messaging_product": "whatsapp",
+              "metadata": {
+                "display_phone_number": "5591999999999",
+                "phone_number_id": "PHONE_NUMBER_ID"
+              },
+              "statuses": [
+                {
+                  "id": "wamid.out001",
+                  "status": "delivered",
+                  "timestamp": "1713629000",
+                  "recipient_id": "5591991800637"
+                }
+              ]
+            },
+            "field": "messages"
+          }
+        ]
+      }
+    ]
+  }
+}
