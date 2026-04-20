@@ -1,5 +1,6 @@
 """Testes da lógica do state_machine.handle()."""
 from pathlib import Path
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -17,9 +18,18 @@ from app.engines.state_machine import (
 from app.models.session import Session as SessionModel
 
 
+FAQ_PATH = Path("app/knowledge/faq.json")
+
+
 @pytest.fixture
 def faq_engine():
-    return FAQEngine(Path("app/knowledge/faq.json"))
+    return FAQEngine(FAQ_PATH)
+
+
+@pytest.fixture
+def faq():
+    """Alias usado pelos testes de cobertura do S02-06."""
+    return FAQEngine(FAQ_PATH)
 
 
 @pytest.fixture
@@ -39,6 +49,21 @@ def _sess(estado: str = INICIO) -> SessionModel:
     return s
 
 
+def make_session(
+    state: str,
+    nome: str | None = None,
+    data: dict | None = None,
+) -> MagicMock:
+    s = MagicMock()
+    s.current_state = state
+    s.nome_cliente = nome
+    s.session_data = data if data is not None else {}
+    return s
+
+
+# ── Testes originais (SessionModel real) ──────────────────────────────────
+
+
 def test_inicio_envia_saudacao(faq_engine, campaign_engine):
     r = handle("olá", _sess(INICIO), faq_engine, campaign_engine)
     assert r.next_state == AGUARDA_NOME
@@ -54,8 +79,6 @@ def test_aguarda_nome_salva_e_vai_para_menu(faq_engine, campaign_engine):
 
 
 def test_menu_alias_numerico_1_vai_para_aguarda_pedido(faq_engine, campaign_engine):
-    """Canais que renderizam botões como lista numerada (Telegram)
-    devem conseguir rotear '1' para consultar_pedido."""
     r = handle("1", _sess(MENU), faq_engine, campaign_engine)
     assert r.next_state == AGUARDA_PEDIDO
 
@@ -73,7 +96,6 @@ def test_menu_alias_numerico_3_encaminha_humano(faq_engine, campaign_engine):
 
 
 def test_menu_button_id_original_continua_funcionando(faq_engine, campaign_engine):
-    """Compatibilidade com WhatsApp Interactive: button ids ainda funcionam."""
     r = handle("consultar_pedido", _sess(MENU), faq_engine, campaign_engine)
     assert r.next_state == AGUARDA_PEDIDO
 
@@ -88,3 +110,259 @@ def test_aguarda_pedido_texto_nao_numerico_permanece(faq_engine, campaign_engine
     r = handle("abc", _sess(AGUARDA_PEDIDO), faq_engine, campaign_engine)
     assert r.next_state == AGUARDA_PEDIDO
     assert "inválido" in r.response.body.lower()
+
+
+# ── Testes S02-06: cobertura ampla com MagicMock ──────────────────────────
+
+# 1. INICIO
+def test_inicio_returns_greeting(faq):
+    s = make_session("inicio")
+    r = handle("oi", s, faq)
+    assert r.next_state == "aguarda_nome"
+    assert r.response.body
+
+
+# 2. AGUARDA_NOME
+def test_aguarda_nome_saves_name(faq):
+    s = make_session("aguarda_nome")
+    r = handle("Maria", s, faq)
+    assert r.next_state == "menu"
+    assert s.nome_cliente == "Maria"
+
+
+# 3. MENU → consultar pedido
+def test_menu_consultar_pedido(faq):
+    s = make_session("menu", nome="Maria")
+    r = handle("consultar_pedido", s, faq)
+    assert r.next_state == "aguarda_pedido"
+
+
+def test_menu_numeral_1(faq):
+    s = make_session("menu", nome="Maria")
+    r = handle("1", s, faq)
+    assert r.next_state == "aguarda_pedido"
+
+
+# 4. MENU → catálogo
+def test_menu_catalogo(faq):
+    s = make_session("menu", nome="Maria")
+    r = handle("ver_catalogo", s, faq)
+    assert r.next_state == "envia_catalogo"
+    assert r.action == "send_catalog"
+
+
+def test_menu_numeral_2(faq):
+    s = make_session("menu", nome="Maria")
+    r = handle("2", s, faq)
+    assert r.action == "send_catalog"
+
+
+# 5. MENU → humano
+def test_menu_humano(faq):
+    s = make_session("menu", nome="Maria")
+    r = handle("falar_humano", s, faq)
+    assert r.next_state == "encaminhar_humano"
+
+
+def test_menu_numeral_3(faq):
+    s = make_session("menu", nome="Maria")
+    r = handle("3", s, faq)
+    assert r.action == "forward_to_human"
+
+
+# 6. MENU → FAQ high priority
+def test_menu_faq_match_keeps_state(faq):
+    s = make_session("menu", nome="Maria")
+    r = handle("qual o preço da polo?", s, faq)
+    assert (
+        r.matched_intent_id == "preco_polo"
+        or "polo" in r.response.body.lower()
+    )
+    assert r.next_state == "menu"
+
+
+# 7. MENU → fallback
+def test_menu_no_match_fallback(faq):
+    s = make_session("menu", nome="Maria")
+    r = handle("xablau foobar inexistente", s, faq)
+    assert r.next_state == "menu"
+    assert r.response.body
+
+
+# 8. ENCAMINHAR_HUMANO → moves to AGUARDA_RETORNO_HUMANO
+def test_encaminhar_humano_state(faq):
+    s = make_session("encaminhar_humano", nome="Maria")
+    r = handle("qualquer coisa", s, faq)
+    assert r.next_state == "aguarda_retorno_humano"
+    assert r.action == "forward_to_human"
+
+
+# 9. AGUARDA_RETORNO_HUMANO + FAQ match
+def test_aguarda_retorno_faq_match(faq):
+    s = make_session("aguarda_retorno_humano", nome="Maria")
+    r = handle("qual o endereço?", s, faq)
+    assert r.next_state == "aguarda_retorno_humano"
+    assert (
+        "Magalhães" in r.response.body
+        or r.matched_intent_id == "endereco"
+    )
+
+
+# 10. AGUARDA_RETORNO_HUMANO + no match
+def test_aguarda_retorno_no_match(faq):
+    s = make_session("aguarda_retorno_humano", nome="Maria")
+    r = handle("xablau", s, faq)
+    assert r.next_state == "aguarda_retorno_humano"
+
+
+# 11. COLETA_ORCAMENTO_QTD — quantidade inválida
+def test_qtd_invalida_mantem_estado(faq):
+    s = make_session(
+        "coleta_orcamento_qtd",
+        nome="Maria",
+        data={
+            "orcamento_segmento": "corporativo",
+            "orcamento_produto": "Camisa Polo",
+        },
+    )
+    r = handle("muitas", s, faq)
+    assert r.next_state == "coleta_orcamento_qtd"
+
+
+def test_qtd_zero_mantem_estado(faq):
+    s = make_session(
+        "coleta_orcamento_qtd",
+        nome="Maria",
+        data={
+            "orcamento_segmento": "corporativo",
+            "orcamento_produto": "Camisa Polo",
+        },
+    )
+    r = handle("0", s, faq)
+    assert r.next_state == "coleta_orcamento_qtd"
+
+
+def test_qtd_valida_avanca(faq):
+    s = make_session(
+        "coleta_orcamento_qtd",
+        nome="Maria",
+        data={
+            "orcamento_segmento": "corporativo",
+            "orcamento_produto": "Camisa Polo",
+        },
+    )
+    r = handle("50", s, faq)
+    assert r.next_state == "coleta_orcamento_personalizacao"
+    assert s.session_data["orcamento_quantidade"] == 50
+
+
+# 12. CONFIRMACAO_ORCAMENTO
+def test_confirmacao_confirmar(faq):
+    s = make_session(
+        "confirmacao_orcamento",
+        nome="Maria",
+        data={
+            "orcamento_segmento": "corporativo",
+            "orcamento_produto": "Camisa Polo",
+            "orcamento_quantidade": 50,
+            "orcamento_personalizacao": "Bordado",
+            "orcamento_prazo": "15 dias",
+        },
+    )
+    r = handle("confirmar", s, faq)
+    assert r.action == "capture_lead"
+    assert r.next_state == "lead_capturado"
+
+
+def test_confirmacao_corrigir(faq):
+    s = make_session(
+        "confirmacao_orcamento",
+        nome="Maria",
+        data={
+            "orcamento_segmento": "corporativo",
+            "orcamento_produto": "Camisa Polo",
+            "orcamento_quantidade": 50,
+            "orcamento_personalizacao": "Bordado",
+            "orcamento_prazo": "15 dias",
+        },
+    )
+    r = handle("corrigir", s, faq)
+    assert r.next_state == "coleta_orcamento_qtd"
+
+
+# 13. Estado desconhecido → defensive reset
+def test_unknown_state_resets_to_inicio(faq):
+    s = make_session("estado_que_nao_existe", nome="Maria")
+    r = handle("mensagem", s, faq)
+    assert r.next_state == "inicio"
+
+
+# ── Fluxo de orçamento ponta-a-ponta (cobertura extra) ────────────────────
+
+
+def test_menu_trigger_orcamento_text(faq):
+    s = make_session("menu", nome="Maria")
+    r = handle("orçamento", s, faq)
+    assert r.next_state == "coleta_orcamento_segmento"
+    assert r.response.type == "list"
+
+
+def test_segmento_valido_avanca_para_produto(faq):
+    s = make_session("coleta_orcamento_segmento", nome="Maria")
+    r = handle("corporativo", s, faq)
+    assert r.next_state == "coleta_orcamento_produto"
+    assert s.session_data["orcamento_segmento"] == "corporativo"
+
+
+def test_produto_valido_avanca_para_qtd(faq):
+    s = make_session(
+        "coleta_orcamento_produto",
+        nome="Maria",
+        data={"orcamento_segmento": "corporativo"},
+    )
+    r = handle("Camisa Polo", s, faq)
+    assert r.next_state == "coleta_orcamento_qtd"
+    assert s.session_data["orcamento_produto"] == "Camisa Polo"
+
+
+def test_personalizacao_valida_avanca_para_prazo(faq):
+    s = make_session(
+        "coleta_orcamento_personalizacao",
+        nome="Maria",
+        data={
+            "orcamento_segmento": "corporativo",
+            "orcamento_produto": "Camisa Polo",
+            "orcamento_quantidade": 50,
+        },
+    )
+    r = handle("bordado", s, faq)
+    assert r.next_state == "coleta_orcamento_prazo"
+    assert s.session_data["orcamento_personalizacao"] == "Bordado"
+
+
+def test_prazo_valido_vai_para_confirmacao(faq):
+    s = make_session(
+        "coleta_orcamento_prazo",
+        nome="Maria",
+        data={
+            "orcamento_segmento": "corporativo",
+            "orcamento_produto": "Camisa Polo",
+            "orcamento_quantidade": 50,
+            "orcamento_personalizacao": "Bordado",
+        },
+    )
+    r = handle("15 dias", s, faq)
+    assert r.next_state == "confirmacao_orcamento"
+    assert "Resumo" in r.response.body
+
+
+def test_lead_capturado_menu(faq):
+    s = make_session("lead_capturado", nome="Maria")
+    r = handle("menu", s, faq)
+    assert r.next_state == "menu"
+
+
+def test_envia_catalogo_state_returns_to_menu(faq):
+    s = make_session("envia_catalogo", nome="Maria")
+    r = handle("qualquer coisa", s, faq)
+    assert r.next_state == "menu"
