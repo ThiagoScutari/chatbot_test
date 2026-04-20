@@ -55,10 +55,34 @@ def db():
 
 @pytest.fixture
 def client(db):
+    """TestClient com override do get_db e engines inicializados.
+
+    Inicializa CampaignEngine e FAQEngine manualmente (sem usar o lifespan
+    para não recriar o schema no banco de teste a cada fixture).
+    """
+    from pathlib import Path
+
+    import app.main as app_main
+    from app.engines.campaign_engine import CampaignEngine
+    from app.engines.regex_engine import FAQEngine
+
+    # Setup engines (idempotente — mesmos objetos em execuções paralelas)
+    campaign_engine = CampaignEngine(Path("app/knowledge/campaigns.json"))
+    campaign_engine.reload()
+    faq_engine = FAQEngine(
+        Path("app/knowledge/faq.json"), campaign_engine=campaign_engine
+    )
+    app_main.campaign_engine = campaign_engine
+    app_main.faq_engine = faq_engine
+
     def override_get_db():
         yield db
 
     app.dependency_overrides[get_db] = override_get_db
-    with TestClient(app) as c:
+    # TestClient sem context manager para NÃO disparar o lifespan
+    # (que rodaria Base.metadata.create_all no banco de produção).
+    c = TestClient(app)
+    try:
         yield c
-    app.dependency_overrides.clear()
+    finally:
+        app.dependency_overrides.clear()
