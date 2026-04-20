@@ -19,7 +19,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from app.database import Base, get_db
-from app.main import app
+from app.main import app as fastapi_app
 
 # Import models para registrá-los no Base.metadata
 import app.models.session  # noqa: F401
@@ -78,11 +78,11 @@ def client(db):
     def override_get_db():
         yield db
 
-    app.dependency_overrides[get_db] = override_get_db
+    fastapi_app.dependency_overrides[get_db] = override_get_db
     # TestClient sem context manager para NÃO disparar o lifespan
     # (que rodaria Base.metadata.create_all no banco de produção).
-    c = TestClient(app)
+    c = TestClient(fastapi_app)
     try:
         yield c
     finally:
-        app.dependency_overrides.clear()
+        fastapi_app.dependency_overrides.clear()

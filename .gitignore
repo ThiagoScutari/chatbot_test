@@ -10,3 +10,5 @@ test/docs/Catalogo.pdf
 **/.pytest_cache/
 .env
 .claude/settings.local.json
+.coverage
+htmlcov/
