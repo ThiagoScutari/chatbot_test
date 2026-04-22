@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     TELEGRAM_WEBHOOK_SECRET: str = ""
     FAQ_JSON_PATH: Path = Path("app/knowledge/faq.json")
     CAMPAIGNS_JSON_PATH: Path = Path("app/knowledge/campaigns.json")
+    ANTHROPIC_API_KEY: str = ""
+    LLM_CONFIG_PATH: Path = Path("app/knowledge/llm_config.json")
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 

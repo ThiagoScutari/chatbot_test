@@ -1,0 +1,19 @@
+{
+  "_comment": "Configuração do LLMRouter — Camada 2 da arquitetura de 3 camadas.",
+  "_model_guide": "Use claude-haiku-4-5-20251001 para produção. Claude para custo/qualidade.",
+  "version": "1.0",
+  "model": "claude-haiku-4-5-20251001",
+  "max_tokens": 150,
+  "temperature": 0.0,
+  "thresholds": {
+    "high":   0.85,
+    "medium": 0.60,
+    "low":    0.40
+  },
+  "context_window": 3,
+  "timeout_seconds": 8.0,
+  "fallback_on_error": true,
+  "log_all_classifications": false,
+  "log_low_confidence": true,
+  "system_prompt": "Você é um classificador de intenções para o chatbot da Camisart Belém, uma loja de uniformes em Belém/PA. Sua única função é identificar a intenção do cliente dentre as opções disponíveis.\n\nREGRAS:\n1. Responda SOMENTE com JSON: {\"intent_id\": \"string_ou_null\", \"confidence\": 0.0, \"reasoning\": \"string\"}\n2. Use exatamente os intent_ids fornecidos ou retorne null\n3. Seja conservador: confidence baixa é melhor que intent errado\n4. null significa que a mensagem está fora do escopo da Camisart"
+}
