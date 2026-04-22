@@ -18,12 +18,14 @@
       "id": "falar_humano",
       "priority": 15,
       "patterns": [
-        "\\b(atendente|vendedor|consultor|humano)\\b",
-        "\\bfalar\\b.*\\b(pessoa|humano|atendente|vendedor|consultor|algu[eé]m)\\b",
-        "\\b(preciso|quero)\\b.*\\b(atendente|vendedor|consultor|humano|ajuda humana)\\b",
+        "\\b(atendente|vendedor|consultor|humano|rob[oô])\\b",
+        "\\bfalar\\b.*\\b(pessoa|humano|atendente|vendedor|consultor|algu[eé]m|respons[aá]vel)\\b",
+        "\\b(preciso|quero)\\b.*\\b(atendente|vendedor|consultor|humano|ajuda humana|respons[aá]vel)\\b",
         "\\bme (ajuda|ajude|atende|atenda)\\b",
         "\\btransfer[ei]r?\\b",
-        "\\b(n[aã]o (consigo|entend|funciona))\\b"
+        "\\b(n[aã]o (consigo|entend|funciona|quero falar))\\b",
+        "\\b(pra|para)\\s+me\\s+atender\\b",
+        "\\balgu[eé]m\\b.*\\batend"
       ],
       "response": {
         "type": "buttons",
@@ -56,8 +58,8 @@
       "id": "preco_jaleco",
       "priority": 10,
       "patterns": [
-        "\\b(pre[çc]o|valor|quanto)\\b.*\\bjaleco\\b",
-        "\\bjaleco\\b.*\\b(pre[çc]o|valor|quanto)\\b"
+        "\\b(pre[çc]o|valor|quanto)\\b.*\\bjalecos?\\b",
+        "\\bjalecos?\\b.*\\b(pre[çc]o|valor|quanto)\\b"
       ],
       "response": {
         "type": "text",
@@ -70,8 +72,15 @@
       "priority": 8,
       "patterns": [
         "\\b(pedido\\s+m[íi]nimo|m[íi]nimo\\s+de\\s+pe[çc]as|m[íi]nimo\\s+pra|quantas\\s+pe[çc]as\\s+m[íi]nimo)\\b",
-        "\\bcomprar\\s+(1|uma|s[oó]\\s+uma)\\s+pe[çc]a\\b",
-        "\\btem\\s+m[íi]nimo\\b"
+        "\\bcomprar\\s+(s[oó]\\s+)?(1|uma|um[aá]s?)\\b.*\\bpe[çc]a",
+        "\\btem\\s+(pedido\\s+)?m[íi]nim",
+        "\\bqual\\s+o\\s+m[íi]nim",
+        "\\bquantidade\\s+m[íi]nim",
+        "\\b(compro|comprar)\\s+avulso\\b",
+        "\\bavulso\\b",
+        "\\bpe[çc]as?\\s+no\\s+m[íi]nim",
+        "\\bd[aá]\\s+pra\\s+comprar\\b.*\\b(1|uma|s[oó])\\b",
+        "\\bm[íi]nimo\\s+de\\s+pe[çc]a"
       ],
       "response": {
         "type": "text",
@@ -84,7 +93,10 @@
       "priority": 8,
       "patterns": [
         "\\b(prazo|demora|quanto\\s+tempo|quando\\s+fica|dias\\s+para|entrega\\s+em)\\b",
-        "\\b(urgente|r[áa]pido|preciso\\s+para\\s+amanh[ãa]|preciso\\s+logo)\\b"
+        "\\b(urgente|r[áa]pido|preciso\\s+para\\s+amanh[ãa]|preciso\\s+logo)\\b",
+        "\\btempo\\s+de\\s+produ[çc][ãa]o\\b",
+        "\\bpreciso\\s+(pra|para)\\b.*\\b(semana|amanh|hoje|urgente|logo)",
+        "\\bsemana\\s+que\\s+vem\\b"
       ],
       "response": {
         "type": "buttons",
@@ -100,7 +112,8 @@
       "id": "pagamento",
       "priority": 7,
       "patterns": [
-        "\\b(pix|cart[aã]o|boleto|pagamento|parcel|d[ée]bito|cr[ée]dito|aceita)\\b"
+        "\\b(pix|cart[aã]o|boleto|pagamento|parcel\\w*|d[ée]bito|cr[ée]dito|aceita|pagar|como\\s+pago)\\b",
+        "\\bformas?\\s+de\\s+pagamento\\b"
       ],
       "response": {
         "type": "text",
@@ -126,7 +139,8 @@
       "patterns": [
         "\\b(desconto|atacado|por\\s+atacado|lote|muitas\\s+pe[çc]as|grande\\s+quantidade)\\b",
         "\\bdesconto.*quantidade\\b",
-        "\\bquantidade.*desconto\\b"
+        "\\bquantidade.*desconto\\b",
+        "\\bquanto\\s+fica\\s+\\d+\\s+pe[çc]as?\\b"
       ],
       "response": {
         "type": "buttons",
@@ -217,7 +231,9 @@
       "id": "endereco",
       "priority": 5,
       "patterns": [
-        "\\b(endere[çc]o|onde|local|localiza|loja|f[íi]sica)\\b"
+        "\\b(endere[çc]o|onde|local|localiza\\w*|loja|f[íi]sica)\\b",
+        "\\bcomo\\s+chegar\\b",
+        "\\bchegar\\s+(na|no|at[ée])\\b"
       ],
       "response": {
         "type": "text",
