@@ -50,9 +50,9 @@ def test_rate_limit_blocks_11th_message(db):
         db, "whatsapp_cloud", "5591111110004", "TEST_D"
     )
     for _ in range(10):
-        assert check_rate_limit(session) is True
+        assert check_rate_limit(session, db) is True
     # 11ª mensagem é bloqueada
-    assert check_rate_limit(session) is False
+    assert check_rate_limit(session, db) is False
 
 
 def test_rate_limit_resets_after_window(db):
@@ -60,7 +60,7 @@ def test_rate_limit_resets_after_window(db):
         db, "whatsapp_cloud", "5591111110005", "TEST_E"
     )
     for _ in range(10):
-        check_rate_limit(session)
+        check_rate_limit(session, db)
 
     # Simula passagem da janela de 1 minuto
     past = (datetime.now(timezone.utc) - timedelta(minutes=2)).isoformat()
@@ -68,7 +68,20 @@ def test_rate_limit_resets_after_window(db):
     data["rl_window_start"] = past
     session.session_data = data
 
-    assert check_rate_limit(session) is True
+    assert check_rate_limit(session, db) is True
+
+
+def test_rate_limit_persists_across_calls(db):
+    """Counter must be visible in DB after each call."""
+    session, _ = get_or_create_session(
+        db, "whatsapp_cloud", "5591111110010", "TEST_RL"
+    )
+    check_rate_limit(session, db)
+    check_rate_limit(session, db)
+    # Re-fetch from DB to verify persistence
+    db.expire(session)
+    db.refresh(session)
+    assert session.session_data.get("rl_count", 0) == 2
 
 
 def test_update_state(db):

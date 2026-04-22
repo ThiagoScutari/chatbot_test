@@ -57,7 +57,7 @@ class MessagePipeline:
         )
 
         # Rate limit
-        if not session_service.check_rate_limit(session):
+        if not session_service.check_rate_limit(session, db):
             logger.warning(
                 "Rate limit excedido para %s/%s",
                 inbound.channel_id,

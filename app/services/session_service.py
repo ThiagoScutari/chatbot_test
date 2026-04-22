@@ -65,19 +65,28 @@ def get_or_create_session(
     return session, False
 
 
-def check_rate_limit(session: SessionModel) -> bool:
+def check_rate_limit(session: SessionModel, db: Session) -> bool:
     """Rate limit por `channel_user_id`: `RATE_LIMIT_MAX_MSGS`/min via session_data.
 
+    Persiste o contador via db.commit() para que a janela deslizante sobreviva
+    entre requisições (telegram_polling cria SessionLocal por mensagem).
     Retorna True se permitido, False se excedeu.
+
+    IMPORTANT: session.session_data é reatribuído como novo dict (não mutado
+    in-place) para que o SQLAlchemy detecte a mudança no JSONB.
     """
     now = _now()
     data = dict(session.session_data or {})
     window_start_iso = data.get("rl_window_start")
 
     if window_start_iso is None:
-        data["rl_window_start"] = now.isoformat()
-        data["rl_count"] = 1
-        session.session_data = data
+        session.session_data = {
+            **data,
+            "rl_window_start": now.isoformat(),
+            "rl_count": 1,
+        }
+        db.add(session)
+        db.commit()
         return True
 
     try:
@@ -90,15 +99,20 @@ def check_rate_limit(session: SessionModel) -> bool:
 
     if now - window_start > RATE_LIMIT_WINDOW:
         # Nova janela
-        data["rl_window_start"] = now.isoformat()
-        data["rl_count"] = 1
-        session.session_data = data
+        session.session_data = {
+            **data,
+            "rl_window_start": now.isoformat(),
+            "rl_count": 1,
+        }
+        db.add(session)
+        db.commit()
         return True
 
-    count = int(data.get("rl_count", 0)) + 1
-    data["rl_count"] = count
-    session.session_data = data
-    return count <= RATE_LIMIT_MAX_MSGS
+    new_count = int(data.get("rl_count", 0)) + 1
+    session.session_data = {**data, "rl_count": new_count}
+    db.add(session)
+    db.commit()
+    return new_count <= RATE_LIMIT_MAX_MSGS
 
 
 def update_state(
