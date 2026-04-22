@@ -337,7 +337,7 @@ def test_personalizacao_valida_avanca_para_prazo(faq):
     )
     r = handle("bordado", s, faq)
     assert r.next_state == "coleta_orcamento_prazo"
-    assert s.session_data["orcamento_personalizacao"] == "Bordado"
+    assert s.session_data["orcamento_personalizacao"] == "bordado"
 
 
 def test_prazo_valido_vai_para_confirmacao(faq):
