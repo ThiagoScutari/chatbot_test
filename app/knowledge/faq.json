@@ -140,15 +140,18 @@
     },
     {
       "id": "entrega_nacional",
-      "priority": 7,
+      "priority": 9,
       "patterns": [
-        "\\b(entrega|envi[ao]|manda|frete|correios|sedex|interior)\\b",
+        "\\b(envi[ao]|frete|correios|sedex|interior)\\b",
         "\\b(fora\\s+de\\s+bel[ée]m|outro\\s+estado|s[ãa]o\\s+paulo|rio|brasil)\\b",
         "\\b(entrega|envi[ao]|manda|frete)\\b.*\\b(SC|SP|RJ|MG|RS|PR|BA|CE|PA|AM|PE|GO|DF|MS|MT|RO|AC|RR|AP|TO|MA|PI|RN|PB|AL|SE|ES)\\b",
         "\\b(entrega|envi[ao])\\b.*\\b(s[aã]o paulo|rio de janeiro|santa catarina|minas gerais|paran[aá]|bahia|cear[aá]|goi[aá]s|mato grosso|pará)\\b",
         "\\b(outro estado|outros estados|qualquer estado|todo.*brasil|brasil todo)\\b",
         "\\bfora d[eo] bel[eé]m\\b",
-        "\\bfora d[eo] par[aá]\\b"
+        "\\bfora d[eo] par[aá]\\b",
+        "\\b(entregam|enviam|mandam)\\b",
+        "\\bentregam\\b.*\\b(s[aã]o paulo|rio|brasil|estado|interior)\\b",
+        "\\b(entregam|enviam|mandam)\\b.*\\b(fora|outro|outros)\\b"
       ],
       "response": {
         "type": "text",

@@ -90,9 +90,13 @@ async def main() -> None:
                     db = SessionLocal()
                     try:
                         outbound = await pipeline.process(inbound, db)
-                        db.commit()
                         if outbound:
                             await adapter.send(outbound)
+                        # db.commit() é chamado dentro de pipeline.process()
+                        # via check_rate_limit — não commitar novamente aqui.
+                    except Exception:  # noqa: BLE001
+                        logger.exception("Erro ao processar mensagem:")
+                        db.rollback()
                     finally:
                         db.close()
         except httpx.ReadTimeout:

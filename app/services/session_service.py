@@ -77,6 +77,12 @@ def check_rate_limit(session: SessionModel, db: Session) -> bool:
     IMPORTANT: session.session_data é reatribuído como novo dict (não mutado
     in-place) para que o SQLAlchemy detecte a mudança no JSONB.
     """
+    # Garante dados frescos do DB (polling cria SessionLocal por mensagem)
+    try:
+        db.refresh(session)
+    except Exception:  # noqa: BLE001
+        # Session pode não estar persistida ainda — ignora
+        pass
     now = _now()
     data = dict(session.session_data or {})
     window_start_iso = data.get("rl_window_start")
