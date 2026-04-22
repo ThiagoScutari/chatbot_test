@@ -42,30 +42,6 @@
       "follow_up_state": "menu"
     },
     {
-      "id": "endereco",
-      "priority": 5,
-      "patterns": [
-        "\\b(endere[çc]o|onde|local|localiza)\\b"
-      ],
-      "response": {
-        "type": "text",
-        "body": "*Camisart Belém*\n📍 Av. Magalhães Barata, 445 (altos da Só Modas)\n📞 (91) 99180-0637\n📦 Entregamos para todo o Brasil"
-      }
-    },
-    {
-      "id": "bordado_prazo",
-      "priority": 5,
-      "patterns": [
-        "\\bbordad",
-        "\\bprazo\\b.*\\bborda",
-        "\\bbordao\\b"
-      ],
-      "response": {
-        "type": "text",
-        "body": "✅ *Bordado Camisart*\n• Prazo: *5 dias úteis*\n• Pedido mínimo: *nenhum* (bordamos 1 peça só)\n• Preço: varia conforme o desenho — me envie a logo?"
-      }
-    },
-    {
       "id": "pedido_minimo",
       "priority": 8,
       "patterns": [
@@ -97,10 +73,52 @@
       "follow_up_state": "menu"
     },
     {
+      "id": "pagamento",
+      "priority": 7,
+      "patterns": [
+        "\\b(pix|cart[aã]o|boleto|pagamento|parcel|d[ée]bito|cr[ée]dito|aceita)\\b"
+      ],
+      "response": {
+        "type": "text",
+        "body": "💳 *Formas de pagamento Camisart:*\n\n• PIX (desconto à vista)\n• Cartão de débito e crédito\n• Boleto bancário\n• Transferência\n\nPara pedidos grandes, consulte condições especiais! 😊"
+      },
+      "follow_up_state": "menu"
+    },
+    {
+      "id": "feminino",
+      "priority": 7,
+      "patterns": [
+        "\\b(feminina?|feminino|fem|mulher|baby.?look|babylook)\\b"
+      ],
+      "response": {
+        "type": "text",
+        "body": "👚 *Linha Feminina Camisart:*\n\n• Polo feminina\n• Básica baby look\n• Jaleco feminino\n• Regata feminina\n\nTodos com opções de bordado e personalização! Deseja um orçamento?"
+      },
+      "follow_up_state": "menu"
+    },
+    {
+      "id": "desconto_quantidade",
+      "priority": 7,
+      "patterns": [
+        "\\b(desconto|atacado|por\\s+atacado|lote|muitas\\s+pe[çc]as|grande\\s+quantidade)\\b",
+        "\\bdesconto.*quantidade\\b",
+        "\\bquantidade.*desconto\\b"
+      ],
+      "response": {
+        "type": "buttons",
+        "body": "🏷️ *Tabela de descontos Camisart:*\n\n• 1-11 peças: preço varejo\n• 12-49 peças: *preço atacado*\n• 50+ peças: *preço especial* (consultar)\n\nQuer fazer um orçamento?",
+        "buttons": [
+          { "id": "orcamento",     "title": "📋 Fazer orçamento" },
+          { "id": "falar_humano",  "title": "🧑 Falar com consultor" }
+        ]
+      },
+      "follow_up_state": "menu"
+    },
+    {
       "id": "entrega_nacional",
       "priority": 7,
       "patterns": [
-        "\\b(entrega|envi[ao]|manda|frete|correios|sedex)\\b",
+        "\\b(entrega|envi[ao]|manda|frete|correios|sedex|interior)\\b",
         "\\b(fora\\s+de\\s+bel[ée]m|outro\\s+estado|s[ãa]o\\s+paulo|rio|brasil)\\b"
       ],
       "response": {
@@ -128,6 +146,67 @@
       "follow_up_state": "menu"
     },
     {
+      "id": "contato_whatsapp",
+      "priority": 6,
+      "patterns": [
+        "\\b(whatsapp|zap|n[uú]mero|contato|ligar|fone|telefone)\\b"
+      ],
+      "response": {
+        "type": "text",
+        "body": "📞 *Contato Camisart:*\n\n📱 WhatsApp: (91) 99180-0637\n📍 Av. Magalhães Barata, 445 — Belém/PA\n\n_Você já está conversando com nosso assistente! Para falar com um consultor humano, é só pedir._ 😊"
+      },
+      "follow_up_state": "menu"
+    },
+    {
+      "id": "manga_longa",
+      "priority": 6,
+      "patterns": [
+        "\\b(manga\\s+longa|manga\\s+comprida|ml\\s+camisa|longa)\\b"
+      ],
+      "response": {
+        "type": "text",
+        "body": "👔 *Camisa Manga Longa Camisart:*\n\nFazemos manga longa sob encomenda em malha piquet e gabardine.\n\nIdeal para profissionais de saúde, segurança e ambientes frios. Deseja um orçamento?"
+      },
+      "follow_up_state": "menu"
+    },
+    {
+      "id": "dry_fit",
+      "priority": 6,
+      "patterns": [
+        "\\b(dry.?fit|dryfit|poli[ée]ster|esporte|esportiva?|futebol|time)\\b"
+      ],
+      "response": {
+        "type": "text",
+        "body": "⚽ *Uniformes Esportivos — Camisart:*\n\n• Camiseta dry fit para times\n• Sublimação total (100% personalizada)\n• Uniforme PV (recomendado para sublimação)\n\nFazemos serigrafia a partir de 40 peças. Deseja um orçamento?"
+      },
+      "follow_up_state": "menu"
+    },
+    {
+      "id": "endereco",
+      "priority": 5,
+      "patterns": [
+        "\\b(endere[çc]o|onde|local|localiza|loja|f[íi]sica)\\b"
+      ],
+      "response": {
+        "type": "text",
+        "body": "*Camisart Belém*\n📍 Av. Magalhães Barata, 445 (altos da Só Modas)\n📞 (91) 99180-0637\n📦 Entregamos para todo o Brasil"
+      }
+    },
+    {
+      "id": "bordado_prazo",
+      "priority": 5,
+      "patterns": [
+        "\\bbordad",
+        "\\bprazo\\b.*\\bborda",
+        "\\bbordao\\b",
+        "\\b(personaliza[çc][aã]o|personalizar|personalizad[oa])\\b"
+      ],
+      "response": {
+        "type": "text",
+        "body": "✅ *Bordado e Personalização Camisart*\n• Prazo: *5 dias úteis*\n• Pedido mínimo: *nenhum* (bordamos 1 peça só)\n• Aceitamos logo, foto, frase ou desenho\n• Preço varia conforme o desenho — me envie a referência?"
+      }
+    },
+    {
       "id": "instagram_referencia",
       "priority": 4,
       "patterns": [
@@ -137,6 +216,30 @@
       "response": {
         "type": "text",
         "body": "📸 Que bom que viu a gente no Instagram!\n\nMe descreva o modelo que você viu (ou me envie o print da foto) que eu te passo as informações de preço e prazo. 😊"
+      },
+      "follow_up_state": "menu"
+    },
+    {
+      "id": "segmento_negocio",
+      "priority": 4,
+      "patterns": [
+        "\\b(restaurante|bar|hotel|escola|creche|cl[íi]nica|sal[ãa]o|empresa|com[ée]rcio|food.?truck|delivery|pizzaria|hamburgueria)\\b"
+      ],
+      "response": {
+        "type": "text",
+        "body": "👥 *Uniformes corporativos Camisart:*\n\nAtendemos restaurantes, hotéis, escolas, clínicas, salões e diversos segmentos com uniformes personalizados.\n\nMe conta um pouco sobre o seu negócio? Posso te passar referências e fazer um orçamento. 😊"
+      },
+      "follow_up_state": "menu"
+    },
+    {
+      "id": "estoque_pronto",
+      "priority": 4,
+      "patterns": [
+        "\\b(estoque|pronto|pronta\\s+entrega|imediat[ao]|disponivel|disponível|j[áa]\\s+tem|tem\\s+pronto)\\b"
+      ],
+      "response": {
+        "type": "text",
+        "body": "📦 *Estoque Camisart:*\n\nTrabalhamos com produção sob demanda — cada peça é feita após o pedido confirmado.\n\nPara peças *sem bordado*, entregamos em *2-3 dias úteis*.\nPara *bordado*, *5 dias úteis*.\n\nSe precisa para *amanhã*, me avisa que vejo o que conseguimos fazer! ⚡"
       },
       "follow_up_state": "menu"
     }

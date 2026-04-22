@@ -1,4 +1,3 @@
-import asyncio
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -38,12 +37,9 @@ UPDATE_NO_MESSAGE = {
 }
 
 
-def _run(coro):
-    return asyncio.get_event_loop().run_until_complete(coro)
-
-
-def test_parse_text_message():
-    inbound = _run(adapter.parse_inbound(VALID_TEXT_UPDATE, {}))
+@pytest.mark.asyncio
+async def test_parse_text_message():
+    inbound = await adapter.parse_inbound(VALID_TEXT_UPDATE, {})
     assert inbound is not None
     assert inbound.channel_id == "telegram"
     assert inbound.content == "qual o preço da polo?"
@@ -52,13 +48,15 @@ def test_parse_text_message():
     assert inbound.channel_message_id == "1"
 
 
-def test_parse_non_text_returns_none():
-    result = _run(adapter.parse_inbound(NON_TEXT_UPDATE, {}))
+@pytest.mark.asyncio
+async def test_parse_non_text_returns_none():
+    result = await adapter.parse_inbound(NON_TEXT_UPDATE, {})
     assert result is None
 
 
-def test_parse_no_message_returns_none():
-    result = _run(adapter.parse_inbound(UPDATE_NO_MESSAGE, {}))
+@pytest.mark.asyncio
+async def test_parse_no_message_returns_none():
+    result = await adapter.parse_inbound(UPDATE_NO_MESSAGE, {})
     assert result is None
 
 
@@ -91,7 +89,8 @@ def test_verify_auth_invalid_secret(monkeypatch):
     assert exc.value.status_code == 403
 
 
-def test_send_converts_buttons_to_text():
+@pytest.mark.asyncio
+async def test_send_converts_buttons_to_text():
     outbound = OutboundMessage(
         channel_id="telegram",
         channel_user_id="5591999990001",
@@ -110,14 +109,15 @@ def test_send_converts_buttons_to_text():
         new_callable=AsyncMock,
     ) as mock:
         mock.return_value = "42"
-        _run(adapter.send(outbound))
+        await adapter.send(outbound)
         call_args = mock.call_args
         sent_text = call_args[0][1]  # segundo arg posicional = text
         assert "1." in sent_text
         assert "Meu pedido" in sent_text
 
 
-def test_send_text_only():
+@pytest.mark.asyncio
+async def test_send_text_only():
     outbound = OutboundMessage(
         channel_id="telegram",
         channel_user_id="5591999990002",
@@ -128,7 +128,7 @@ def test_send_text_only():
         new_callable=AsyncMock,
     ) as mock:
         mock.return_value = "11"
-        result = _run(adapter.send(outbound))
+        result = await adapter.send(outbound)
         assert result == "11"
         assert mock.call_args[0][1] == "Olá!"
 
