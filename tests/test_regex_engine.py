@@ -134,3 +134,25 @@ def test_start_command_priority_over_others(engine):
     m = engine.match("/start")
     assert m is not None
     assert m.follow_up_state == "aguarda_nome"
+
+
+def test_falar_humano_atendente(engine):
+    m = engine.match("falar com atendente")
+    assert m is not None
+    assert m.intent_id == "falar_humano"
+
+
+def test_falar_humano_vendedor(engine):
+    assert engine.match("preciso de um vendedor") is not None
+
+
+def test_falar_humano_pessoa(engine):
+    assert engine.match("quero falar com uma pessoa") is not None
+
+
+def test_falar_humano_keyword_alone(engine):
+    assert engine.match("atendente") is not None
+
+
+def test_falar_humano_nao_entendi(engine):
+    assert engine.match("não consigo entender") is not None

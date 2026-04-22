@@ -15,6 +15,27 @@
       "follow_up_state": "aguarda_nome"
     },
     {
+      "id": "falar_humano",
+      "priority": 15,
+      "patterns": [
+        "\\b(atendente|vendedor|consultor|humano)\\b",
+        "\\bfalar\\b.*\\b(pessoa|humano|atendente|vendedor|consultor|algu[eé]m)\\b",
+        "\\b(preciso|quero)\\b.*\\b(atendente|vendedor|consultor|humano|ajuda humana)\\b",
+        "\\bme (ajuda|ajude|atende|atenda)\\b",
+        "\\btransfer[ei]r?\\b",
+        "\\b(n[aã]o (consigo|entend|funciona))\\b"
+      ],
+      "response": {
+        "type": "buttons",
+        "body": "👤 Vou te conectar com um consultor!\n\nAtendimento: *segunda a sexta, 8h às 18h*.\nEm breve alguém vai te responder. 😊",
+        "buttons": [
+          {"id": "falar_humano", "title": "✅ Conectar agora"},
+          {"id": "menu",         "title": "🏠 Voltar ao menu"}
+        ]
+      },
+      "follow_up_state": "encaminhar_humano"
+    },
+    {
       "id": "preco_polo",
       "priority": 10,
       "patterns": [
