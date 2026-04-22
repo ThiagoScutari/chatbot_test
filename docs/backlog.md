@@ -20,3 +20,8 @@ Atualizar a cada sprint review.
 | BK-14 | Sprint 02 review | 🟡 Sprint 03 | `tests/test_telegram_adapter.py` usava `asyncio.get_event_loop().run_until_complete()` (deprecated no Python 3.13). Migrar para `@pytest.mark.asyncio` | ✅ Fechado Sprint 03 |
 | BK-15 | Sprint 02 review | 🟢 Sprint 03 | Documentar em CLAUDE.md que `app/main.py` em ~57% de cobertura é esperado (lifespan não roda no TestClient) | ✅ Fechado Sprint 03 |
 | BK-16 | Sprint 02 review | 🟡 Sprint 03 | `POST /adapters/telegram/webhook` tinha 0% de cobertura — adicionar teste de integração que cubra wiring do endpoint, FAQ trigger, secret inválido e isolation | ✅ Fechado Sprint 03 |
+| BK-17 | Sprint 03 review | 🟡 Fase 4 | Encaminhamento por inatividade com SLA — sessão sem resposta há X horas notifica operador automaticamente | Pendente |
+| BK-18 | Sprint 03 review | 🟡 Fase 4 | `close_reason` na sessão — registrar motivo de encerramento (resolvido, transferido, abandono, sem resposta) | Pendente |
+| BK-19 | Sprint 03 review | 🟢 Fase 4 | Bloqueio de envios para desengajados em campanhas Template Messages — proteger reputação do número Meta | Pendente |
+| BK-20 | Sprint 03 review | 🟢 Sprint 04 | Teste de overlap de prioridade entre intents FAQ — garantir que novos intents não roubam match de intents existentes | Pendente |
+| BK-21 | Sprint 03 review | 🟢 Sprint 04 | Corrigir SAWarning `transaction already deassociated` no conftest — ruído no output do pytest há 3 sprints | Pendente |
