@@ -144,7 +144,6 @@ class MessagePipeline:
                 known_intents=known_intents,
             )
             thresholds = self._llm_router.thresholds
-            high = thresholds.get("high", 0.85)
             medium = thresholds.get("medium", 0.60)
             low = thresholds.get("low", 0.40)
 
