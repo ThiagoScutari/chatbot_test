@@ -37,6 +37,7 @@ from app.database import SessionLocal  # noqa: E402
 from app.engines.campaign_engine import CampaignEngine  # noqa: E402
 from app.engines.regex_engine import FAQEngine  # noqa: E402
 from app.pipeline.message_pipeline import MessagePipeline  # noqa: E402
+from app.adapters.registry import register, clear  # noqa: E402
 
 
 TELEGRAM_LONGPOLL_TIMEOUT = 30
@@ -71,7 +72,9 @@ async def main() -> None:
     pipeline = MessagePipeline(
         faq_engine=faq_engine, campaign_engine=campaign_engine
     )
-
+    clear()
+    register(adapter)
+    logger.info("Registry: adapter 'telegram' registrado.")
     logger.info(
         "Telegram polling iniciado. Envie uma mensagem para o seu bot."
     )

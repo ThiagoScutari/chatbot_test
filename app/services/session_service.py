@@ -4,6 +4,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.attributes import flag_modified
 
 from app.models.session import Session as SessionModel
 
@@ -57,6 +58,7 @@ def get_or_create_session(
         nome_salvo = session.nome_cliente
         session.current_state = "inicio"
         session.session_data = {}
+        flag_modified(session, "session_data")
         session.nome_cliente = nome_salvo
         session.last_interaction_at = _now()
         db.flush()
@@ -85,6 +87,7 @@ def check_rate_limit(session: SessionModel, db: Session) -> bool:
             "rl_window_start": now.isoformat(),
             "rl_count": 1,
         }
+        flag_modified(session, "session_data")
         db.add(session)
         db.commit()
         return True
@@ -104,12 +107,14 @@ def check_rate_limit(session: SessionModel, db: Session) -> bool:
             "rl_window_start": now.isoformat(),
             "rl_count": 1,
         }
+        flag_modified(session, "session_data")
         db.add(session)
         db.commit()
         return True
 
     new_count = int(data.get("rl_count", 0)) + 1
     session.session_data = {**data, "rl_count": new_count}
+    flag_modified(session, "session_data")
     db.add(session)
     db.commit()
     return new_count <= RATE_LIMIT_MAX_MSGS
