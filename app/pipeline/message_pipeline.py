@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.attributes import flag_modified
 
 from app.engines.campaign_engine import CampaignEngine
 from app.engines.regex_engine import FAQEngine
@@ -78,6 +79,11 @@ class MessagePipeline:
             faq_engine=self._faq_engine,
             campaign_engine=self._campaign_engine,
         )
+
+        # state_machine pode mutar session.session_data in-place
+        # (ex.: orcamento_quantidade). JSONB não detecta mutação in-place,
+        # então marcamos explicitamente como dirty para garantir persistência.
+        flag_modified(session, "session_data")
 
         # Persiste mensagem inbound
         message_service.record_inbound(
