@@ -14,7 +14,12 @@ from app.engines.campaign_engine import CampaignEngine
 from app.engines.regex_engine import FAQEngine
 from app.engines.state_machine import HandleResult, handle
 from app.schemas.messaging import InboundMessage, OutboundMessage
-from app.services import lead_service, message_service, session_service
+from app.services import (
+    catalog_service,
+    lead_service,
+    message_service,
+    session_service,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -86,6 +91,33 @@ class MessagePipeline:
 
         # Atualiza estado da sessão
         session_service.update_state(db, session, result.next_state)
+
+        # Ação: enviar catálogo (envio direto via adapter do canal)
+        if result.action == "send_catalog":
+            catalog_text = catalog_service.build_catalog_message()
+            catalog_outbound = OutboundMessage(
+                channel_id=inbound.channel_id,
+                channel_user_id=inbound.channel_user_id,
+                response={"type": "text", "body": catalog_text},
+            )
+            try:
+                from app.adapters.registry import get as get_adapter
+
+                adapter = get_adapter(inbound.channel_id)
+                await adapter.send(catalog_outbound)
+                message_service.record_outbound(
+                    db,
+                    session,
+                    content=catalog_text,
+                    state_before=state_before,
+                    state_after=result.next_state,
+                )
+            except Exception as exc:  # noqa: BLE001
+                logger.error(
+                    "Erro ao enviar catálogo via %s: %s",
+                    inbound.channel_id,
+                    exc,
+                )
 
         # Ação: captura de lead (grava Lead + audit_log antes do commit)
         if result.action == "capture_lead":

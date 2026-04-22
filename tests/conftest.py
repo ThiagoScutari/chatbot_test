@@ -120,14 +120,18 @@ def db():
 
 @pytest.fixture
 def client(db):
-    """TestClient com override do get_db e engines inicializados.
+    """TestClient com override do get_db, engines e registry inicializados.
 
-    Inicializa CampaignEngine e FAQEngine manualmente (sem usar o lifespan
-    para não recriar o schema no banco de teste a cada fixture).
+    Inicializa CampaignEngine, FAQEngine e registra os adapters
+    manualmente (sem usar o lifespan para não recriar o schema no banco
+    de teste a cada fixture).
     """
     from pathlib import Path
 
     import app.main as app_main
+    from app.adapters.registry import clear, register
+    from app.adapters.telegram.adapter import TelegramAdapter
+    from app.adapters.whatsapp_cloud.adapter import WhatsAppCloudAdapter
     from app.engines.campaign_engine import CampaignEngine
     from app.engines.regex_engine import FAQEngine
 
@@ -140,6 +144,11 @@ def client(db):
     app_main.campaign_engine = campaign_engine
     app_main.faq_engine = faq_engine
 
+    # Setup registry para que pipeline.send_catalog resolva adapter por canal
+    clear()
+    register(WhatsAppCloudAdapter())
+    register(TelegramAdapter())
+
     def override_get_db():
         yield db
 
@@ -151,3 +160,4 @@ def client(db):
         yield c
     finally:
         fastapi_app.dependency_overrides.clear()
+        clear()
