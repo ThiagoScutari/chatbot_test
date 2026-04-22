@@ -465,6 +465,13 @@ def handle(
         try:
             qtd = int(texto)
         except ValueError:
+            # Permite FAQ (ex.: endereço) interromper o fluxo sem perder contexto
+            if faq_match is not None:
+                return HandleResult(
+                    response=faq_match.response,
+                    next_state=COLETA_ORCAMENTO_QTD,
+                    matched_intent_id=faq_match.intent_id,
+                )
             return HandleResult(
                 response=_text(
                     "Número inválido. Me diga quantas peças você precisa (ex: 50)."
@@ -562,6 +569,12 @@ def handle(
 
     if estado_atual == LEAD_CAPTURADO:
         escolha = texto.lower().strip()
+        # Permite iniciar novo orçamento sem voltar manualmente ao menu
+        if _is_orcamento_trigger(texto):
+            return HandleResult(
+                response=_segmento_list(),
+                next_state=COLETA_ORCAMENTO_SEGMENTO,
+            )
         if escolha in {"menu", "🏠 menu principal", "menu principal"}:
             return HandleResult(
                 response=_menu_buttons(),
