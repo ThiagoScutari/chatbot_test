@@ -178,7 +178,11 @@ def pipeline(db):
     campaign = CampaignEngine(settings.CAMPAIGNS_JSON_PATH)
     campaign.reload()
     faq = FAQEngine(settings.FAQ_JSON_PATH, campaign_engine=campaign)
-    return MessagePipeline(faq_engine=faq, campaign_engine=campaign)
+    return MessagePipeline(
+        faq_engine=faq,
+        campaign_engine=campaign,
+        llm_router=None,  # testes usam apenas Camada 1 por padrão
+    )
 
 
 @pytest.fixture

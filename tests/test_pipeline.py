@@ -177,6 +177,40 @@ def test_admin_status_valid_token(client):
     assert "upcoming" in body
 
 
+def test_admin_llm_status_without_router(client):
+    """Sem ANTHROPIC_API_KEY, endpoint retorna enabled=False."""
+    r = client.get(
+        "/admin/llm/status",
+        headers={"x-admin-token": "test-admin-token-32-chars-minimum-ok"},
+    )
+    assert r.status_code == 200
+    body = r.json()["data"]
+    assert body["enabled"] is False
+    assert "reason" in body
+
+
+def test_admin_llm_status_invalid_token(client):
+    r = client.get("/admin/llm/status", headers={"x-admin-token": "wrong"})
+    assert r.status_code == 403
+
+
+def test_llm_router_nao_importado_em_adapters():
+    """Contrato arquitetural: LLMRouter não deve ser importado em adapters."""
+    for f in pathlib.Path("app/adapters").rglob("*.py"):
+        src = f.read_text(encoding="utf-8")
+        tree = ast.parse(src)
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.Import, ast.ImportFrom)):
+                module = (
+                    getattr(node, "module", None) or ""
+                    if isinstance(node, ast.ImportFrom)
+                    else node.names[0].name
+                )
+                assert "llm_router" not in module, (
+                    f"VIOLATION: {f} importa llm_router na linha {node.lineno}"
+                )
+
+
 def test_send_catalog_calls_adapter_twice(client):
     """send_catalog must call send_text at least twice: catalog + follow-up."""
     body = json.dumps({
