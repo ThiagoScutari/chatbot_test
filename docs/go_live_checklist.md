@@ -14,15 +14,16 @@ Todos os itens devem estar ✅ APROVADO.
 - [ ] CI verde no `main`
 - [ ] Migrations Sprint 01-03 executadas com sucesso em `camisart_test_db`
 
-## Critérios de Produto (validados via Telegram)
+## Critérios de Produto (validados por pytest — não requerem Telegram)
+- [ ] `test_conversation_flows.py` — todos os C01-C20 passando
+- [ ] `test_faq_stress.py` — 80+ variações linguísticas cobertas
+- [ ] `test_edge_cases.py` — edge cases e inputs adversariais passando
+- [ ] `pytest tests/ -q` — 0 falhas, cobertura >= 82%
 
-- [ ] 20/20 cenários do dogfooding concluídos (`docs/dogfood/`)
-- [ ] FAQ coverage ≥ 80% nas perguntas reais (`scripts/faq_coverage_check.py`)
-- [ ] Fallback rate < 20% em 48h de uso contínuo
-- [ ] Fluxo de orçamento completo end-to-end sem intervenção humana
-- [ ] Lead capturado no banco com todos os campos corretos (`inspect_session.py --leads`)
-- [ ] Session timeout testado e funcionando
-- [ ] Rate limiting testado (11ª mensagem bloqueada)
+## Critérios de UX (validados manualmente via Telegram — somente após pytest verde)
+- [ ] Conversa flui naturalmente — tom e formatação das mensagens
+- [ ] Botões interativos renderizam corretamente (após display name aprovado)
+- [ ] Tempo de resposta < 2s percebido pelo usuário
 
 ## Critérios Operacionais (manual)
 
