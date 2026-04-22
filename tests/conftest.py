@@ -65,6 +65,35 @@ END $$;
 """
 
 
+_INDEX_SQL = """
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_indexes
+        WHERE tablename = 'leads' AND indexname = 'idx_leads_session_id'
+    ) THEN
+        CREATE INDEX idx_leads_session_id ON leads(session_id);
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_indexes
+        WHERE tablename = 'leads' AND indexname = 'idx_leads_status'
+    ) THEN
+        CREATE INDEX idx_leads_status ON leads(status)
+        WHERE deleted_at IS NULL;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_indexes
+        WHERE tablename = 'leads' AND indexname = 'idx_leads_unsynced_kommo'
+    ) THEN
+        CREATE INDEX idx_leads_unsynced_kommo ON leads(created_at)
+        WHERE synced_to_kommo_at IS NULL AND deleted_at IS NULL;
+    END IF;
+END $$;
+"""
+
+
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_db():
     from sqlalchemy import text
@@ -72,6 +101,7 @@ def setup_test_db():
     Base.metadata.create_all(bind=test_engine)
     with test_engine.connect() as conn:
         conn.execute(text(_TRIGGER_SQL))
+        conn.execute(text(_INDEX_SQL))
         conn.commit()
     yield
     Base.metadata.drop_all(bind=test_engine)
