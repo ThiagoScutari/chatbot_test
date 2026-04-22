@@ -10,6 +10,7 @@ services. NÃO conhece canal externo (InboundMessage é apenas texto).
 """
 from __future__ import annotations
 
+import unicodedata
 from typing import Any, Literal
 
 from pydantic import BaseModel
@@ -17,6 +18,71 @@ from pydantic import BaseModel
 from app.engines.campaign_engine import CampaignEngine
 from app.engines.regex_engine import FAQEngine, FAQResponse
 from app.models.session import Session as SessionModel
+
+
+def _norm(text: str) -> str:
+    """Lowercase, strip, remove diacritics."""
+    t = (text or "").lower().strip()
+    t = unicodedata.normalize("NFD", t)
+    return "".join(c for c in t if unicodedata.category(c) != "Mn")
+
+
+SEGMENTO_MAP: dict[str, str] = {
+    "corporativo": "corporativo", "corp": "corporativo",
+    "empresa": "corporativo", "empresarial": "corporativo",
+    "escritorio": "corporativo", "escritório": "corporativo",
+    "saude": "saude", "saúde": "saude",
+    "medico": "saude", "médico": "saude",
+    "hospital": "saude", "clinica": "saude", "clínica": "saude",
+    "jaleco": "saude", "odonto": "saude", "estetica": "saude",
+    "industria": "industria", "indústria": "industria",
+    "fabrica": "industria", "fábrica": "industria",
+    "industrial": "industria",
+    "domestica": "domestica", "doméstica": "domestica",
+    "diarista": "domestica", "baba": "domestica", "babá": "domestica",
+    "cuidadora": "domestica", "limpeza": "domestica",
+    "outro": "outro", "outros": "outro", "outra": "outro",
+    "nenhum": "outro", "diferente": "outro",
+}
+
+
+PERSONALIZACAO_MAP: dict[str, str] = {
+    "bordado": "bordado", "bordar": "bordado", "borda": "bordado",
+    "serigrafia": "serigrafia", "serigraf": "serigrafia",
+    "estampa": "serigrafia", "silk": "serigrafia",
+    "sem": "sem_personalizacao", "nenhum": "sem_personalizacao",
+    "nenhuma": "sem_personalizacao", "nao": "sem_personalizacao",
+    "não": "sem_personalizacao", "simples": "sem_personalizacao",
+    "sem personalizacao": "sem_personalizacao",
+    "sem_personalizacao": "sem_personalizacao",
+}
+
+
+CONFIRMACAO_MAP: dict[str, str] = {
+    "confirmar": "confirmar", "confirmo": "confirmar",
+    "sim": "confirmar", "s": "confirmar", "ok": "confirmar",
+    "isso": "confirmar", "correto": "confirmar", "certo": "confirmar",
+    "esta certo": "confirmar", "está certo": "confirmar",
+    "pode ser": "confirmar", "pode": "confirmar",
+    "corrigir": "corrigir", "corrige": "corrigir",
+    "nao": "corrigir", "não": "corrigir", "errado": "corrigir",
+    "mudar": "corrigir", "alterar": "corrigir", "voltar": "corrigir",
+}
+
+
+def _resolve_choice(text: str, mapping: dict[str, str]) -> str | None:
+    """Tries exact match, then partial match against mapping keys.
+
+    Partial match only for keys with len >= 3 — evita que "s"/"n"/"ok"
+    casem trechos curtos de inputs longos como "saude" ou "ok comigo".
+    """
+    normalized = _norm(text)
+    if normalized in mapping:
+        return mapping[normalized]
+    for key, val in mapping.items():
+        if len(key) >= 3 and _norm(key) in normalized:
+            return val
+    return None
 
 
 # Estados
@@ -126,17 +192,6 @@ _SEGMENTO_LABELS: dict[str, str] = {
 }
 
 
-_PERSONALIZACAO_MAP = {
-    "bordado": "Bordado",
-    "serigrafia": "Serigrafia",
-    "sem_personalizacao": "Sem personalização",
-    "sem personalizacao": "Sem personalização",
-    "sem personalização": "Sem personalização",
-    "nenhum": "Sem personalização",
-    "nenhuma": "Sem personalização",
-}
-
-
 def _is_orcamento_trigger(text: str) -> bool:
     norm = text.lower().strip()
     if norm in _ORCAMENTO_TRIGGERS:
@@ -161,25 +216,6 @@ def _segmento_list() -> FAQResponse:
     )
 
 
-def _parse_segmento(text: str) -> str | None:
-    norm = text.lower().strip()
-    # IDs diretos
-    if norm in _SEGMENTO_LABELS:
-        return norm
-    # Títulos humanos (também aceita com/sem acentos)
-    aliases = {
-        "corporativo": "corporativo",
-        "saude": "saude",
-        "saúde": "saude",
-        "industria": "industria",
-        "indústria": "industria",
-        "domestica": "domestica",
-        "doméstica": "domestica",
-        "outro": "outro",
-    }
-    return aliases.get(norm)
-
-
 def _produto_options(segmento_id: str) -> FAQResponse:
     produtos = PRODUTOS_POR_SEGMENTO.get(
         segmento_id, PRODUTOS_POR_SEGMENTO["outro"]
@@ -200,27 +236,6 @@ def _produto_options(segmento_id: str) -> FAQResponse:
             {"id": p, "title": p[:24]} for p in produtos
         ],
     )
-
-
-def _parse_produto(text: str, segmento_id: str) -> str | None:
-    produtos = PRODUTOS_POR_SEGMENTO.get(
-        segmento_id, PRODUTOS_POR_SEGMENTO["outro"]
-    )
-    norm = text.strip()
-    # Match case-insensitive por nome completo
-    for p in produtos:
-        if p.lower() == norm.lower():
-            return p
-    # Match por id (se canal retornar o id do botão)
-    for p in produtos:
-        if p.lower().replace(" ", "_") == norm.lower().replace(" ", "_"):
-            return p
-    return None
-
-
-def _parse_personalizacao(text: str) -> str | None:
-    norm = text.lower().strip()
-    return _PERSONALIZACAO_MAP.get(norm)
 
 
 def _orcamento_resumo(session: SessionModel) -> FAQResponse:
@@ -379,13 +394,32 @@ def handle(
         )
 
     if estado_atual == COLETA_ORCAMENTO_SEGMENTO:
-        segmento_id = _parse_segmento(texto)
+        segmento_id = _resolve_choice(texto, SEGMENTO_MAP)
         if segmento_id is None:
             return HandleResult(
-                response=_segmento_list(),
+                response=_text(
+                    "Não entendi. Para qual segmento é o uniforme?\n\n"
+                    "1. Corporativo\n"
+                    "2. Saúde\n"
+                    "3. Indústria\n"
+                    "4. Doméstica\n"
+                    "5. Outro"
+                ),
                 next_state=COLETA_ORCAMENTO_SEGMENTO,
             )
         session.session_data["orcamento_segmento"] = segmento_id
+        produtos = PRODUTOS_POR_SEGMENTO.get(
+            segmento_id, PRODUTOS_POR_SEGMENTO["outro"]
+        )
+        if len(produtos) == 1:
+            session.session_data["orcamento_produto"] = produtos[0]
+            return HandleResult(
+                response=_text(
+                    f"Produto selecionado: *{produtos[0]}*\n\n"
+                    "Quantas peças você precisa?"
+                ),
+                next_state=COLETA_ORCAMENTO_QTD,
+            )
         return HandleResult(
             response=_produto_options(segmento_id),
             next_state=COLETA_ORCAMENTO_PRODUTO,
@@ -393,13 +427,33 @@ def handle(
 
     if estado_atual == COLETA_ORCAMENTO_PRODUTO:
         segmento_id = session.session_data.get("orcamento_segmento", "outro")
-        produto = _parse_produto(texto, segmento_id)
-        if produto is None:
+        produtos = PRODUTOS_POR_SEGMENTO.get(
+            segmento_id, PRODUTOS_POR_SEGMENTO["outro"]
+        )
+        normalized_input = _norm(texto)
+        produto_escolhido = None
+
+        # Match por número (1, 2, 3...)
+        if texto.strip().isdigit():
+            idx = int(texto.strip()) - 1
+            if 0 <= idx < len(produtos):
+                produto_escolhido = produtos[idx]
+
+        # Match parcial por nome
+        if not produto_escolhido:
+            for p in produtos:
+                if _norm(p) in normalized_input or normalized_input in _norm(p):
+                    produto_escolhido = p
+                    break
+
+        if not produto_escolhido:
+            lista = "\n".join(f"{i + 1}. {p}" for i, p in enumerate(produtos))
             return HandleResult(
-                response=_produto_options(segmento_id),
+                response=_text(f"Não encontrei esse produto. Escolha:\n\n{lista}"),
                 next_state=COLETA_ORCAMENTO_PRODUTO,
             )
-        session.session_data["orcamento_produto"] = produto
+
+        session.session_data["orcamento_produto"] = produto_escolhido
         return HandleResult(
             response=_text(
                 "Quantas peças você precisa? (ex: 10, 50, 200)"
@@ -411,6 +465,13 @@ def handle(
         try:
             qtd = int(texto)
         except ValueError:
+            # Permite FAQ (ex.: endereço) interromper o fluxo sem perder contexto
+            if faq_match is not None:
+                return HandleResult(
+                    response=faq_match.response,
+                    next_state=COLETA_ORCAMENTO_QTD,
+                    matched_intent_id=faq_match.intent_id,
+                )
             return HandleResult(
                 response=_text(
                     "Número inválido. Me diga quantas peças você precisa (ex: 50)."
@@ -439,17 +500,14 @@ def handle(
         )
 
     if estado_atual == COLETA_ORCAMENTO_PERSONALIZACAO:
-        personalizacao = _parse_personalizacao(texto)
+        personalizacao = _resolve_choice(texto, PERSONALIZACAO_MAP)
         if personalizacao is None:
             return HandleResult(
-                response=FAQResponse(
-                    type="buttons",
-                    body="Não entendi. Como deseja personalizar?",
-                    buttons=[  # type: ignore[arg-type]
-                        {"id": "bordado", "title": "🧵 Bordado"},
-                        {"id": "serigrafia", "title": "🎨 Serigrafia"},
-                        {"id": "sem_personalizacao", "title": "❌ Sem personalização"},
-                    ],
+                response=_text(
+                    "Como deseja personalizar?\n\n"
+                    "1. Bordado\n"
+                    "2. Serigrafia\n"
+                    "3. Sem personalização"
                 ),
                 next_state=COLETA_ORCAMENTO_PERSONALIZACAO,
             )
@@ -476,7 +534,7 @@ def handle(
         )
 
     if estado_atual == CONFIRMACAO_ORCAMENTO:
-        escolha = texto.lower().strip()
+        escolha = _resolve_choice(texto, CONFIRMACAO_MAP)
         if escolha == "confirmar":
             nome = session.nome_cliente or "cliente"
             return HandleResult(
@@ -511,6 +569,12 @@ def handle(
 
     if estado_atual == LEAD_CAPTURADO:
         escolha = texto.lower().strip()
+        # Permite iniciar novo orçamento sem voltar manualmente ao menu
+        if _is_orcamento_trigger(texto):
+            return HandleResult(
+                response=_segmento_list(),
+                next_state=COLETA_ORCAMENTO_SEGMENTO,
+            )
         if escolha in {"menu", "🏠 menu principal", "menu principal"}:
             return HandleResult(
                 response=_menu_buttons(),

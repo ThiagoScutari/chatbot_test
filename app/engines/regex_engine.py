@@ -51,7 +51,11 @@ class FAQIntent(BaseModel):
     patterns: list[str]
     response: FAQResponse
     follow_up_state: Literal[
-        "menu", "aguarda_pedido", "aguarda_orcamento", "aguarda_nome"
+        "menu",
+        "aguarda_pedido",
+        "aguarda_orcamento",
+        "aguarda_nome",
+        "encaminhar_humano",
     ] | None = None
 
 

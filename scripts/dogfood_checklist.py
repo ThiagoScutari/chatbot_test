@@ -101,17 +101,31 @@ def run():
         print(f"  Esperado: {esperado}")
         resposta = input("  Resultado [PASS/FAIL/SKIP/OBS:...]: ").strip()
 
-        status = "✅ PASS"
-        obs = ""
-        if resposta.upper().startswith("FAIL"):
+        PASS_ALIASES = {
+            "pass", "p", "ok", "sim", "s", "yes", "y",
+            "certo", "correto", "✅", "funcionou", "ok!"
+        }
+        FAIL_ALIASES = {
+            "fail", "f", "falhou", "errou",
+            "não", "nao", "n", "❌"
+        }
+        SKIP_ALIASES = {"skip", "pular", "sk"}
+
+        resposta_lower = resposta.strip().lower()
+
+        if resposta_lower in PASS_ALIASES:
+            status = "✅ PASS"
+            obs = ""
+        elif resposta_lower in FAIL_ALIASES or resposta_lower.startswith("fail"):
             status = "❌ FAIL"
-            obs = resposta[4:].strip(": ")
-        elif resposta.upper().startswith("SKIP"):
+            obs = resposta[4:].strip(": ") if resposta_lower.startswith("fail") else ""
+        elif resposta_lower in SKIP_ALIASES:
             status = "⏭️ SKIP"
-        elif resposta.upper().startswith("OBS:"):
+            obs = ""
+        elif resposta_lower.startswith("obs:"):
             status = "⚠️ OBS"
             obs = resposta[4:].strip()
-        elif resposta.upper() != "PASS":
+        else:
             status = "⚠️ OBS"
             obs = resposta
 

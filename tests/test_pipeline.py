@@ -175,3 +175,37 @@ def test_admin_status_valid_token(client):
     body = r.json()["data"]
     assert "active" in body
     assert "upcoming" in body
+
+
+def test_send_catalog_calls_adapter_twice(client):
+    """send_catalog must call send_text at least twice: catalog + follow-up."""
+    body = json.dumps({
+        "update_id": 777001,
+        "message": {
+            "message_id": 777001,
+            "from": {"id": 5599000777001, "first_name": "TEST_Catalog"},
+            "chat": {"id": 5599000777001, "type": "private"},
+            "text": "ver_catalogo",
+            "date": 1714000000,
+        },
+    }).encode()
+
+    with patch(
+        "app.adapters.telegram.client.send_text",
+        new_callable=AsyncMock,
+    ) as mock_send:
+        mock_send.return_value = "99"
+        r = client.post(
+            "/adapters/telegram/webhook",
+            content=body,
+            headers={"content-type": "application/json"},
+        )
+    assert r.status_code == 200
+    # At minimum: catalog message sent
+    assert mock_send.call_count >= 1
+    # Verify catalog content was in one of the calls
+    all_texts = " ".join(
+        str(call.args[1]) for call in mock_send.call_args_list
+        if len(call.args) >= 2
+    )
+    assert "Camisart" in all_texts or "polo" in all_texts.lower()

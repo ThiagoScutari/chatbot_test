@@ -162,3 +162,16 @@ These lines are exercised only in production against real Meta/Telegram APIs.
 Pydantic models used for documentation and type hints.
 Parsing happens in adapter.py which is tested.
 Direct schema tests would be redundant.
+
+### tests/helpers/conversation_simulator.py — teste manual permanente C03
+C03 (session timeout de 2h) não tem cobertura automatizada por natureza —
+requer passagem real de tempo. É o único cenário do dogfooding que permanece
+como teste manual. Todos os demais C01-C20 estão cobertos por
+tests/test_conversation_flows.py.
+
+Para testar C03 manualmente:
+  1. python scripts/telegram_polling.py
+  2. Alterar last_interaction_at no banco para 3h atrás:
+     UPDATE sessions SET last_interaction_at = NOW() - INTERVAL '3 hours'
+     WHERE channel_user_id = '<seu_id_telegram>';
+  3. Enviar mensagem — bot deve cumprimentar de volta com nome salvo.

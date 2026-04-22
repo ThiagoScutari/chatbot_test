@@ -25,3 +25,4 @@ Atualizar a cada sprint review.
 | BK-19 | Sprint 03 review | 🟢 Fase 4 | Bloqueio de envios para desengajados em campanhas Template Messages — proteger reputação do número Meta | Pendente |
 | BK-20 | Sprint 03 review | 🟢 Sprint 04 | Teste de overlap de prioridade entre intents FAQ — garantir que novos intents não roubam match de intents existentes | Pendente |
 | BK-21 | Sprint 03 review | 🟢 Sprint 04 | Corrigir SAWarning `transaction already deassociated` no conftest — ruído no output do pytest há 3 sprints | Pendente |
+| BK-22 | Sprint 05 review | 🟢 Documentação | C03 (timeout 2h) documentado como teste manual permanente no CLAUDE.md — não automatizável por natureza | ✅ Fechado Sprint 05 |
