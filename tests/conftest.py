@@ -161,3 +161,33 @@ def client(db):
     finally:
         fastapi_app.dependency_overrides.clear()
         clear()
+
+
+@pytest.fixture
+def pipeline(db):
+    """MessagePipeline com FAQEngine e CampaignEngine reais."""
+    os.environ.setdefault(
+        "DATABASE_URL",
+        "postgresql://postgres:test@localhost:5432/camisart_test_db",
+    )
+    from app.config import settings
+    from app.engines.campaign_engine import CampaignEngine
+    from app.engines.regex_engine import FAQEngine
+    from app.pipeline.message_pipeline import MessagePipeline
+
+    campaign = CampaignEngine(settings.CAMPAIGNS_JSON_PATH)
+    campaign.reload()
+    faq = FAQEngine(settings.FAQ_JSON_PATH, campaign_engine=campaign)
+    return MessagePipeline(faq_engine=faq, campaign_engine=campaign)
+
+
+@pytest.fixture
+def sim(pipeline, db):
+    """ConversationSimulator pronto para uso com user_id único."""
+    import uuid
+
+    from tests.helpers.conversation_simulator import ConversationSimulator
+
+    return ConversationSimulator(
+        pipeline, db, user_id=f"TEST_SIM_{uuid.uuid4().hex[:8]}"
+    )
