@@ -82,6 +82,10 @@ async def test_multiplos_orcamentos_mesma_sessao(sim, db):
     await sim.send("sim")
     assert len(sim.leads_captured()) == 1
 
+    # Reseta rate limit — o teste envia muitas mensagens rápidas, o que
+    # não reflete uso real de dois orçamentos em momentos distintos.
+    sim.reset_rate_limit()
+
     # Segundo orçamento na mesma sessão
     await sim.send("quero outro orçamento")
     await sim.send("Saúde")

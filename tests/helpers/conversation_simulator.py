@@ -100,7 +100,33 @@ class ConversationSimulator:
         return substring.lower() in self.last_response.lower()
 
     def history(self) -> list[str]:
-        return [m.response.get("body", "") for m in self._sent_messages]
+        """Textos de todas as respostas — inclui títulos de botões/list items."""
+        result = []
+        for m in self._sent_messages:
+            body = m.response.get("body", "")
+            buttons = m.response.get("buttons") or []
+            list_items = m.response.get("list_items") or []
+            extras = [b.get("title", "") for b in buttons] + [
+                it.get("title", "") for it in list_items
+            ]
+            if extras:
+                body = body + " " + " ".join(extras)
+            result.append(body)
+        return result
+
+    def reset_rate_limit(self) -> None:
+        """Reseta contador de rate limit — uso exclusivo em testes."""
+        session = self._session()
+        if session is None:
+            return
+        data = dict(session.session_data or {})
+        data.pop("rl_window_start", None)
+        data.pop("rl_count", None)
+        session.session_data = data
+        from sqlalchemy.orm.attributes import flag_modified
+
+        flag_modified(session, "session_data")
+        self.db.flush()
 
     def leads_captured(self) -> list:
         from app.models.lead import Lead
