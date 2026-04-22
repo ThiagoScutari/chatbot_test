@@ -54,11 +54,11 @@ def inspect_user(db: Session, channel_user_id: str):
     leads = db.query(Lead).filter_by(session_id=session.id).all()
     if leads:
         print(f"\nLEADS ({len(leads)}):")
-        for l in leads:
+        for lead in leads:
             print(
-                f"  - {l.nome_cliente} | {l.segmento} | {l.produto} "
-                f"| {l.quantidade}x | {l.personalizacao} "
-                f"| prazo: {l.prazo_desejado} | status: {l.status}"
+                f"  - {lead.nome_cliente} | {lead.segmento} | {lead.produto} "
+                f"| {lead.quantidade}x | {lead.personalizacao} "
+                f"| prazo: {lead.prazo_desejado} | status: {lead.status}"
             )
 
     print(f"{'=' * 60}\n")
@@ -74,10 +74,10 @@ def list_new_leads(db: Session):
     )
     print(f"\n{'=' * 60}")
     print(f"LEADS NOVOS (ultimos {len(leads)}):")
-    for l in leads:
+    for lead in leads:
         print(
-            f"  - [{l.created_at.strftime('%H:%M')}] {l.nome_cliente} "
-            f"| {l.segmento} | {l.produto} | {l.quantidade}x"
+            f"  - [{lead.created_at.strftime('%H:%M')}] {lead.nome_cliente} "
+            f"| {lead.segmento} | {lead.produto} | {lead.quantidade}x"
         )
     print(f"{'=' * 60}\n")
 

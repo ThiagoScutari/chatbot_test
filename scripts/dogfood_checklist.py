@@ -5,7 +5,6 @@ Gera relatório em docs/dogfood/YYYY-MM-DD_relatorio.md
 Uso:
     python scripts/dogfood_checklist.py
 """
-import sys
 from datetime import date
 from pathlib import Path
 
