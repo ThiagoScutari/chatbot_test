@@ -5,7 +5,7 @@ Sem token ou token inválido → 403. Na Fase 4, substituir por JWT.
 """
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Header, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 
 from app.config import settings
 from app.schemas.response import StandardResponse
@@ -53,3 +53,39 @@ async def campaigns_status() -> StandardResponse:
     if campaign_engine is None:
         raise HTTPException(status_code=503, detail="CampaignEngine não inicializado.")
     return StandardResponse(data=campaign_engine.status())
+
+
+@router.get(
+    "/llm/status",
+    dependencies=[Depends(verify_admin_token)],
+)
+async def llm_status(request: Request) -> StandardResponse:
+    """Métricas de uso do LLMRouter (X-Admin-Token obrigatório)."""
+    llm_router = getattr(request.app.state, "llm_router", None)
+    if llm_router is None:
+        return StandardResponse(
+            data={
+                "enabled": False,
+                "reason": (
+                    "ANTHROPIC_API_KEY não configurada — "
+                    "bot opera apenas com Camada 1 (FAQ regex)."
+                ),
+            }
+        )
+
+    stats = llm_router.stats
+    return StandardResponse(
+        data={
+            "enabled": True,
+            "model": llm_router.model,
+            "thresholds": llm_router.thresholds,
+            "stats": {
+                "total_classifications": stats["total"],
+                "high_confidence": stats["high"],
+                "medium_confidence": stats["medium"],
+                "low_confidence": stats["low"],
+                "errors": stats["errors"],
+                "avg_latency_ms": round(stats["avg_latency_ms"], 1),
+            },
+        }
+    )
