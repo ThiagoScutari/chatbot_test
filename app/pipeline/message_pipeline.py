@@ -118,8 +118,16 @@ class MessagePipeline:
         # ── Camada 1: FAQEngine (regex, sem custo) ───────────────────────────
         faq_match = self._faq_engine.match(inbound.content)
 
-        if faq_match is not None or not self._llm_router:
-            # Camada 1 resolveu OU LLMRouter não configurado — fluxo padrão
+        # Camada 2 só faz sentido em diálogo aberto (MENU / INICIO). Em estados
+        # de coleta (nome, quantidade, etc.) o state_machine dirige a entrada.
+        llm_applicable_state = session.current_state in (None, "inicio", "menu")
+
+        if (
+            faq_match is not None
+            or not self._llm_router
+            or not llm_applicable_state
+        ):
+            # Camada 1 resolveu OU LLMRouter indisponível — fluxo padrão
             result: HandleResult = handle(
                 message=inbound.content,
                 session=session,
