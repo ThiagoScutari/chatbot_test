@@ -26,8 +26,20 @@ async def lifespan(app: FastAPI):
     campaign_engine.reload()
     faq_engine = FAQEngine(settings.FAQ_JSON_PATH, campaign_engine=campaign_engine)
 
+    from app.adapters.registry import (
+        clear,
+        register,
+        registered_channels,
+    )
+    from app.adapters.telegram.adapter import TelegramAdapter
+    from app.adapters.whatsapp_cloud.adapter import WhatsAppCloudAdapter
+
+    clear()  # reset on each startup
+    register(WhatsAppCloudAdapter())
     if settings.TELEGRAM_BOT_TOKEN:
-        logger.info("Telegram adapter ativo (token configurado).")
+        register(TelegramAdapter())
+        logger.info("Telegram adapter registered.")
+    logger.info("Registered channels: %s", registered_channels())
 
     logger.info("Camisart AI started — ENV=%s", settings.APP_ENV)
     yield
