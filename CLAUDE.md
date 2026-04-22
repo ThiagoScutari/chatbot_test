@@ -137,3 +137,28 @@ These are not negotiable without an ADR. Read `docs/project_specz.md` for ration
 - Python 3.12+ target.
 - Pyright is configured via `pyrightconfig.json` — type errors should be addressed, not suppressed.
 - Pydantic v2 for all schemas; use `Literal` types for fixed enumerations (per `confexai-api-contracts`).
+
+## Coverage Notes
+
+### app/main.py — lifespan block (~57% coverage, expected)
+The lifespan context manager initializes CampaignEngine, FAQEngine
+and registers adapters. This block does NOT execute during tests because
+TestClient uses dependency_overrides instead of the full lifespan.
+
+This is intentional. The lifespan IS exercised indirectly via:
+- test_health.py (DB connectivity)
+- test_campaign_engine.py (engine logic)
+- test_regex_engine.py (FAQ engine logic)
+- test_adapter_registry.py (adapter registration)
+
+Do not add fake tests to inflate this number.
+
+### app/adapters/*/client.py — ~50-61% coverage, expected
+HTTP client modules are always mocked in tests (never call real APIs).
+The uncovered lines are the actual HTTP call paths — correct behavior.
+These lines are exercised only in production against real Meta/Telegram APIs.
+
+### app/adapters/whatsapp_cloud/schemas.py — 0% coverage, expected
+Pydantic models used for documentation and type hints.
+Parsing happens in adapter.py which is tested.
+Direct schema tests would be redundant.
