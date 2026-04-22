@@ -163,3 +163,7 @@ class FAQEngine:
     def fallback_response(self) -> FAQResponse:
         """Retorna o FAQResponse de fallback configurado."""
         return self._fallback
+
+    def intent_ids(self) -> list[str]:
+        """Retorna lista de todos os intent_ids carregados."""
+        return [intent.id for intent in self._base_intents]
