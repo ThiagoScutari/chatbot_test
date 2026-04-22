@@ -156,3 +156,23 @@ def test_falar_humano_keyword_alone(engine):
 
 def test_falar_humano_nao_entendi(engine):
     assert engine.match("não consigo entender") is not None
+
+
+def test_entrega_sigla_estado(engine):
+    assert engine.match("entrega em SC?") is not None
+
+
+def test_entrega_nome_estado(engine):
+    assert engine.match("entrega em São Paulo") is not None
+
+
+def test_entrega_fora_belem(engine):
+    assert engine.match("fora de Belém") is not None
+
+
+def test_polo_camiza_polu(engine):
+    assert engine.match("Camiza Polu") is not None
+
+
+def test_polo_variacao_u(engine):
+    assert engine.match("qual o preço da polu?") is not None

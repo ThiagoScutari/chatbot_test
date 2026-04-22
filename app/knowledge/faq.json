@@ -41,7 +41,10 @@
       "patterns": [
         "\\b(pre[çc]o|valor|quanto)\\b.*\\bpolo\\b",
         "\\bpolo\\b.*\\b(pre[çc]o|valor|quanto)\\b",
-        "\\bcami[sz]a?\\s+polo\\b"
+        "\\bcami[sz]a?\\s+polo\\b",
+        "\\bpol[ou]\\b.*\\b(pre[çc][oa]|valor|quanto)\\b",
+        "\\b(pre[çc][oa]|valor|quanto)\\b.*\\bpol[ou]\\b",
+        "\\bcami[zs][ai].*pol[ou]\\b"
       ],
       "response": {
         "type": "text",
@@ -140,7 +143,12 @@
       "priority": 7,
       "patterns": [
         "\\b(entrega|envi[ao]|manda|frete|correios|sedex|interior)\\b",
-        "\\b(fora\\s+de\\s+bel[ée]m|outro\\s+estado|s[ãa]o\\s+paulo|rio|brasil)\\b"
+        "\\b(fora\\s+de\\s+bel[ée]m|outro\\s+estado|s[ãa]o\\s+paulo|rio|brasil)\\b",
+        "\\b(entrega|envi[ao]|manda|frete)\\b.*\\b(SC|SP|RJ|MG|RS|PR|BA|CE|PA|AM|PE|GO|DF|MS|MT|RO|AC|RR|AP|TO|MA|PI|RN|PB|AL|SE|ES)\\b",
+        "\\b(entrega|envi[ao])\\b.*\\b(s[aã]o paulo|rio de janeiro|santa catarina|minas gerais|paran[aá]|bahia|cear[aá]|goi[aá]s|mato grosso|pará)\\b",
+        "\\b(outro estado|outros estados|qualquer estado|todo.*brasil|brasil todo)\\b",
+        "\\bfora d[eo] bel[eé]m\\b",
+        "\\bfora d[eo] par[aá]\\b"
       ],
       "response": {
         "type": "text",
