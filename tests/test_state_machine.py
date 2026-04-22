@@ -366,3 +366,124 @@ def test_envia_catalogo_state_returns_to_menu(faq):
     s = make_session("envia_catalogo", nome="Maria")
     r = handle("qualquer coisa", s, faq)
     assert r.next_state == "menu"
+
+
+# ── S04-07: Texto livre nos estados de orçamento ─────────────────────────
+
+
+def test_segmento_saude_acentuado(faq):
+    s = make_session("coleta_orcamento_segmento", nome="Maria")
+    r = handle("Saúde", s, faq)
+    assert r.next_state != "coleta_orcamento_segmento", \
+        "Saúde com acento deve avançar o estado"
+    assert s.session_data.get("orcamento_segmento") == "saude"
+
+
+def test_segmento_corporativo_maiusculo(faq):
+    s = make_session("coleta_orcamento_segmento", nome="Maria")
+    handle("Corporativo", s, faq)
+    assert s.session_data.get("orcamento_segmento") == "corporativo"
+
+
+def test_segmento_por_numero(faq):
+    s = make_session("coleta_orcamento_segmento", nome="Maria")
+    r = handle("1", s, faq)
+    assert r is not None
+
+
+def test_segmento_desconhecido_repergunta(faq):
+    s = make_session("coleta_orcamento_segmento", nome="Maria")
+    r = handle("xablau foobar", s, faq)
+    assert r.next_state == "coleta_orcamento_segmento"
+
+
+def test_segmento_saude_seleciona_jaleco_unico(faq):
+    """Saúde tem jaleco tradicional e premium — deve ir para PRODUTO."""
+    s = make_session("coleta_orcamento_segmento", nome="Maria")
+    r = handle("saude", s, faq)
+    assert r.next_state in (
+        "coleta_orcamento_produto", "coleta_orcamento_qtd"
+    )
+
+
+def test_personalizacao_bordado_livre(faq):
+    s = make_session(
+        "coleta_orcamento_personalizacao",
+        nome="Maria",
+        data={
+            "orcamento_segmento": "corporativo",
+            "orcamento_produto": "Camisa Polo",
+            "orcamento_quantidade": 50,
+        },
+    )
+    r = handle("Bordado", s, faq)
+    assert r.next_state == "coleta_orcamento_prazo"
+    assert s.session_data.get("orcamento_personalizacao") == "bordado"
+
+
+def test_personalizacao_sem_personalizacao(faq):
+    s = make_session(
+        "coleta_orcamento_personalizacao",
+        nome="Maria",
+        data={
+            "orcamento_segmento": "corporativo",
+            "orcamento_produto": "Camisa Polo",
+            "orcamento_quantidade": 50,
+        },
+    )
+    r = handle("sem personalização", s, faq)
+    assert r.next_state == "coleta_orcamento_prazo"
+
+
+def test_confirmacao_sim_captura_lead(faq):
+    s = make_session(
+        "confirmacao_orcamento",
+        nome="Maria",
+        data={
+            "orcamento_segmento": "corporativo",
+            "orcamento_produto": "Camisa Polo",
+            "orcamento_quantidade": 50,
+            "orcamento_personalizacao": "bordado",
+            "orcamento_prazo": "15 dias",
+        },
+    )
+    r = handle("sim", s, faq)
+    assert r.action == "capture_lead"
+
+
+def test_confirmacao_ok_captura_lead(faq):
+    s = make_session(
+        "confirmacao_orcamento",
+        nome="Maria",
+        data={
+            "orcamento_segmento": "corporativo",
+            "orcamento_produto": "Camisa Polo",
+            "orcamento_quantidade": 50,
+            "orcamento_personalizacao": "bordado",
+            "orcamento_prazo": "15 dias",
+        },
+    )
+    r = handle("ok", s, faq)
+    assert r.action == "capture_lead"
+
+
+def test_confirmacao_nao_volta_qtd(faq):
+    s = make_session(
+        "confirmacao_orcamento",
+        nome="Maria",
+        data={
+            "orcamento_segmento": "corporativo",
+            "orcamento_produto": "Camisa Polo",
+            "orcamento_quantidade": 50,
+            "orcamento_personalizacao": "bordado",
+            "orcamento_prazo": "15 dias",
+        },
+    )
+    r = handle("não", s, faq)
+    assert r.next_state == "coleta_orcamento_qtd"
+
+
+def test_falar_humano_texto_livre_no_menu(faq):
+    s = make_session("menu", nome="Maria")
+    r = handle("falar com atendente", s, faq)
+    assert r.next_state != "menu" or r.action == "forward_to_human"
