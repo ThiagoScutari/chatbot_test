@@ -7,13 +7,15 @@ por teste estrutural (tests/test_pipeline.py::test_adapter_not_imported).
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 
 from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 
 from app.engines.campaign_engine import CampaignEngine
-from app.engines.regex_engine import FAQEngine
+from app.engines.regex_engine import FAQEngine, FAQResponse
 from app.engines.state_machine import HandleResult, handle
+from app.models.session import Session as SessionModel
 from app.schemas.messaging import InboundMessage, OutboundMessage
 from app.services import (
     catalog_service,
@@ -21,6 +23,9 @@ from app.services import (
     message_service,
     session_service,
 )
+
+if TYPE_CHECKING:
+    from app.engines.llm_router import LLMRouter
 
 
 logger = logging.getLogger(__name__)
@@ -33,9 +38,46 @@ class MessagePipeline:
         self,
         faq_engine: FAQEngine,
         campaign_engine: CampaignEngine | None = None,
+        llm_router: "LLMRouter | None" = None,
+        llm_config: dict | None = None,
     ) -> None:
         self._faq_engine = faq_engine
         self._campaign_engine = campaign_engine
+        self._llm_router = llm_router
+        self._llm_config = llm_config or {}
+
+    def _build_llm_context(
+        self, session: SessionModel, db: Session
+    ) -> dict:
+        """Builds context dict with last N messages for LLM prompt."""
+        from app.models.message import Message
+
+        last_msgs = (
+            db.query(Message)
+            .filter_by(session_id=session.id, direction="in")
+            .order_by(Message.created_at.desc())
+            .limit(3)
+            .all()
+        )
+        return {
+            "last_messages": [m.content for m in reversed(last_msgs)],
+            "current_state": session.current_state,
+            "nome_cliente": session.nome_cliente,
+        }
+
+    def _result_from_intent(
+        self, intent_id: str, session: SessionModel
+    ) -> HandleResult | None:
+        """Constrói HandleResult a partir de um intent_id classificado pelo LLM."""
+        faq_match = self._faq_engine.match_by_id(intent_id)
+        if faq_match is None:
+            return None
+        next_state = faq_match.follow_up_state or session.current_state or "menu"
+        return HandleResult(
+            response=faq_match.response,
+            next_state=next_state,
+            matched_intent_id=faq_match.intent_id,
+        )
 
     async def process(
         self, inbound: InboundMessage, db: Session
@@ -71,14 +113,86 @@ class MessagePipeline:
             )
             return None
 
-        # Executa máquina de estados
         state_before = session.current_state
-        result: HandleResult = handle(
-            message=inbound.content,
-            session=session,
-            faq_engine=self._faq_engine,
-            campaign_engine=self._campaign_engine,
-        )
+
+        # ── Camada 1: FAQEngine (regex, sem custo) ───────────────────────────
+        faq_match = self._faq_engine.match(inbound.content)
+
+        # Camada 2 só faz sentido em diálogo aberto (MENU / INICIO). Em estados
+        # de coleta (nome, quantidade, etc.) o state_machine dirige a entrada.
+        llm_applicable_state = session.current_state in (None, "inicio", "menu")
+
+        if (
+            faq_match is not None
+            or not self._llm_router
+            or not llm_applicable_state
+        ):
+            # Camada 1 resolveu OU LLMRouter indisponível — fluxo padrão
+            result: HandleResult = handle(
+                message=inbound.content,
+                session=session,
+                faq_engine=self._faq_engine,
+                campaign_engine=self._campaign_engine,
+            )
+        else:
+            # ── Camada 2: LLMRouter ──────────────────────────────────────────
+            context = self._build_llm_context(session, db)
+            known_intents = self._faq_engine.intent_ids()
+            classification = await self._llm_router.classify_intent(
+                message=inbound.content,
+                session_context=context,
+                known_intents=known_intents,
+            )
+            thresholds = self._llm_router.thresholds
+            medium = thresholds.get("medium", 0.60)
+            low = thresholds.get("low", 0.40)
+
+            synthesized: HandleResult | None = None
+            if (
+                classification.intent_id
+                and classification.confidence >= medium
+            ):
+                # Confiança alta ou média — responde direto com o template
+                logger.info(
+                    "LLM Camada 2: '%s' → %s (%.2f)",
+                    inbound.content[:50],
+                    classification.intent_id,
+                    classification.confidence,
+                )
+                synthesized = self._result_from_intent(
+                    classification.intent_id, session
+                )
+            elif (
+                classification.intent_id
+                and classification.confidence >= low
+            ):
+                # Confiança baixa — pede confirmação
+                label = classification.intent_id.replace("_", " ")
+                synthesized = HandleResult(
+                    response=FAQResponse(
+                        type="buttons",
+                        body=(
+                            f"Não entendi bem. "
+                            f"Você quer saber sobre *{label}*?"
+                        ),
+                        buttons=[  # type: ignore[arg-type]
+                            {"id": classification.intent_id, "title": "✅ Sim"},
+                            {"id": "falar_humano", "title": "❌ Outro assunto"},
+                        ],
+                    ),
+                    next_state=session.current_state or "menu",
+                )
+
+            if synthesized is not None:
+                result = synthesized
+            else:
+                # Confiança muito baixa, None ou erro — delega para state_machine
+                result = handle(
+                    message=inbound.content,
+                    session=session,
+                    faq_engine=self._faq_engine,
+                    campaign_engine=self._campaign_engine,
+                )
 
         # state_machine pode mutar session.session_data in-place
         # (ex.: orcamento_quantidade). JSONB não detecta mutação in-place,

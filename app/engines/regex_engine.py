@@ -163,3 +163,27 @@ class FAQEngine:
     def fallback_response(self) -> FAQResponse:
         """Retorna o FAQResponse de fallback configurado."""
         return self._fallback
+
+    def intent_ids(self) -> list[str]:
+        """Retorna lista de todos os intent_ids carregados."""
+        return [intent.id for intent in self._base_intents]
+
+    def match_by_id(self, intent_id: str) -> FAQMatch | None:
+        """Retorna FAQMatch para um intent_id conhecido — usado pela Camada 2.
+
+        Quando o LLMRouter classifica uma mensagem, precisamos do template
+        de resposta correspondente sem re-executar regex matching.
+        """
+        for intent in self._current_intents():
+            if intent.id == intent_id:
+                response = intent.response
+                if self._campaign_engine is not None:
+                    response = self._campaign_engine.apply_override(
+                        intent.id, response
+                    )
+                return FAQMatch(
+                    intent_id=intent.id,
+                    response=response,
+                    follow_up_state=intent.follow_up_state,
+                )
+        return None

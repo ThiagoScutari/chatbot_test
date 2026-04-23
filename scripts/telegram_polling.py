@@ -69,8 +69,12 @@ async def main() -> None:
         settings.FAQ_JSON_PATH, campaign_engine=campaign_engine
     )
     adapter = TelegramAdapter()
+    # LLMRouter não é usado no polling local — latência adicional de 200-400ms
+    # impacta a experiência. Habilitar apenas em produção via webhook FastAPI.
     pipeline = MessagePipeline(
-        faq_engine=faq_engine, campaign_engine=campaign_engine
+        faq_engine=faq_engine,
+        campaign_engine=campaign_engine,
+        llm_router=None,
     )
     clear()
     register(adapter)
