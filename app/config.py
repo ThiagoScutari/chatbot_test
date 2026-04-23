@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     CAMPAIGNS_JSON_PATH: Path = Path("app/knowledge/campaigns.json")
     ANTHROPIC_API_KEY: str = ""
     LLM_CONFIG_PATH: Path = Path("app/knowledge/llm_config.json")
+    OPENAI_API_KEY: str = ""
+    KNOWLEDGE_BASE_PATH: Path = Path("app/knowledge/camisart_knowledge_base.md")
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 

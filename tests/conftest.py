@@ -12,6 +12,8 @@ os.environ.setdefault("APP_ENV", "test")
 os.environ.setdefault("WHATSAPP_VERIFY_TOKEN", "test-verify-token")
 os.environ.setdefault("WHATSAPP_APP_SECRET", "test-app-secret-32-chars-minimum-ok")
 os.environ.setdefault("ADMIN_TOKEN", "test-admin-token-32-chars-minimum-ok")
+os.environ.setdefault("ANTHROPIC_API_KEY", "test-fake-anthropic-key")
+os.environ.setdefault("OPENAI_API_KEY", "test-fake-openai-key")
 
 import pytest
 from fastapi.testclient import TestClient
@@ -26,6 +28,7 @@ import app.models.session  # noqa: F401
 import app.models.message  # noqa: F401
 import app.models.lead  # noqa: F401
 import app.models.audit_log  # noqa: F401
+import app.models.knowledge_chunk  # noqa: F401  — requer extensão pgvector no teste
 
 
 TEST_DATABASE_URL = os.environ["TEST_DATABASE_URL"]
@@ -98,6 +101,11 @@ END $$;
 def setup_test_db():
     from sqlalchemy import text
 
+    # Habilitar pgvector ANTES do create_all
+    # knowledge_chunks usa o tipo vector(1536) que requer esta extensão
+    with test_engine.connect() as conn:
+        conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+        conn.commit()
     Base.metadata.create_all(bind=test_engine)
     with test_engine.connect() as conn:
         conn.execute(text(_TRIGGER_SQL))
@@ -182,6 +190,7 @@ def pipeline(db):
         faq_engine=faq,
         campaign_engine=campaign,
         llm_router=None,  # testes usam apenas Camada 1 por padrão
+        rag_engine=None,  # testes usam apenas Camadas 1 e 2
     )
 
 

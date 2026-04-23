@@ -25,7 +25,10 @@ def build_catalog_message(
 
     for p in data.get("products", []):
         preco_str = _format_preco(p.get("precos", {}))
-        line = f"• *{p['nome']}* — {p['tecido']}"
+        line = f"• *{p['nome']}*"
+        tecido_str = _format_tecido(p)
+        if tecido_str:
+            line += f" — {tecido_str}"
         if preco_str:
             line += f" | {preco_str}"
         obs = p.get("observacao")
@@ -46,6 +49,19 @@ def build_catalog_message(
 
     lines.append("\n💬 Qual produto te interessa? Posso fazer um orçamento completo! 📋")
     return "\n".join(lines)
+
+
+def _format_tecido(product: dict) -> str:
+    """Formata campo tecido para exibição. Suporta v1 (string) e v2 (list/dict)."""
+    tecido = product.get("tecido")
+    if tecido:
+        return str(tecido)
+    tecidos = product.get("tecidos")
+    if isinstance(tecidos, list):
+        return ", ".join(tecidos)
+    if isinstance(tecidos, dict):
+        return ", ".join(f"{k}: {v}" for k, v in tecidos.items())
+    return ""
 
 
 def _format_preco(precos: dict) -> str:

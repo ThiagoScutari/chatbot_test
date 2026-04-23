@@ -26,3 +26,5 @@ Atualizar a cada sprint review.
 | BK-20 | Sprint 03 review | 🟢 Sprint 04 | Teste de overlap de prioridade entre intents FAQ — garantir que novos intents não roubam match de intents existentes | Pendente |
 | BK-21 | Sprint 03 review | 🟢 Sprint 04 | Corrigir SAWarning `transaction already deassociated` no conftest — ruído no output do pytest há 3 sprints | Pendente |
 | BK-22 | Sprint 05 review | 🟢 Documentação | C03 (timeout 2h) documentado como teste manual permanente no CLAUDE.md — não automatizável por natureza | ✅ Fechado Sprint 05 |
+| BK-24 | Sprint 07 review | 🟢 Fechado Sprint 07 | test_llm.py e patch_prompt.py adicionados ao .gitignore | ✅ Fechado |
+| BK-25 | Sprint 07 review | 🟡 Sprint 08 | index_knowledge.py --status mostrar breakdown por fonte | Pendente |

@@ -89,3 +89,43 @@ async def llm_status(request: Request) -> StandardResponse:
             },
         }
     )
+
+
+@router.get(
+    "/rag/status",
+    dependencies=[Depends(verify_admin_token)],
+)
+async def rag_status(request: Request) -> StandardResponse:
+    """
+    Estatísticas do RAGEngine: chunks indexados por fonte.
+
+    Como usar:
+        curl https://seu-dominio.com/admin/rag/status \
+             -H "X-Admin-Token: seu_token"
+
+    Para re-indexar após atualizar o catálogo:
+        python scripts/index_knowledge.py --clear
+    """
+    rag = getattr(request.app.state, "rag_engine", None)
+    if not rag:
+        return StandardResponse(
+            data={
+                "enabled": False,
+                "reason": (
+                    "OPENAI_API_KEY não configurada — "
+                    "bot opera apenas com Camadas 1 e 2."
+                ),
+            }
+        )
+
+    try:
+        total = await rag.count_chunks()
+        return StandardResponse(
+            data={
+                "enabled": True,
+                "total_chunks": total,
+                "reindex_command": "python scripts/index_knowledge.py --clear",
+            }
+        )
+    except Exception as exc:  # noqa: BLE001
+        return StandardResponse(data={"enabled": True, "error": str(exc)})
