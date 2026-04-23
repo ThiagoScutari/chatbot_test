@@ -28,8 +28,7 @@ import app.models.session  # noqa: F401
 import app.models.message  # noqa: F401
 import app.models.lead  # noqa: F401
 import app.models.audit_log  # noqa: F401
-# knowledge_chunk NÃO é importado aqui — requer extensão pgvector no banco.
-# Testes RAG mocam a sessão de DB, então a tabela não precisa existir no teste.
+import app.models.knowledge_chunk  # noqa: F401  — requer extensão pgvector no teste
 
 
 TEST_DATABASE_URL = os.environ["TEST_DATABASE_URL"]
