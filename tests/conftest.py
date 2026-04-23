@@ -101,6 +101,11 @@ END $$;
 def setup_test_db():
     from sqlalchemy import text
 
+    # Habilitar pgvector ANTES do create_all
+    # knowledge_chunks usa o tipo vector(1536) que requer esta extensão
+    with test_engine.connect() as conn:
+        conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+        conn.commit()
     Base.metadata.create_all(bind=test_engine)
     with test_engine.connect() as conn:
         conn.execute(text(_TRIGGER_SQL))
