@@ -1,83 +1,149 @@
 {
-  "version": "1.0",
+  "version": "2.0",
   "products": [
     {
       "id": "polo_piquet",
       "nome": "Camisa Polo",
-      "tecido": "Malha Piquet",
-      "precos": {"varejo": 45.00, "atacado_12": 42.00},
+      "categoria": "polo",
+      "tecidos": ["piquet", "algodao", "pv", "poliester"],
+      "mangas": ["curta", "longa"],
+      "precos": {
+        "varejo": 45.00,
+        "atacado_12": 42.00,
+        "observacao": "Sujeito a alteração — consultar para pedidos grandes"
+      },
       "tamanhos": ["P", "M", "G", "GG"],
-      "segmentos": ["corporativo", "industria", "agro", "varejo"],
-      "personalizacoes": ["bordado", "serigrafia_40+"]
+      "tamanhos_especiais": "G1, G2, G3 sob consulta",
+      "personalizacoes": ["bordado", "serigrafia", "lisa", "colorida"],
+      "pronta_entrega": true,
+      "segmentos": [
+        "corporativo", "saude", "educacao",
+        "portaria", "jardinagem", "servicos_publicos"
+      ],
+      "casos_de_uso": [
+        "Recepcionistas e equipe de atendimento ao cliente",
+        "Profissionais de saúde em clínicas e consultórios",
+        "Professores e coordenadores pedagógicos",
+        "Porteiros e agentes de segurança patrimonial",
+        "Equipes de campo e logística",
+        "Jardineiros e trabalhadores de serviços gerais",
+        "Funcionários de serviços públicos municipais e estaduais"
+      ],
+      "rag_texto": "Camisa polo da Camisart disponível em malha piquet, algodão, PV e poliéster, com manga curta ou manga longa. A malha piquet é a mais procurada para uniformes corporativos pelo visual elegante e durabilidade. Preço a partir de R$45 no varejo e R$42 em atacado para pedidos de 12 ou mais peças. Tamanhos P, M, G e GG, com tamanhos especiais G1, G2 e G3 sob consulta. Ideal para empresas, clínicas, escolas, porteiros e serviços públicos. A personalização mais comum é bordado do logotipo no peito esquerdo."
     },
     {
-      "id": "basica_algodao",
-      "nome": "Básica Algodão",
-      "tecido": "100% Algodão",
-      "precos": {"a_partir_de": 29.00},
-      "tamanhos": ["P", "M", "G"],
-      "segmentos": ["varejo", "atacado", "igrejas", "esportes"]
-    },
-    {
-      "id": "basica_pv",
-      "nome": "Básica PV",
-      "tecido": "Poliéster + Viscose",
-      "precos": {},
+      "id": "camiseta_basica",
+      "nome": "Camiseta Básica",
+      "categoria": "camiseta",
+      "tecidos": ["algodao", "poliester", "pv", "misto_algodao_poliester"],
+      "mangas": ["curta", "longa", "regata"],
+      "precos": {
+        "a_partir_de": 29.00
+      },
       "tamanhos": ["P", "M", "G", "GG"],
-      "segmentos": ["industria", "sublimacao"],
-      "observacao": "Recomendada para sublimação"
+      "personalizacoes": ["bordado", "serigrafia", "sublimacao_pv", "sublimacao_poliester", "lisa", "colorida"],
+      "pronta_entrega": true,
+      "segmentos": [
+        "esportes", "eventos", "igrejas", "escolas", "varejo"
+      ],
+      "rag_texto": "Camiseta básica da Camisart disponível em 100% algodão, 100% poliéster, PV (poliéster e viscose) e misto algodão/poliéster. Mangas curta, longa ou regata. O algodão é mais fresco e respirável, ideal para o calor de Belém. O poliéster e o PV aceitam sublimação total para estampas com foto e cores ilimitadas. Usada por times de futebol, igrejas, eventos, grupos e escolas. Pronta entrega em peças lisas e coloridas. A partir de R$29."
     },
     {
-      "id": "jaleco_tradicional",
-      "nome": "Jaleco Tradicional",
-      "tecido": "Gabardine",
+      "id": "jaleco",
+      "nome": "Jaleco",
+      "categoria": "jaleco",
+      "modelos": ["tradicional", "premium"],
+      "tecidos": {
+        "tradicional": "gabardine",
+        "premium": "gabardine superior"
+      },
+      "cortes": ["masculino", "feminino"],
+      "precos": {
+        "tradicional": 120.00,
+        "premium": 145.00
+      },
+      "personalizacoes": ["bordado", "lisa"],
+      "segmentos": ["saude", "educacao", "estetica"],
+      "casos_de_uso": [
+        "Dentistas e cirurgiões-dentistas",
+        "Médicos, clínicos gerais e especialistas",
+        "Oftalmologistas e dermatologistas",
+        "Esteticistas e profissionais de beleza",
+        "Nutricionistas e fisioterapeutas",
+        "Enfermeiros e técnicos de enfermagem",
+        "Professores e coordenadores",
+        "Recepcionistas de clínicas e hospitais",
+        "Laboratoristas"
+      ],
+      "rag_texto": "Jaleco da Camisart em dois modelos: tradicional em gabardine (R$120) e premium em gabardine superior com melhor toque e acabamento (R$145). Disponível em corte masculino e feminino com modelagens diferentes para melhor caimento. Muito usado por dentistas, médicos, oftalmologistas, esteticistas, professores e enfermeiros. A personalização mais comum é bordado com nome do profissional e logotipo da clínica. Para uso hospitalar com lavagens frequentes, consultar o especialista sobre o tecido mais adequado. A Camisart envia catálogo para o cliente escolher o modelo com mais detalhes de comprimento e bolsos."
+    },
+    {
+      "id": "uniforme_industrial",
+      "nome": "Uniforme Industrial",
+      "categoria": "industrial",
+      "tecidos": ["brim", "oxford_pesado"],
+      "opcoes": ["com_fita_refletiva", "sem_fita_refletiva"],
+      "precos": {"consultar": true},
+      "personalizacoes": ["bordado", "serigrafia"],
+      "segmentos": ["industria", "construcao_civil", "seguranca", "gas"],
+      "rag_texto": "Uniforme industrial da Camisart em tecido brim ou oxford pesado, resistente a rasgos e uso intenso. Disponível com ou sem fitas refletivas para atender normas de segurança do trabalho. Muito procurado por empresas de construção civil, distribuidoras de gás, indústrias e segurança viária. Personalização com bordado ou serigrafia do logotipo e nome da empresa. Preço sob consulta conforme modelo e quantidade."
+    },
+    {
+      "id": "uniforme_escolar",
+      "nome": "Uniforme Escolar",
+      "categoria": "escolar",
+      "produtos_mais_usados": ["polo", "camiseta_basica", "jaleco"],
+      "personalizacoes": ["bordado", "serigrafia"],
+      "segmentos": ["escolas_particulares", "escolas_publicas"],
+      "rag_texto": "Uniforme escolar da Camisart para escolas particulares e públicas. Os produtos mais usados são camisa polo manga curta para alunos e professores, camiseta básica algodão para educação física e jaleco para professores e laboratório. Personalização com bordado ou serigrafia do nome e logotipo da escola. Atenção: pedidos para início do ano letivo (janeiro e fevereiro) devem ser feitos com 30 dias de antecedência pela alta demanda."
+    },
+    {
+      "id": "uniforme_domestico",
+      "nome": "Uniforme Doméstico",
+      "categoria": "domestico",
+      "modelos": ["manga_curta", "sem_manga", "com_bolso", "sem_bolso"],
       "precos": {"unidade": 120.00},
-      "segmentos": ["saude"],
-      "nichos": ["odonto", "medicina", "estetica"]
+      "personalizacoes": ["bordado", "lisa"],
+      "segmentos": ["domestico"],
+      "rag_texto": "Uniforme doméstico da Camisart para babás, diaristas, cuidadoras e empregadas domésticas. Disponível em modelos manga curta, sem manga, com bolso e sem bolso. Sem cor padrão definida, o cliente escolhe conforme preferência. Pode ter bordado com nome ou iniciais. Preço a partir de R$120 por unidade."
     },
     {
-      "id": "jaleco_premium",
-      "nome": "Jaleco Premium",
-      "tecido": "Gabardine",
-      "precos": {"unidade": 145.00},
-      "detalhes": "Amarração em laço + botões",
-      "segmentos": ["saude"]
-    },
-    {
-      "id": "uniforme_domestica",
-      "nome": "Uniforme Doméstica",
-      "tecido": "UniOffice Camisaria",
-      "precos": {"unidade": 120.00},
-      "segmentos": ["domestica"],
-      "observacao": "Babás, faxineiras, cuidadoras"
-    },
-    {
-      "id": "regata",
-      "nome": "Regata",
-      "tecido": "100% Algodão",
-      "precos": {"unidade": 20.00},
-      "variantes": ["masculina", "feminina"]
+      "id": "boné_personalizado",
+      "nome": "Boné Personalizado",
+      "categoria": "acessorio",
+      "modelos": ["aba_curva", "aba_reta"],
+      "precos": {"a_partir_de": 35.00},
+      "pedido_minimo": 12,
+      "prazo_dias_uteis": 15,
+      "personalizacoes": ["bordado"],
+      "rag_texto": "Boné personalizado da Camisart com bordado do logotipo ou nome da empresa. Disponível em aba curva e aba reta. Pedido mínimo de 12 unidades. Preço a partir de R$35 por unidade. Prazo de 10 a 15 dias úteis após aprovação da arte. Ideal para complementar pedidos de uniforme, eventos corporativos e times esportivos."
     }
   ],
   "servicos": [
     {
       "id": "bordado",
-      "nome": "Bordado de Logo",
-      "prazo_dias_uteis": 5,
+      "nome": "Bordado",
       "pedido_minimo": 1,
-      "observacao": "Preço variável conforme desenho"
+      "preco_programacao": {"min": 60.00, "max": 80.00},
+      "preco_por_peca_7_9cm": 4.50,
+      "prazo_dias_uteis": 7,
+      "formatos_aceitos": ["AI", "CDR", "PDF_vetorial", "PNG_300dpi"],
+      "rag_texto": "Bordado da Camisart sem pedido mínimo — borda a partir de 1 peça. Valor de programação (digitalização da arte) de R$60 a R$80, cobrado uma única vez. Bordado de 7 a 9cm custa R$4,50 por bordado por peça. A posição mais comum é o lado esquerdo do peito. Prazo de 5 a 7 dias úteis após aprovação. Formatos aceitos: AI, CDR, PDF vetorial ou PNG em 300 DPI. Quando o cliente não tem arte, a Camisart tem designer próprio para ajudar."
     },
     {
       "id": "serigrafia",
       "nome": "Serigrafia",
-      "pedido_minimo": 40,
-      "observacao": "Ideal para eventos e grupos grandes"
+      "pedido_minimo": 20,
+      "preco": "consultar",
+      "prazo": "consultar",
+      "rag_texto": "Serigrafia da Camisart a partir de 20 peças. Ideal para estampas grandes e pedidos maiores. Valores e prazo dependem do número de cores, tamanho da estampa e quantidade — consultar com o especialista. Para pedidos menores que 20 peças, o bordado é mais indicado."
     },
     {
       "id": "sublimacao",
       "nome": "Sublimação",
-      "tecido_obrigatorio": "malha_pv",
-      "observacao": "Necessita camisa PV"
+      "tecidos_compativeis": ["poliester", "pv"],
+      "preco": "consultar",
+      "rag_texto": "Sublimação da Camisart integra a tinta ao tecido, permitindo estampas com fotos, gradientes e cores ilimitadas que não descascam. Funciona apenas em tecidos de poliéster ou PV. Não funciona em algodão. Ideal para uniformes esportivos, camisetas comemorativas e estampas all-over. Valores e prazo sob consulta com o especialista."
     }
   ]
 }
