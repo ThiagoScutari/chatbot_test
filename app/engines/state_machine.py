@@ -296,15 +296,31 @@ def handle(
     estado_atual = session.current_state or INICIO
     texto = (message or "").strip()
 
+    # ── Tenta FAQEngine em qualquer estado "aberto" ──────────────────────
+    faq_match = faq_engine.match(texto) if texto else None
+
+    # ── Escape hatch universal: /start reseta qualquer estado ───────────
+    # Garante que o usuário NUNCA fique preso em nenhum estado.
+    # start_command tem priority=100 no faq.json. Preserva contadores
+    # de rate limit (rl_*) — esses não são workflow, são abuso-prevenção
+    # e não devem ser bypassáveis via /start.
+    if faq_match is not None and faq_match.intent_id == "start_command":
+        data = session.session_data or {}
+        preserved = {k: v for k, v in data.items() if k.startswith("rl_")}
+        session.nome_cliente = None
+        session.session_data = preserved
+        return HandleResult(
+            response=_text(_greeting(session, campaign_engine)),
+            next_state=AGUARDA_NOME,
+            matched_intent_id="start_command",
+        )
+
     # ── Estado INICIO: envia saudação e avança para AGUARDA_NOME ──────────
     if estado_atual == INICIO:
         return HandleResult(
             response=_text(_greeting(session, campaign_engine)),
             next_state=AGUARDA_NOME,
         )
-
-    # ── Tenta FAQEngine em qualquer estado "aberto" ──────────────────────
-    faq_match = faq_engine.match(texto) if texto else None
 
     if estado_atual == AGUARDA_NOME:
         if faq_match is not None and faq_match.follow_up_state:
@@ -632,7 +648,7 @@ def handle(
         if faq_match is not None:
             return HandleResult(
                 response=faq_match.response,
-                next_state=AGUARDA_RETORNO_HUMANO,
+                next_state=faq_match.follow_up_state or AGUARDA_RETORNO_HUMANO,
                 matched_intent_id=faq_match.intent_id,
             )
         return HandleResult(
