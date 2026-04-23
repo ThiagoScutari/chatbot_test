@@ -23,9 +23,10 @@ async def lifespan(app: FastAPI):
 
     import anthropic as _anthropic
 
-    from app.database import Base, engine
+    from app.database import Base, SessionLocal, engine
     from app.engines.campaign_engine import CampaignEngine
     from app.engines.llm_router import LLMRouter
+    from app.engines.rag_engine import RAGEngine
     from app.engines.regex_engine import FAQEngine
     from app.pipeline.message_pipeline import MessagePipeline
     import app.models.knowledge_chunk  # noqa: F401  — registra tabela no Base.metadata
@@ -50,13 +51,31 @@ async def lifespan(app: FastAPI):
             "LLMRouter desativado, apenas Camada 1 (FAQ regex)."
         )
 
+    rag_engine = None
+    if settings.OPENAI_API_KEY:
+        import openai as _openai
+
+        openai_client = _openai.AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+        rag_engine = RAGEngine(
+            db_session_factory=SessionLocal,
+            openai_client=openai_client,
+        )
+        logger.info("RAGEngine inicializado.")
+    else:
+        logger.info(
+            "OPENAI_API_KEY não configurada — "
+            "RAGEngine desativado, apenas Camadas 1 e 2."
+        )
+
     pipeline = MessagePipeline(
         faq_engine=faq_engine,
         campaign_engine=campaign_engine,
         llm_router=llm_router,
         llm_config=llm_config,
+        rag_engine=rag_engine,
     )
     app.state.llm_router = llm_router
+    app.state.rag_engine = rag_engine
     app.state.pipeline = pipeline
 
     from app.adapters.registry import (

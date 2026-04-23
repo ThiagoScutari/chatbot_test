@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.orm.attributes import flag_modified
 
 from app.engines.campaign_engine import CampaignEngine
+from app.engines.rag_engine import is_product_question
 from app.engines.regex_engine import FAQEngine, FAQResponse
 from app.engines.state_machine import HandleResult, handle
 from app.models.session import Session as SessionModel
@@ -26,6 +27,7 @@ from app.services import (
 
 if TYPE_CHECKING:
     from app.engines.llm_router import LLMRouter
+    from app.engines.rag_engine import RAGEngine
 
 
 logger = logging.getLogger(__name__)
@@ -40,11 +42,46 @@ class MessagePipeline:
         campaign_engine: CampaignEngine | None = None,
         llm_router: "LLMRouter | None" = None,
         llm_config: dict | None = None,
+        rag_engine: "RAGEngine | None" = None,
     ) -> None:
         self._faq_engine = faq_engine
         self._campaign_engine = campaign_engine
         self._llm_router = llm_router
         self._llm_config = llm_config or {}
+        self._rag_engine = rag_engine
+
+    async def _generate_rag_response(
+        self,
+        question: str,
+        chunks: list[str],
+        session: SessionModel,
+    ) -> str:
+        """Gera resposta usando chunks do RAG como contexto."""
+        if not self._llm_router:
+            return chunks[0][:600] if chunks else ""
+
+        context = "\n\n---\n\n".join(chunks[:3])
+        nome = session.nome_cliente or "cliente"
+
+        prompt = (
+            f"Você é o assistente da Camisart Belém, loja de uniformes em Belém/PA.\n"
+            f"Responda a pergunta de {nome} usando APENAS as informações abaixo.\n"
+            f"Se a informação não estiver no contexto, diga que um consultor pode ajudar melhor.\n"
+            f"Seja direto, amigável e em português. Máximo 200 palavras.\n\n"
+            f"Informações da Camisart:\n{context}\n\n"
+            f"Pergunta: {question}"
+        )
+        try:
+            response = await self._llm_router._client.messages.create(
+                model="claude-haiku-4-5-20251001",
+                max_tokens=300,
+                messages=[{"role": "user", "content": prompt}],
+                timeout=8.0,
+            )
+            return response.content[0].text.strip()
+        except Exception as exc:  # noqa: BLE001
+            logger.error("RAG generation error: %s", exc)
+            return chunks[0][:400] if chunks else ""
 
     def _build_llm_context(
         self, session: SessionModel, db: Session
@@ -122,12 +159,18 @@ class MessagePipeline:
         # de coleta (nome, quantidade, etc.) o state_machine dirige a entrada.
         llm_applicable_state = session.current_state in (None, "inicio", "menu")
 
+        # Flag tracking whether Camada 1 (FAQ) ou 2 (LLM medium+) resolveu.
+        # Controla se Camada 3 (RAG) deve ser consultada depois.
+        result_from_layer2_was_confident = False
+
         if (
             faq_match is not None
             or not self._llm_router
             or not llm_applicable_state
         ):
             # Camada 1 resolveu OU LLMRouter indisponível — fluxo padrão
+            if faq_match is not None:
+                result_from_layer2_was_confident = True
             result: HandleResult = handle(
                 message=inbound.content,
                 session=session,
@@ -162,6 +205,8 @@ class MessagePipeline:
                 synthesized = self._result_from_intent(
                     classification.intent_id, session
                 )
+                if synthesized is not None:
+                    result_from_layer2_was_confident = True
             elif (
                 classification.intent_id
                 and classification.confidence >= low
@@ -192,6 +237,34 @@ class MessagePipeline:
                     session=session,
                     faq_engine=self._faq_engine,
                     campaign_engine=self._campaign_engine,
+                )
+
+        # ── Camada 3: RAGEngine ──────────────────────────────────────────────
+        # Só consulta RAG se: (a) engine disponível, (b) mensagem parece pergunta
+        # técnica de produto, (c) camadas anteriores não resolveram com confiança.
+        if (
+            self._rag_engine
+            and is_product_question(inbound.content)
+            and not result_from_layer2_was_confident
+        ):
+            rag_result = await self._rag_engine.query(
+                inbound.content, top_k=3
+            )
+            if rag_result.chunks:
+                logger.info(
+                    "RAG Camada 3: '%s' → %d chunks encontrados",
+                    inbound.content[:50],
+                    rag_result.top_k,
+                )
+                rag_text = await self._generate_rag_response(
+                    question=inbound.content,
+                    chunks=rag_result.chunks,
+                    session=session,
+                )
+                result = HandleResult(
+                    response=FAQResponse(type="text", body=rag_text),
+                    next_state=session.current_state or "menu",
+                    matched_intent_id="rag_response",
                 )
 
         # state_machine pode mutar session.session_data in-place
