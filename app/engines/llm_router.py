@@ -175,41 +175,73 @@ class LLMRouter:
                 raw_text = raw_text[4:]
         raw_text = raw_text.strip()
 
+        import re
+
         # Attempt 1: direct parse
         try:
             parsed = json.loads(raw_text)
+            return LLMClassification(
+                intent_id=parsed.get("intent_id"),
+                confidence=float(parsed.get("confidence", 0.0)),
+                reasoning=parsed.get("reasoning"),
+            )
         except json.JSONDecodeError:
-            # Attempt 2: extract JSON object with regex
-            import re
-            match = re.search(r'\{[^{}]*\}', raw_text, re.DOTALL)
-            if match:
-                try:
-                    parsed = json.loads(match.group())
-                except json.JSONDecodeError:
-                    # Attempt 3: extract only intent_id and confidence
-                    intent_match = re.search(
-                        r'"intent_id"\s*:\s*"?([^",\n}]+)"?', raw_text
-                    )
-                    conf_match = re.search(
-                        r'"confidence"\s*:\s*([0-9.]+)', raw_text
-                    )
-                    if intent_match and conf_match:
-                        intent_val = intent_match.group(1).strip().strip('"')
-                        if intent_val.lower() in ("null", "none", ""):
-                            intent_val = None
-                        return LLMClassification(
-                            intent_id=intent_val,
-                            confidence=float(conf_match.group(1)),
-                            reasoning="parsed via regex fallback",
-                        )
-                    raise
-            else:
-                raise
-        return LLMClassification(
-            intent_id=parsed.get("intent_id"),
-            confidence=float(parsed.get("confidence", 0.0)),
-            reasoning=parsed.get("reasoning"),
+            pass
+
+        # Attempt 2: extract JSON object with regex
+        match = re.search(r'\{[^{}]*\}', raw_text, re.DOTALL)
+        if match:
+            try:
+                parsed = json.loads(match.group())
+                return LLMClassification(
+                    intent_id=parsed.get("intent_id"),
+                    confidence=float(parsed.get("confidence", 0.0)),
+                    reasoning=parsed.get("reasoning"),
+                )
+            except json.JSONDecodeError:
+                pass
+
+        # Attempt 3: strip reasoning field entirely and parse
+        try:
+            stripped = re.sub(
+                r',?\s*"reasoning"\s*:\s*"[^}]*?"(?=\s*[,}])',
+                '',
+                raw_text,
+                flags=re.DOTALL,
+            )
+            stripped = re.sub(
+                r',?\s*"reasoning"\s*:\s*".*?"(?=\s*\})',
+                '',
+                stripped,
+                flags=re.DOTALL,
+            )
+            parsed = json.loads(stripped)
+            return LLMClassification(
+                intent_id=parsed.get("intent_id"),
+                confidence=float(parsed.get("confidence", 0.0)),
+                reasoning="stripped",
+            )
+        except Exception:  # noqa: BLE001
+            pass
+
+        # Last resort: extract just the two fields we need
+        intent_match = re.search(
+            r'"intent_id"\s*:\s*"?([^",\n}]+)"?', raw_text
         )
+        conf_match = re.search(
+            r'"confidence"\s*:\s*([0-9.]+)', raw_text
+        )
+        if intent_match and conf_match:
+            intent_val = intent_match.group(1).strip().strip('"')
+            if intent_val.lower() in ("null", "none", ""):
+                intent_val = None
+            return LLMClassification(
+                intent_id=intent_val,
+                confidence=float(conf_match.group(1)),
+                reasoning="regex-extracted",
+            )
+
+        raise json.JSONDecodeError("all parse attempts failed", raw_text, 0)
 
     @staticmethod
     def _load_config(path: Path) -> dict:
