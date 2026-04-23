@@ -28,6 +28,7 @@ async def lifespan(app: FastAPI):
     from app.engines.llm_router import LLMRouter
     from app.engines.regex_engine import FAQEngine
     from app.pipeline.message_pipeline import MessagePipeline
+    import app.models.knowledge_chunk  # noqa: F401  — registra tabela no Base.metadata
 
     Base.metadata.create_all(bind=engine)
     campaign_engine = CampaignEngine(settings.CAMPAIGNS_JSON_PATH)
