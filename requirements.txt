@@ -14,3 +14,4 @@ pytest-cov>=4.1
 ruff>=0.4
 anthropic>=0.40
 pgvector>=0.3
+openai>=1.0
