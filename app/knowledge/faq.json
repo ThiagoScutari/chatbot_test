@@ -47,7 +47,11 @@
         "\\btransfer[ei]r?\\b",
         "\\b(n[aã]o (consigo|entend|funciona|quero falar))\\b",
         "\\b(pra|para)\\s+me\\s+atender\\b",
-        "\\balgu[eé]m\\b.*\\batend"
+        "\\balgu[eé]m\\b.*\\batend",
+        "\\b(quero|preciso|pode)\\b.{0,20}\\b(falar|conversar|chamar)\\b.{0,20}\\b(pessoa|humano|alguem|alguém|atendente|vendedor|consultor)\\b",
+        "\\b(me (passa|conecta|transfere))\\b",
+        "\\b(nao quero|não quero)\\b.{0,15}\\b(robo|robô|bot|automatico|automático)\\b",
+        "\\bpreciso de (ajuda|atendimento) (urgente|agora|rapido|rápido)\\b"
       ],
       "response": {
         "type": "buttons",
