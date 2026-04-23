@@ -71,10 +71,26 @@ async def main() -> None:
     adapter = TelegramAdapter()
     # LLMRouter não é usado no polling local — latência adicional de 200-400ms
     # impacta a experiência. Habilitar apenas em produção via webhook FastAPI.
+    import anthropic as _anthropic
+    import json as _json
+    from app.engines.llm_router import LLMRouter
+    _llm_config = {}
+    _llm_router = None
+    if settings.ANTHROPIC_API_KEY:
+        _llm_config = _json.loads(
+            settings.LLM_CONFIG_PATH.read_text(encoding='utf-8')
+        )
+        _llm_config = {k: v for k, v in _llm_config.items()
+                       if not k.startswith('_')}
+        _llm_client = _anthropic.AsyncAnthropic(
+            api_key=settings.ANTHROPIC_API_KEY
+        )
+        _llm_router = LLMRouter(settings.LLM_CONFIG_PATH, client=_llm_client)
     pipeline = MessagePipeline(
         faq_engine=faq_engine,
         campaign_engine=campaign_engine,
-        llm_router=None,
+        llm_router=_llm_router,
+        llm_config=_llm_config,
     )
     clear()
     register(adapter)
