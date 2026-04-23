@@ -114,8 +114,11 @@
       "id": "pagamento",
       "priority": 7,
       "patterns": [
-        "\\b(pix|cart[aã]o|boleto|pagamento|parcel\\w*|d[ée]bito|cr[ée]dito|aceita|pagar|como\\s+pago)\\b",
-        "\\bformas?\\s+de\\s+pagamento\\b"
+        "\\baceita\\b.{0,20}\\b(pix|cartao|cartão|boleto|credito|crédito|debito|débito|pagamento|parcelamento|transferencia|transferência)\\b",
+        "\\b(pix|cartao|cartão|boleto|credito|crédito|debito|débito|parcelamento)\\b",
+        "\\bformas?\\b.{0,15}\\b(pagamento|pagar)\\b",
+        "\\bcomo\\b.{0,15}\\b(pago|pagar|pagamento)\\b",
+        "\\bpagamento\\b"
       ],
       "response": {
         "type": "text",
