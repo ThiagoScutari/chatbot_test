@@ -7,7 +7,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from app.engines.rag_engine import (
     RAGEngine, RAGResult,
     chunk_markdown, chunk_products_json, is_product_question,
-    _split_section,
 )
 
 PRODUCTS_PATH = Path("app/knowledge/products.json")
