@@ -92,7 +92,9 @@
       "id": "prazo_entrega",
       "priority": 8,
       "patterns": [
-        "\\b(prazo|demora|quanto\\s+tempo|quando\\s+fica|dias\\s+para|entrega\\s+em)\\b",
+        "\\bprazo\\b.{0,30}\\b(entreg|produc|pedido|receb)\\b",
+        "\\b(entreg|produc)\\b.{0,30}\\bprazo\\b",
+        "\\b(demora|quanto\\s+tempo|quando\\s+fica|dias\\s+para|entrega\\s+em|fica\\s+pronto|dias\\s+fica)\\b",
         "\\b(urgente|r[áa]pido|preciso\\s+para\\s+amanh[ãa]|preciso\\s+logo)\\b",
         "\\btempo\\s+de\\s+produ[çc][ãa]o\\b",
         "\\bpreciso\\s+(pra|para)\\b.*\\b(semana|amanh|hoje|urgente|logo)",
@@ -242,12 +244,16 @@
     },
     {
       "id": "bordado_prazo",
-      "priority": 5,
+      "priority": 10,
       "patterns": [
         "\\bbordad",
         "\\bprazo\\b.*\\bborda",
         "\\bbordao\\b",
-        "\\b(personaliza[çc][aã]o|personalizar|personalizad[oa])\\b"
+        "\\b(personaliza[çc][aã]o|personalizar|personalizad[oa])\\b",
+        "\\b(prazo|demora|tempo)\\b.{0,20}\\bbordad[oa]\\b",
+        "\\bbordad[oa]\\b.{0,20}\\b(prazo|demora|tempo|dia)\\b",
+        "\\bquanto tempo\\b.{0,20}\\bbordad[oa]\\b",
+        "\\bbordad[oa]\\b.{0,20}\\bquanto tempo\\b"
       ],
       "response": {
         "type": "text",
