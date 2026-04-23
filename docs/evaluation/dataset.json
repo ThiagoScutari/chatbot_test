@@ -210,18 +210,18 @@
     {"id": "S185", "message": "boa tarde, tudo bem?", "expected_intent": "none", "expected_layer": "none", "difficulty": "easy", "notes": "saudação"},
     {"id": "S186", "message": "vocês vendem tecido por metro?", "expected_intent": "none", "expected_layer": "none", "difficulty": "medium", "notes": "produto que loja não vende"},
     {"id": "S187", "message": "tem loja em São Paulo?", "expected_intent": "none", "expected_layer": "none", "difficulty": "medium", "notes": "filial inexistente"},
-    {"id": "S188", "message": "fazem conserto de roupa?", "expected_intent": "none", "expected_layer": "none", "difficulty": "medium", "notes": "serviço inexistente"},
+    {"id": "S188", "message": "o jaleco chegou com defeito", "expected_intent": "pos_venda", "expected_layer": "faq", "difficulty": "medium", "notes": "pós-venda — defeito"},
     {"id": "S189", "message": "alugo roupa aí?", "expected_intent": "none", "expected_layer": "none", "difficulty": "medium", "notes": "serviço inexistente"},
     {"id": "S190", "message": "vocês vendem fantasia de carnaval?", "expected_intent": "none", "expected_layer": "none", "difficulty": "medium", "notes": "fora do escopo"},
     {"id": "S191", "message": "tem curso de costura?", "expected_intent": "none", "expected_layer": "none", "difficulty": "medium", "notes": "serviço inexistente"},
     {"id": "S192", "message": "vendem máquina de costura?", "expected_intent": "none", "expected_layer": "none", "difficulty": "medium", "notes": "produto inexistente"},
-    {"id": "S193", "message": "sobram peças de uniforme usado pra doar?", "expected_intent": "none", "expected_layer": "none", "difficulty": "medium", "notes": "doação"},
+    {"id": "S193", "message": "a camisa veio manchada, quero trocar", "expected_intent": "pos_venda", "expected_layer": "faq", "difficulty": "medium", "notes": "pós-venda — troca por problema"},
     {"id": "S194", "message": "o jaleco que comprei rasgou, quero trocar", "expected_intent": "pos_venda", "expected_layer": "faq", "difficulty": "hard", "notes": "pós-venda — troca/defeito"},
-    {"id": "S195", "message": "vocês fazem parceria com fornecedores de tecido?", "expected_intent": "none", "expected_layer": "none", "difficulty": "hard", "notes": "B2B fornecedor"},
-    {"id": "S196", "message": "tem vaga de emprego aí como costureira?", "expected_intent": "none", "expected_layer": "none", "difficulty": "hard", "notes": "RH"},
+    {"id": "S195", "message": "recebi o pedido errado", "expected_intent": "pos_venda", "expected_layer": "faq", "difficulty": "hard", "notes": "pós-venda — produto errado"},
+    {"id": "S196", "message": "meu pedido chegou rasgado", "expected_intent": "pos_venda", "expected_layer": "faq", "difficulty": "hard", "notes": "pós-venda — dano no transporte"},
     {"id": "S197", "message": "recebi a peça errada, como devolvo?", "expected_intent": "pos_venda", "expected_layer": "faq", "difficulty": "hard", "notes": "pós-venda — devolução"},
-    {"id": "S198", "message": "estou procurando investidor pra minha marca de roupa, vocês investiriam?", "expected_intent": "none", "expected_layer": "none", "difficulty": "hard", "notes": "investimento"},
-    {"id": "S199", "message": "trabalham com dropshipping pra lojistas virtuais?", "expected_intent": "none", "expected_layer": "none", "difficulty": "hard", "notes": "modelo de negócio atípico"},
-    {"id": "S200", "message": "posso fazer estágio aí como aprendiz de costureira?", "expected_intent": "none", "expected_layer": "none", "difficulty": "hard", "notes": "RH estágio"}
+    {"id": "S198", "message": "quero reembolso do meu pedido", "expected_intent": "pos_venda", "expected_layer": "faq", "difficulty": "hard", "notes": "pós-venda — reembolso"},
+    {"id": "S199", "message": "a camiseta encolheu depois de lavar, posso trocar?", "expected_intent": "pos_venda", "expected_layer": "faq", "difficulty": "hard", "notes": "pós-venda — defeito após uso"},
+    {"id": "S200", "message": "produto com problema, quero devolver", "expected_intent": "pos_venda", "expected_layer": "faq", "difficulty": "hard", "notes": "pós-venda — devolução"}
   ]
 }

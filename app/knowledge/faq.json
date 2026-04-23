@@ -49,7 +49,7 @@
         "\\b(pra|para)\\s+me\\s+atender\\b",
         "\\balgu[eé]m\\b.*\\batend",
         "\\b(quero|preciso|pode)\\b.{0,20}\\b(falar|conversar|chamar)\\b.{0,20}\\b(pessoa|humano|alguem|alguém|atendente|vendedor|consultor)\\b",
-        "\\b(me (passa|conecta|transfere))\\b",
+        "\\b(me (passa|conecta|transfere))\\b.{0,30}\\b(pessoa|humano|alguem|alguém|atendente|vendedor|consultor)\\b",
         "\\b(nao quero|não quero)\\b.{0,15}\\b(robo|robô|bot|automatico|automático)\\b",
         "\\bpreciso de (ajuda|atendimento) (urgente|agora|rapido|rápido)\\b"
       ],
@@ -118,8 +118,7 @@
       "id": "prazo_entrega",
       "priority": 8,
       "patterns": [
-        "\\bprazo\\b.{0,30}\\b(entreg|produc|pedido|receb)\\b",
-        "\\b(entreg|produc)\\b.{0,30}\\bprazo\\b",
+        "\\bprazo\\b",
         "\\b(demora|quanto\\s+tempo|quando\\s+fica|dias\\s+para|entrega\\s+em|fica\\s+pronto|dias\\s+fica)\\b",
         "\\b(urgente|r[áa]pido|preciso\\s+para\\s+amanh[ãa]|preciso\\s+logo)\\b",
         "\\btempo\\s+de\\s+produ[çc][ãa]o\\b",
