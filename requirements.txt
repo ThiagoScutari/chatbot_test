@@ -15,3 +15,5 @@ ruff>=0.4
 anthropic>=0.40
 pgvector>=0.3
 openai>=1.0
+scikit-learn>=1.4
+matplotlib>=3.8

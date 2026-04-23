@@ -17,3 +17,8 @@ catalogo/
 # Scripts temporários de teste manual
 test_llm.py
 patch_prompt.py
+
+# Artefatos gerados pela pipeline de avaliação (S08)
+docs/evaluation/reports/*.json
+docs/evaluation/reports/*.html
+docs/evaluation/qualitative/*.json
