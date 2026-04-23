@@ -15,6 +15,28 @@
       "follow_up_state": "aguarda_nome"
     },
     {
+      "id": "pos_venda",
+      "priority": 12,
+      "patterns": [
+        "\\b(rasgou|rasgado|defeito|defeituoso|danificado|danificada)\\b",
+        "\\b(peca|peça).{0,20}\\b(errada|incorreta|errado|incorreto)\\b",
+        "\\b(devolucao|devolução|devolver|trocar|troca|reembolso)\\b",
+        "\\b(recebi|chegou).{0,30}\\b(errad|diferente|incorre)\\b",
+        "\\b(problema|reclamacao|reclamação).{0,20}\\b(pedido|peca|peça|produto)\\b",
+        "\\bnao\\b.{0,15}\\b(chegou|recebi)\\b",
+        "\\bnão\\b.{0,15}\\b(chegou|recebi)\\b"
+      ],
+      "response": {
+        "type": "buttons",
+        "body": "Lamento pelo inconveniente! 😟\n\nVou te conectar com nossa equipe para resolver isso o mais rápido possível.\n\nAtendimento: *segunda a sexta, 8h às 18h*.",
+        "buttons": [
+          {"id": "falar_humano", "title": "👤 Falar com equipe"},
+          {"id": "menu",         "title": "🏠 Voltar ao menu"}
+        ]
+      },
+      "follow_up_state": "encaminhar_humano"
+    },
+    {
       "id": "falar_humano",
       "priority": 15,
       "patterns": [
