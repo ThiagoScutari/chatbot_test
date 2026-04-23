@@ -17,6 +17,9 @@ catalogo/
 # Scripts temporários de teste manual
 test_llm.py
 patch_prompt.py
+fix_polling_llm.py
+fix_rag.py
+fix_state.py
 
 # Artefatos gerados pela pipeline de avaliação (S08)
 docs/evaluation/reports/*.json

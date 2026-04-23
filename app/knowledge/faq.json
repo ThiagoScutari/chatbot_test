@@ -15,6 +15,28 @@
       "follow_up_state": "aguarda_nome"
     },
     {
+      "id": "pos_venda",
+      "priority": 12,
+      "patterns": [
+        "\\b(rasgou|rasgado|defeito|defeituoso|danificado|danificada)\\b",
+        "\\b(peca|peça).{0,20}\\b(errada|incorreta|errado|incorreto)\\b",
+        "\\b(devolucao|devolução|devolver|trocar|troca|reembolso)\\b",
+        "\\b(recebi|chegou).{0,30}\\b(errad|diferente|incorre)\\b",
+        "\\b(problema|reclamacao|reclamação).{0,20}\\b(pedido|peca|peça|produto)\\b",
+        "\\bnao\\b.{0,15}\\b(chegou|recebi)\\b",
+        "\\bnão\\b.{0,15}\\b(chegou|recebi)\\b"
+      ],
+      "response": {
+        "type": "buttons",
+        "body": "Lamento pelo inconveniente! 😟\n\nVou te conectar com nossa equipe para resolver isso o mais rápido possível.\n\nAtendimento: *segunda a sexta, 8h às 18h*.",
+        "buttons": [
+          {"id": "falar_humano", "title": "👤 Falar com equipe"},
+          {"id": "menu",         "title": "🏠 Voltar ao menu"}
+        ]
+      },
+      "follow_up_state": "encaminhar_humano"
+    },
+    {
       "id": "falar_humano",
       "priority": 15,
       "patterns": [
@@ -25,7 +47,11 @@
         "\\btransfer[ei]r?\\b",
         "\\b(n[aã]o (consigo|entend|funciona|quero falar))\\b",
         "\\b(pra|para)\\s+me\\s+atender\\b",
-        "\\balgu[eé]m\\b.*\\batend"
+        "\\balgu[eé]m\\b.*\\batend",
+        "\\b(quero|preciso|pode)\\b.{0,20}\\b(falar|conversar|chamar)\\b.{0,20}\\b(pessoa|humano|alguem|alguém|atendente|vendedor|consultor)\\b",
+        "\\b(me (passa|conecta|transfere))\\b.{0,30}\\b(pessoa|humano|alguem|alguém|atendente|vendedor|consultor)\\b",
+        "\\b(nao quero|não quero)\\b.{0,15}\\b(robo|robô|bot|automatico|automático)\\b",
+        "\\bpreciso de (ajuda|atendimento) (urgente|agora|rapido|rápido)\\b"
       ],
       "response": {
         "type": "buttons",
@@ -92,7 +118,8 @@
       "id": "prazo_entrega",
       "priority": 8,
       "patterns": [
-        "\\b(prazo|demora|quanto\\s+tempo|quando\\s+fica|dias\\s+para|entrega\\s+em)\\b",
+        "\\bprazo\\b",
+        "\\b(demora|quanto\\s+tempo|quando\\s+fica|dias\\s+para|entrega\\s+em|fica\\s+pronto|dias\\s+fica)\\b",
         "\\b(urgente|r[áa]pido|preciso\\s+para\\s+amanh[ãa]|preciso\\s+logo)\\b",
         "\\btempo\\s+de\\s+produ[çc][ãa]o\\b",
         "\\bpreciso\\s+(pra|para)\\b.*\\b(semana|amanh|hoje|urgente|logo)",
@@ -112,8 +139,11 @@
       "id": "pagamento",
       "priority": 7,
       "patterns": [
-        "\\b(pix|cart[aã]o|boleto|pagamento|parcel\\w*|d[ée]bito|cr[ée]dito|aceita|pagar|como\\s+pago)\\b",
-        "\\bformas?\\s+de\\s+pagamento\\b"
+        "\\baceita\\b.{0,20}\\b(pix|cartao|cartão|boleto|credito|crédito|debito|débito|pagamento|parcelamento|transferencia|transferência)\\b",
+        "\\b(pix|cartao|cartão|boleto|credito|crédito|debito|débito|parcelamento)\\b",
+        "\\bformas?\\b.{0,15}\\b(pagamento|pagar)\\b",
+        "\\bcomo\\b.{0,15}\\b(pago|pagar|pagamento)\\b",
+        "\\bpagamento\\b"
       ],
       "response": {
         "type": "text",
@@ -242,12 +272,16 @@
     },
     {
       "id": "bordado_prazo",
-      "priority": 5,
+      "priority": 10,
       "patterns": [
         "\\bbordad",
         "\\bprazo\\b.*\\bborda",
         "\\bbordao\\b",
-        "\\b(personaliza[çc][aã]o|personalizar|personalizad[oa])\\b"
+        "\\b(personaliza[çc][aã]o|personalizar|personalizad[oa])\\b",
+        "\\b(prazo|demora|tempo)\\b.{0,20}\\bbordad[oa]\\b",
+        "\\bbordad[oa]\\b.{0,20}\\b(prazo|demora|tempo|dia)\\b",
+        "\\bquanto tempo\\b.{0,20}\\bbordad[oa]\\b",
+        "\\bbordad[oa]\\b.{0,20}\\bquanto tempo\\b"
       ],
       "response": {
         "type": "text",

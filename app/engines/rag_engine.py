@@ -87,12 +87,13 @@ class RAGEngine:
             for chunk in chunks:
                 try:
                     embedding = await self._embed(chunk["content"])
+                    emb_str = "[" + ",".join(str(x) for x in embedding) + "]"
                     db.execute(text("""
                         INSERT INTO knowledge_chunks
                             (id, source, chunk_id, content, embedding, metadata)
                         VALUES
                             (:id, :source, :chunk_id, :content,
-                             :embedding::vector, :metadata::jsonb)
+                             CAST(:embedding AS vector), CAST(:metadata AS jsonb))
                         ON CONFLICT (source, chunk_id)
                         DO UPDATE SET
                             content   = EXCLUDED.content,
@@ -104,7 +105,7 @@ class RAGEngine:
                         "source": source,
                         "chunk_id": chunk["chunk_id"],
                         "content": chunk["content"],
-                        "embedding": str(embedding),
+                        "embedding": emb_str,
                         "metadata": json.dumps(chunk.get("metadata", {})),
                     })
                     indexed += 1
@@ -143,10 +144,10 @@ class RAGEngine:
         with self._db_factory() as db:
             rows = db.execute(text("""
                 SELECT content, chunk_id,
-                       1 - (embedding <=> :emb::vector) AS similarity
+                       1 - (embedding <=> CAST(:emb AS vector)) AS similarity
                 FROM knowledge_chunks
                 WHERE embedding IS NOT NULL
-                  AND 1 - (embedding <=> :emb::vector) >= :threshold
+                  AND 1 - (embedding <=> CAST(:emb AS vector)) >= :threshold
                 ORDER BY similarity DESC
                 LIMIT :top_k
             """), {

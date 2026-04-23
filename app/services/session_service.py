@@ -126,4 +126,5 @@ def update_state(
     """Atualiza o estado atual e o timestamp de última interação."""
     session.current_state = new_state
     session.last_interaction_at = _now()
-    db.flush()
+    db.add(session)
+    db.commit()
