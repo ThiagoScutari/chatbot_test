@@ -216,10 +216,10 @@
     {"id": "S191", "message": "tem curso de costura?", "expected_intent": "none", "expected_layer": "none", "difficulty": "medium", "notes": "serviço inexistente"},
     {"id": "S192", "message": "vendem máquina de costura?", "expected_intent": "none", "expected_layer": "none", "difficulty": "medium", "notes": "produto inexistente"},
     {"id": "S193", "message": "sobram peças de uniforme usado pra doar?", "expected_intent": "none", "expected_layer": "none", "difficulty": "medium", "notes": "doação"},
-    {"id": "S194", "message": "o jaleco que comprei rasgou, quero trocar", "expected_intent": "none", "expected_layer": "none", "difficulty": "hard", "notes": "pós-venda — não há intent"},
+    {"id": "S194", "message": "o jaleco que comprei rasgou, quero trocar", "expected_intent": "pos_venda", "expected_layer": "faq", "difficulty": "hard", "notes": "pós-venda — troca/defeito"},
     {"id": "S195", "message": "vocês fazem parceria com fornecedores de tecido?", "expected_intent": "none", "expected_layer": "none", "difficulty": "hard", "notes": "B2B fornecedor"},
     {"id": "S196", "message": "tem vaga de emprego aí como costureira?", "expected_intent": "none", "expected_layer": "none", "difficulty": "hard", "notes": "RH"},
-    {"id": "S197", "message": "recebi a peça errada, como devolvo?", "expected_intent": "none", "expected_layer": "none", "difficulty": "hard", "notes": "logística reversa"},
+    {"id": "S197", "message": "recebi a peça errada, como devolvo?", "expected_intent": "pos_venda", "expected_layer": "faq", "difficulty": "hard", "notes": "pós-venda — devolução"},
     {"id": "S198", "message": "estou procurando investidor pra minha marca de roupa, vocês investiriam?", "expected_intent": "none", "expected_layer": "none", "difficulty": "hard", "notes": "investimento"},
     {"id": "S199", "message": "trabalham com dropshipping pra lojistas virtuais?", "expected_intent": "none", "expected_layer": "none", "difficulty": "hard", "notes": "modelo de negócio atípico"},
     {"id": "S200", "message": "posso fazer estágio aí como aprendiz de costureira?", "expected_intent": "none", "expected_layer": "none", "difficulty": "hard", "notes": "RH estágio"}
