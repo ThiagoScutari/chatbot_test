@@ -13,3 +13,7 @@ test/docs/Catalogo.pdf
 .coverage
 htmlcov/
 catalogo/
+
+# Scripts temporários de teste manual
+test_llm.py
+patch_prompt.py
