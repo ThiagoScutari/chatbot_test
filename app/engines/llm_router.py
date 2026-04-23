@@ -175,7 +175,36 @@ class LLMRouter:
                 raw_text = raw_text[4:]
         raw_text = raw_text.strip()
 
-        parsed = json.loads(raw_text)
+        # Attempt 1: direct parse
+        try:
+            parsed = json.loads(raw_text)
+        except json.JSONDecodeError:
+            # Attempt 2: extract JSON object with regex
+            import re
+            match = re.search(r'\{[^{}]*\}', raw_text, re.DOTALL)
+            if match:
+                try:
+                    parsed = json.loads(match.group())
+                except json.JSONDecodeError:
+                    # Attempt 3: extract only intent_id and confidence
+                    intent_match = re.search(
+                        r'"intent_id"\s*:\s*"?([^",\n}]+)"?', raw_text
+                    )
+                    conf_match = re.search(
+                        r'"confidence"\s*:\s*([0-9.]+)', raw_text
+                    )
+                    if intent_match and conf_match:
+                        intent_val = intent_match.group(1).strip().strip('"')
+                        if intent_val.lower() in ("null", "none", ""):
+                            intent_val = None
+                        return LLMClassification(
+                            intent_id=intent_val,
+                            confidence=float(conf_match.group(1)),
+                            reasoning="parsed via regex fallback",
+                        )
+                    raise
+            else:
+                raise
         return LLMClassification(
             intent_id=parsed.get("intent_id"),
             confidence=float(parsed.get("confidence", 0.0)),
