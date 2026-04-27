@@ -59,13 +59,18 @@ PERSONALIZACAO_MAP: dict[str, str] = {
 
 
 CONFIRMACAO_MAP: dict[str, str] = {
+    "1": "confirmar", "✅": "confirmar",
     "confirmar": "confirmar", "confirmo": "confirmar",
     "sim": "confirmar", "s": "confirmar", "ok": "confirmar",
+    "yes": "confirmar",
     "isso": "confirmar", "correto": "confirmar", "certo": "confirmar",
     "esta certo": "confirmar", "está certo": "confirmar",
     "pode ser": "confirmar", "pode": "confirmar",
+    "exato": "confirmar", "bora": "confirmar", "manda ver": "confirmar",
+    "2": "corrigir", "✏️": "corrigir",
     "corrigir": "corrigir", "corrige": "corrigir",
     "nao": "corrigir", "não": "corrigir", "errado": "corrigir",
+    "no": "corrigir", "n": "corrigir",
     "mudar": "corrigir", "alterar": "corrigir", "voltar": "corrigir",
 }
 
