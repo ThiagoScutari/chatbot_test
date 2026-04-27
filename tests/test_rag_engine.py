@@ -9,6 +9,11 @@ from app.engines.rag_engine import (
     chunk_markdown, chunk_products_json, is_product_question,
 )
 
+pytestmark = pytest.mark.skip(
+    reason="RAGEngine substituído por ContextEngine (ADR-003). "
+           "Manter para referência histórica."
+)
+
 PRODUCTS_PATH = Path("app/knowledge/products.json")
 KB_PATH = Path("app/knowledge/camisart_knowledge_base.md")
 
