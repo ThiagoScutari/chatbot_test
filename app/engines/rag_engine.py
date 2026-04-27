@@ -327,6 +327,19 @@ _PRODUCT_QUESTION_PATTERNS = [
     r"\bque tipo\b.{0,20}\b(tecido|material|malha|tecidos)\b",
     r"\b(malha|piquet|gabardine|brim|oxford|pv|viscose)\b",
     r"\bcomposição\b.{0,20}\b(tecido|malha|material)\b",
+    # GROUP 5 — Sublimação com erros de digitação [fix-G2]
+    r"\bsublima[cç][aã]o?\b",
+    r"\bsublimax\b",
+    r"\bsublimaçao\b",
+    r"\bsubliação\b",
+    # GROUP 6 — Indicação por perfil profissional [fix-G2]
+    r"\b(dentist|medic|enfermei|esteticist|nutricion)\b.{0,30}\b(jaleco|roupa|uniforme)\b",
+    r"\b(jaleco|roupa|uniforme)\b.{0,30}\b(dentist|medic|enfermei|clínica|hospital)\b",
+    r"\bpra (dentista|médico|enfermeiro|esteticista)\b",
+    # GROUP 7 — Formatos de arquivo / bordado técnico [fix-G2]
+    r"\barquivo\b.{0,20}\b(bordado|arte|logo|ai|cdr|pdf|png)\b",
+    r"\b(ai|cdr|pdf|png|vetorial)\b.{0,20}\b(bordado|arte|logo)\b",
+    r"\bformato\b.{0,20}\b(bordado|arte|logo)\b",
 ]
 
 _PRODUCT_QUESTION_REGEX = [

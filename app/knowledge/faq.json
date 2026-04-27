@@ -27,7 +27,11 @@
         "\\bquero (comprar|encomendar|pedir)\\b.{0,20}\\b(jalecos?|polos?|camisetas?|uniformes?|bon[ée]s?)\\b",
         "\\b(encomendar|encomenda)\\b",
         "\\bmontar (um |uma )?kit\\b",
-        "\\bpreciso (de )?(un|uns|uma|umas) (jalecos?|polos?|camisetas?|uniformes?)\\b"
+        "\\bpreciso (de )?(un|uns|uma|umas) (jalecos?|polos?|camisetas?|uniformes?)\\b",
+        "\\buniformes?\\b.{0,20}\\b(corporativo|empresa|equipe|time|padaria|restaurante|escola)\\b",
+        "\\b(padaria|restaurante|escola|empresa|cl[íi]nica)\\b.{0,20}\\buniformes?\\b",
+        "\\bfaz\\b.{0,20}\\b(uniformes?|jalecos?|camisetas?|polos?)\\b",
+        "\\bfazem\\b.{0,20}\\b(uniformes?|jalecos?|camisetas?|polos?)\\b"
       ],
       "response": {
         "type": "text",
@@ -96,7 +100,9 @@
         "\\bcami[zs][ai].*pol[ou]\\b",
         "\\bqto\\b.{0,20}\\b(polo|camisa|piquet)\\b",
         "\\b(polo|camisa|piquet)\\b.{0,20}\\bqto\\b",
-        "\\b(valor|valo)\\b.{0,20}\\b(polo|camisa)\\b"
+        "\\b(valor|valo)\\b.{0,20}\\b(polo|camisa)\\b",
+        "\\bcamisa\\b.{0,20}\\bgola\\b",
+        "\\bgola\\b.{0,20}\\b(polo|camisa|listrada|botões|bot[ãa]o)\\b"
       ],
       "response": {
         "type": "text",
@@ -113,7 +119,11 @@
         "\\bqto\\b.{0,20}\\bjaleco\\b",
         "\\bjaleco\\b.{0,20}\\bqto\\b",
         "\\bjaleco\\b.{0,20}\\b(ta|tá|tah)\\b",
-        "\\b(égua|eita|oxe|caramba)\\b.{0,40}\\bjaleco\\b"
+        "\\b(égua|eita|oxe|caramba)\\b.{0,40}\\bjaleco\\b",
+        "\\broupa\\b.{0,20}\\b(dentista|m[ée]dicos?|sa[úu]de|cl[íi]nica|hospital|enfermeiros?|esteticistas?)\\b",
+        "\\b(dentista|m[ée]dicos?|enfermeiros?|esteticistas?)\\b.{0,20}\\broupa\\b",
+        "\\bjalecos?\\b.{0,20}\\b(indicad|recomend|melhor|bom|boa)\\b",
+        "\\b(indicad|recomend|melhor|bom|boa)\\b.{0,20}\\bjalecos?\\b"
       ],
       "response": {
         "type": "text",
@@ -284,7 +294,11 @@
       "id": "dry_fit",
       "priority": 6,
       "patterns": [
-        "\\b(dry.?fit|dryfit|poli[ée]ster|esporte|esportiva?|futebol|time)\\b"
+        "\\b(dry.?fit|dryfit|poli[ée]ster|esporte|esportiva?|esportivos?|futebol|time)\\b",
+        "\\bacademia\\b",
+        "\\bfutebol\\b.{0,20}\\b(camisa|uniforme|camiseta)\\b",
+        "\\b(camisa|camiseta|roupa)\\b.{0,20}\\b(esport|academia|time|futebol)\\b",
+        "\\broupa\\b.{0,20}\\bacademia\\b"
       ],
       "response": {
         "type": "text",
