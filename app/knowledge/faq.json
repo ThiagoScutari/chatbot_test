@@ -235,14 +235,19 @@
       "priority": 9,
       "patterns": [
         "\\b(envi[ao]|frete|correios|sedex|interior)\\b",
-        "\\b(fora\\s+de\\s+bel[ée]m|outro\\s+estado|s[ãa]o\\s+paulo|rio|brasil)\\b",
+        "\\b(fora\\s+de\\s+bel[ée]m|outro\\s+estado|s[ãa]o\\s+paulo|rio)\\b",
+        "\\bbrasil\\b.{0,20}\\b(entrega|entreg|envia|manda|correios|frete|todo)\\b",
+        "\\b(entrega|entreg|envia|manda|correios|frete)\\b.{0,20}\\bbrasil\\b",
+        "\\btodo o brasil\\b",
+        "\\bpara o brasil\\b",
+        "\\bno brasil (todo|inteiro)\\b",
+        "\\bbrasil todo\\b",
         "\\b(entrega|envi[ao]|manda|frete)\\b.*\\b(SC|SP|RJ|MG|RS|PR|BA|CE|PA|AM|PE|GO|DF|MS|MT|RO|AC|RR|AP|TO|MA|PI|RN|PB|AL|SE|ES)\\b",
         "\\b(entrega|envi[ao])\\b.*\\b(s[aã]o paulo|rio de janeiro|santa catarina|minas gerais|paran[aá]|bahia|cear[aá]|goi[aá]s|mato grosso|pará)\\b",
-        "\\b(outro estado|outros estados|qualquer estado|todo.*brasil|brasil todo)\\b",
+        "\\b(outro estado|outros estados|qualquer estado)\\b",
         "\\bfora d[eo] bel[eé]m\\b",
         "\\bfora d[eo] par[aá]\\b",
         "\\b(entregam|enviam|mandam)\\b",
-        "\\bentregam\\b.*\\b(s[aã]o paulo|rio|brasil|estado|interior)\\b",
         "\\b(entregam|enviam|mandam)\\b.*\\b(fora|outro|outros)\\b"
       ],
       "response": {
