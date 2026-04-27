@@ -326,9 +326,9 @@
       "id": "bordado_prazo",
       "priority": 10,
       "patterns": [
-        "^(?!.*\\b(custa|pre[cç]o|valor|programa[cç][aã]o|quanto fica|quanto sai|quanto custa)\\b).*\\bbordad",
+        "^(?!.*\\b(custa|pre[cç]o|valor|programa[cç][aã]o|quanto fica|quanto sai|quanto custa|arquivo|formato|AI|CDR|PDF|PNG|primeira vez)\\b).*\\bbordad",
         "\\bprazo\\b.*\\bborda",
-        "^(?!.*\\b(custa|pre[cç]o|valor|programa[cç][aã]o|quanto fica|quanto sai)\\b).*\\bbordao\\b",
+        "^(?!.*\\b(custa|pre[cç]o|valor|programa[cç][aã]o|quanto fica|quanto sai|arquivo|formato|primeira vez)\\b).*\\bbordao\\b",
         "\\b(personaliza[çc][aã]o|personalizar|personalizad[oa])\\b",
         "\\b(prazo|demora|tempo)\\b.{0,20}\\bbordad[oa]\\b",
         "\\bbordad[oa]\\b.{0,20}\\b(prazo|demora|tempo|dia)\\b",
