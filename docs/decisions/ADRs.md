@@ -65,3 +65,30 @@ Custo de indexação inicial do catálogo: < R$ 0,01.
 - Bot funciona sem a chave (degradação graciosa — apenas Camadas 1 e 2)
 - Extensão `vector` deve estar habilitada no PostgreSQL
 - Reavaliar migração para Qdrant quando catálogo passar de 5.000 chunks
+
+---
+
+## ADR-003: Substituição de RAG (pgvector) por Contexto Longo
+
+**Data:** 2026-04-24
+**Status:** Aceito
+**Contexto:** Sprint 08 mostrou RAG com 0.0% accuracy. Catálogo tem ~38 chunks (~6.000 tokens).
+
+### Problema com RAG para catálogos pequenos
+- Chunking fragmenta o contexto — LLM vê pedaços, não o todo
+- Threshold de similaridade difícil de calibrar para domínio específico
+- Pipeline complexo (embedding → pgvector → chunks → geração) sem ganho real
+- Custo adicional: OpenAI API para embeddings
+
+### Decisão
+Substituir pgvector + embeddings por injeção direta do catálogo completo
+no contexto do LLM quando a pergunta for técnica e as Camadas 1 e 2
+não resolverem com alta confiança.
+
+### Quando reverter para RAG
+Quando o catálogo crescer além de ~200 produtos (>50.000 tokens) e o
+custo de contexto por query se tornar inviável. O ADR-002 permanece
+válido para essa escala futura.
+
+### Referência
+Artigo: "RAG Está Morto?" — AkitaOnRails.com (2026-04-06)
