@@ -154,7 +154,7 @@
       ],
       "response": {
         "type": "text",
-        "body": "💳 *Formas de pagamento Camisart:*\n\n• PIX (desconto à vista)\n• Cartão de débito e crédito\n• Boleto bancário\n• Transferência\n\nPara pedidos grandes, consulte condições especiais! 😊"
+        "body": "💳 *Formas de pagamento Camisart:*\n\n• PIX (condições especiais à vista — consultar)\n• Cartão de débito\n• Cartão de crédito com parcelamento (conforme operadora)\n• Boleto bancário\n• Transferência\n\nPara pedidos grandes, consulte condições especiais! 😊"
       },
       "follow_up_state": "menu"
     },

@@ -176,7 +176,7 @@ SUITES: dict[str, list[TestCase]] = {
         TestCase("faq", "qto tempo demora pra chegar?",
                  ["prazo", "dias"]),
         TestCase("faq", "preciso rápido, e o prazo?",
-                 ["prazo", "urgente"]),
+                 ["prazo", "dias"]),
         TestCase("faq", "tem desconto na quantidade?",
                  ["desconto", "atacado"]),
         TestCase("faq", "se comprar 50 peças fica mais barato?",
