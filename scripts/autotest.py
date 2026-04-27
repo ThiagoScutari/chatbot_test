@@ -510,7 +510,25 @@ def print_result(r: AutoTestResult) -> None:
 # ── HTML report (reaproveitado do telegram_autotest.py) ───────────────────────
 
 
-def render_html(results: list[AutoTestResult], generated_at: datetime) -> str:
+CHART_JS_CDN_URL = "https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"
+
+
+def fetch_chartjs() -> str | None:
+    """Baixa Chart.js para embutir no HTML standalone. None se falhar."""
+    import urllib.request
+    try:
+        with urllib.request.urlopen(CHART_JS_CDN_URL, timeout=15) as resp:
+            return resp.read().decode("utf-8")
+    except Exception as e:  # noqa: BLE001
+        print(f"Aviso: não foi possível baixar Chart.js ({e})")
+        return None
+
+
+def render_html(
+    results: list[AutoTestResult],
+    generated_at: datetime,
+    chartjs_js: str | None = None,
+) -> str:
     total = len(results)
     passed = sum(1 for r in results if r.passed)
     failed = total - passed
@@ -578,12 +596,17 @@ def render_html(results: list[AutoTestResult], generated_at: datetime) -> str:
         }
     )
 
+    chartjs_tag = (
+        f"<script>{chartjs_js}</script>"
+        if chartjs_js
+        else f'<script src="{CHART_JS_CDN_URL}"></script>'
+    )
     return f"""<!doctype html>
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
 <title>Camisart AI — Autotest {generated_at:%Y-%m-%d %H:%M}</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{chartjs_tag}
 <style>
   body {{ font-family: -apple-system, system-ui, "Segoe UI", sans-serif; max-width: 1200px; margin: 24px auto; padding: 0 16px; color: #1a202c; }}
   h1 {{ margin-bottom: 4px; }}
@@ -664,12 +687,23 @@ def render_html(results: list[AutoTestResult], generated_at: datetime) -> str:
 """
 
 
-def export_html(results: list[AutoTestResult]) -> Path:
+def export_html(
+    results: list[AutoTestResult],
+    standalone: bool = False,
+) -> Path:
     out_dir = Path("docs/evaluation/reports")
     out_dir.mkdir(parents=True, exist_ok=True)
     now = datetime.now()
-    out = out_dir / f"{now:%Y-%m-%d}_autotest.html"
-    out.write_text(render_html(results, now), encoding="utf-8")
+    chartjs_js = None
+    if standalone:
+        print("Modo standalone: embutindo Chart.js no HTML...")
+        chartjs_js = fetch_chartjs()
+        out = out_dir / f"{now:%Y-%m-%d}_autotest_standalone.html"
+    else:
+        out = out_dir / f"{now:%Y-%m-%d}_autotest.html"
+    out.write_text(
+        render_html(results, now, chartjs_js=chartjs_js), encoding="utf-8"
+    )
     return out
 
 
@@ -695,6 +729,10 @@ def parse_args() -> argparse.Namespace:
     p.add_argument(
         "--export", action="store_true",
         help="Gera relatório HTML em docs/evaluation/reports/.",
+    )
+    p.add_argument(
+        "--standalone", action="store_true",
+        help="Embute Chart.js no HTML — funciona sem internet.",
     )
     return p.parse_args()
 
@@ -771,7 +809,7 @@ async def amain() -> int:
     print_summary(all_results)
 
     if args.export:
-        path = export_html(all_results)
+        path = export_html(all_results, standalone=args.standalone)
         print(f"\nRelatório HTML: {path}")
 
     failed = sum(1 for r in all_results if not r.passed)
