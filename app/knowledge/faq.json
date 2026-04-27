@@ -15,6 +15,27 @@
       "follow_up_state": "aguarda_nome"
     },
     {
+      "id": "orcamento_trigger",
+      "priority": 16,
+      "patterns": [
+        "\\bor[çc]amento\\b",
+        "\\bcotar\\b",
+        "\\bcota[çc][ãa]o\\b",
+        "\\bquero (fazer|solicitar|pedir)\\b.{0,20}\\bpedido\\b",
+        "\\bfazer (um |uma )?pedido\\b",
+        "\\bpreciso (de )?(um |uma )?uniformes?\\b",
+        "\\bquero (comprar|encomendar|pedir)\\b.{0,20}\\b(jalecos?|polos?|camisetas?|uniformes?|bon[ée]s?)\\b",
+        "\\b(encomendar|encomenda)\\b",
+        "\\bmontar (um |uma )?kit\\b",
+        "\\bpreciso (de )?(un|uns|uma|umas) (jalecos?|polos?|camisetas?|uniformes?)\\b"
+      ],
+      "response": {
+        "type": "text",
+        "body": "Ótimo! Vou te ajudar com o orçamento. 📋\n\nPara qual segmento é o uniforme?\n\n1. Corporativo\n2. Saúde\n3. Indústria\n4. Doméstica\n5. Outro"
+      },
+      "follow_up_state": "coleta_orcamento_segmento"
+    },
+    {
       "id": "pos_venda",
       "priority": 12,
       "patterns": [
