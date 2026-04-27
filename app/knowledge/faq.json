@@ -162,11 +162,11 @@
       "priority": 8,
       "patterns": [
         "\\bprazo\\b",
-        "\\b(demora|quanto\\s+tempo|quando\\s+fica|dias\\s+para|entrega\\s+em|fica\\s+pronto|dias\\s+fica)\\b.{0,30}\\b(produ[çc][ãa]o|entrega|chegar|fica|pronto)\\b",
-        "\\b(produ[çc][ãa]o|entrega|chegar)\\b.{0,30}\\b(demora|quanto\\s+tempo|quando\\s+fica|dias)\\b",
+        "\\b(demora|quanto\\s+tempo|quando\\s+fica|dias\\s+para|entrega\\s+em|fica\\s+pronto|dias\\s+fica)\\b",
+        "\\b(urgente|r[áa]pido|preciso\\s+para\\s+amanh[ãa]|preciso\\s+logo)\\b",
         "\\btempo\\s+de\\s+produ[çc][ãa]o\\b",
-        "\\bsemana\\s+que\\s+vem\\b",
-        "\\bdias\\s+[úu]teis\\b"
+        "\\bpreciso\\s+(pra|para)\\b.*\\b(semana|amanh|hoje|urgente|logo)",
+        "\\bsemana\\s+que\\s+vem\\b"
       ],
       "response": {
         "type": "buttons",
