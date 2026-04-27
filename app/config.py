@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     ADMIN_TOKEN: str = "dev-admin-token-32-chars-minimum-"
     TELEGRAM_BOT_TOKEN: str = ""
     TELEGRAM_WEBHOOK_SECRET: str = ""
+    TELEGRAM_CHAT_ID: str = ""
     FAQ_JSON_PATH: Path = Path("app/knowledge/faq.json")
     CAMPAIGNS_JSON_PATH: Path = Path("app/knowledge/campaigns.json")
     ANTHROPIC_API_KEY: str = ""
