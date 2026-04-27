@@ -78,9 +78,10 @@ def test_aguarda_nome_salva_e_vai_para_menu(faq_engine, campaign_engine):
     assert r.response.type == "buttons"
 
 
-def test_menu_alias_numerico_1_vai_para_aguarda_pedido(faq_engine, campaign_engine):
+def test_menu_alias_numerico_1_inicia_orcamento(faq_engine, campaign_engine):
+    # [fix-Q4] menu reordenado: 1=orçamento, 2=catálogo, 3=pedido, 4=humano
     r = handle("1", _sess(MENU), faq_engine, campaign_engine)
-    assert r.next_state == AGUARDA_PEDIDO
+    assert r.next_state == "coleta_orcamento_segmento"
 
 
 def test_menu_alias_numerico_2_dispara_catalogo(faq_engine, campaign_engine):
@@ -89,8 +90,13 @@ def test_menu_alias_numerico_2_dispara_catalogo(faq_engine, campaign_engine):
     assert r.action == "send_catalog"
 
 
-def test_menu_alias_numerico_3_encaminha_humano(faq_engine, campaign_engine):
+def test_menu_alias_numerico_3_vai_para_aguarda_pedido(faq_engine, campaign_engine):
     r = handle("3", _sess(MENU), faq_engine, campaign_engine)
+    assert r.next_state == AGUARDA_PEDIDO
+
+
+def test_menu_alias_numerico_4_encaminha_humano(faq_engine, campaign_engine):
+    r = handle("4", _sess(MENU), faq_engine, campaign_engine)
     assert r.next_state == ENCAMINHAR_HUMANO
     assert r.action == "forward_to_human"
 
@@ -138,9 +144,10 @@ def test_menu_consultar_pedido(faq):
 
 
 def test_menu_numeral_1(faq):
+    # [fix-Q4] 1 agora inicia orçamento
     s = make_session("menu", nome="Maria")
     r = handle("1", s, faq)
-    assert r.next_state == "aguarda_pedido"
+    assert r.next_state == "coleta_orcamento_segmento"
 
 
 # 4. MENU → catálogo
@@ -165,8 +172,15 @@ def test_menu_humano(faq):
 
 
 def test_menu_numeral_3(faq):
+    # [fix-Q4] 3 agora vai para consultar pedido
     s = make_session("menu", nome="Maria")
     r = handle("3", s, faq)
+    assert r.next_state == "aguarda_pedido"
+
+
+def test_menu_numeral_4(faq):
+    s = make_session("menu", nome="Maria")
+    r = handle("4", s, faq)
     assert r.action == "forward_to_human"
 
 

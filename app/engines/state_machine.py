@@ -364,8 +364,9 @@ def handle(
                     f"Prazer, *{texto}*! Como posso te ajudar?"
                 ),
                 buttons=[  # type: ignore[arg-type]
-                    {"id": "consultar_pedido", "title": "📦 Meu pedido"},
+                    {"id": "orcamento", "title": "💰 Fazer orçamento"},
                     {"id": "ver_catalogo", "title": "👕 Ver catálogo"},
+                    {"id": "consultar_pedido", "title": "📦 Meu pedido"},
                     {"id": "falar_humano", "title": "🧑 Falar atendente"},
                 ],
             ),
@@ -393,12 +394,18 @@ def handle(
         # quanto o número da posição (1/2/3) para canais que renderizam como
         # lista numerada (Telegram) ou para clientes que digitam livre.
         menu_alias = {
-            "1": "consultar_pedido",
+            "1": "orcamento",
             "2": "ver_catalogo",
-            "3": "falar_humano",
+            "3": "consultar_pedido",
+            "4": "falar_humano",
         }
         acao_id = menu_alias.get(texto, texto)
 
+        if acao_id == "orcamento":
+            return HandleResult(
+                response=_segmento_list(),
+                next_state=COLETA_ORCAMENTO_SEGMENTO,
+            )
         if acao_id == "consultar_pedido":
             return HandleResult(
                 response=_text(
