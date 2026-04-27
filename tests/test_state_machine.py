@@ -335,9 +335,11 @@ def test_personalizacao_valida_avanca_para_prazo(faq):
             "orcamento_quantidade": 50,
         },
     )
-    r = handle("bordado", s, faq)
+    # [fix-Q3] bordado vai para coleta_bordado_info antes; serigrafia/sem
+    # personalização vão direto para prazo. Usamos serigrafia aqui.
+    r = handle("serigrafia", s, faq)
     assert r.next_state == "coleta_orcamento_prazo"
-    assert s.session_data["orcamento_personalizacao"] == "bordado"
+    assert s.session_data["orcamento_personalizacao"] == "serigrafia"
 
 
 def test_prazo_valido_vai_para_confirmacao(faq):
@@ -417,7 +419,8 @@ def test_personalizacao_bordado_livre(faq):
         },
     )
     r = handle("Bordado", s, faq)
-    assert r.next_state == "coleta_orcamento_prazo"
+    # [fix-Q3] bordado agora vai para coleta_bordado_info antes do prazo
+    assert r.next_state == "coleta_bordado_info"
     assert s.session_data.get("orcamento_personalizacao") == "bordado"
 
 

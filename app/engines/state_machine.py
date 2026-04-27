@@ -100,6 +100,7 @@ COLETA_ORCAMENTO_SEGMENTO = "coleta_orcamento_segmento"
 COLETA_ORCAMENTO_PRODUTO = "coleta_orcamento_produto"
 COLETA_ORCAMENTO_QTD = "coleta_orcamento_qtd"
 COLETA_ORCAMENTO_PERSONALIZACAO = "coleta_orcamento_personalizacao"
+COLETA_BORDADO_INFO = "coleta_bordado_info"
 COLETA_ORCAMENTO_PRAZO = "coleta_orcamento_prazo"
 CONFIRMACAO_ORCAMENTO = "confirmacao_orcamento"
 LEAD_CAPTURADO = "lead_capturado"
@@ -118,6 +119,7 @@ KNOWN_STATES = {
     COLETA_ORCAMENTO_PRODUTO,
     COLETA_ORCAMENTO_QTD,
     COLETA_ORCAMENTO_PERSONALIZACAO,
+    COLETA_BORDADO_INFO,
     COLETA_ORCAMENTO_PRAZO,
     CONFIRMACAO_ORCAMENTO,
     LEAD_CAPTURADO,
@@ -252,12 +254,25 @@ def _orcamento_resumo(session: SessionModel) -> FAQResponse:
     quantidade = data.get("orcamento_quantidade", "?")
     personalizacao = data.get("orcamento_personalizacao", "?")
     prazo = data.get("orcamento_prazo", "?")
+    arte_label_map = {
+        "tem_arte": "Arte disponível",
+        "precisa_criar": "Precisa criar a arte",
+        "nao_sabe": "A confirmar com consultor",
+    }
+    bordado_arte = data.get("bordado_arte")
+    arte_line = ""
+    if bordado_arte:
+        arte_line = (
+            f"• Arte para bordado: "
+            f"{arte_label_map.get(bordado_arte, bordado_arte)}\n"
+        )
     body = (
         "📋 *Resumo do seu orçamento:*\n\n"
         f"• Segmento: {segmento}\n"
         f"• Produto: {produto}\n"
         f"• Quantidade: {quantidade} peças\n"
         f"• Personalização: {personalizacao}\n"
+        f"{arte_line}"
         f"• Prazo: {prazo}\n\n"
         "Está correto?"
     )
@@ -538,10 +553,84 @@ def handle(
                 next_state=COLETA_ORCAMENTO_PERSONALIZACAO,
             )
         session.session_data["orcamento_personalizacao"] = personalizacao
+        # [fix-Q3] Quando bordado: coleta info de arte antes de pedir prazo
+        if personalizacao == "bordado":
+            return HandleResult(
+                response=_text(
+                    "🧵 *Bordado Camisart:*\n"
+                    "• A partir de 1 peça — sem pedido mínimo\n"
+                    "• Prazo: 5 a 7 dias úteis\n"
+                    "• Programação da arte: R$ 60 a R$ 80 (cobrado 1x)\n"
+                    "• Por peça (7 a 9 cm): R$ 4,50/bordado\n\n"
+                    "Você já tem a arte/logo pronta?\n\n"
+                    "1. ✅ Sim, tenho o arquivo\n"
+                    "2. 🎨 Preciso criar a arte\n"
+                    "3. ❌ Ainda não sei"
+                ),
+                next_state=COLETA_BORDADO_INFO,
+            )
         return HandleResult(
             response=_text(
                 "Quando você precisa? (ex: 15 dias, urgente, sem pressa)"
             ),
+            next_state=COLETA_ORCAMENTO_PRAZO,
+        )
+
+    if estado_atual == COLETA_BORDADO_INFO:
+        arte_map = {
+            "1": "tem_arte",
+            "sim": "tem_arte",
+            "tenho": "tem_arte",
+            "tenho o arquivo": "tem_arte",
+            "tenho a arte": "tem_arte",
+            "✅": "tem_arte",
+            "2": "precisa_criar",
+            "nao tenho": "precisa_criar",
+            "não tenho": "precisa_criar",
+            "preciso criar": "precisa_criar",
+            "criar": "precisa_criar",
+            "🎨": "precisa_criar",
+            "3": "nao_sabe",
+            "nao sei": "nao_sabe",
+            "não sei": "nao_sabe",
+            "ainda nao sei": "nao_sabe",
+            "❌": "nao_sabe",
+        }
+        texto_norm = _norm(texto)
+        arte = arte_map.get(texto_norm)
+        if arte is None:
+            for key, val in arte_map.items():
+                if len(key) >= 3 and _norm(key) in texto_norm:
+                    arte = val
+                    break
+        if arte is None:
+            arte = texto_norm if texto_norm else "nao_informado"
+        session.session_data["bordado_arte"] = arte
+
+        if arte == "tem_arte":
+            msg = (
+                "Ótimo! Envie a arte para nosso consultor "
+                "nos formatos: *AI, CDR, PDF vetorial ou PNG 300dpi*. 😊\n\n"
+                "Quando você precisa? (ex: 15 dias, urgente, sem pressa)"
+            )
+        elif arte == "precisa_criar":
+            msg = (
+                "Sem problema! Temos designer próprio para criar sua arte. 🎨\n"
+                "O consultor vai passar os detalhes e o valor.\n\n"
+                "Quando você precisa? (ex: 15 dias, urgente, sem pressa)"
+            )
+        elif arte == "nao_sabe":
+            msg = (
+                "Tudo bem! O consultor vai te ajudar com isso. 😊\n\n"
+                "Quando você precisa? (ex: 15 dias, urgente, sem pressa)"
+            )
+        else:
+            msg = (
+                "Anotado. O consultor vai esclarecer com você.\n\n"
+                "Quando você precisa? (ex: 15 dias, urgente, sem pressa)"
+            )
+        return HandleResult(
+            response=_text(msg),
             next_state=COLETA_ORCAMENTO_PRAZO,
         )
 
