@@ -247,10 +247,13 @@ class MessagePipeline:
         # ── Camada 3: ContextEngine ──────────────────────────────────────────
         # Só consulta ContextEngine se: (a) engine disponível, (b) mensagem parece
         # pergunta técnica de produto, (c) camadas anteriores não resolveram com
-        # confiança, (d) ainda não foi consultada na chamada prioritária [fix-C1].
+        # confiança, (d) ainda não foi consultada na chamada prioritária [fix-C1],
+        # (e) sessão em estado aberto (menu/inicio) — em estados de coleta o
+        # state_machine dirige a entrada [fix-F].
         if (
             self._context_engine
             and not context_already_tried
+            and llm_applicable_state
             and is_product_question(inbound.content)
             and not result_from_layer2_was_confident
         ):
