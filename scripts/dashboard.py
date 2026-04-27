@@ -254,6 +254,22 @@ def generate_dashboard(report: dict, output_path: Path) -> None:
     .chart-container {{ position: relative; width: 100%; }}
     canvas {{ width: 100% !important; }}
 
+    .chart-desc {{
+      margin-top: 16px;
+      padding: 14px 16px;
+      background: #f8fafc;
+      border-left: 3px solid #3b82f6;
+      border-radius: 0 8px 8px 0;
+      font-size: 13px;
+      line-height: 1.7;
+      color: #475569;
+    }}
+    .chart-desc p {{ margin-bottom: 8px; }}
+    .chart-desc p:last-child {{ margin-bottom: 0; }}
+    .chart-desc strong {{ color: #1e293b; }}
+    .chart-desc em {{ color: #3b82f6; font-style: normal;
+                       font-weight: 600; }}
+
     /* Tablet */
     @media (max-width: 1024px) {{
       .cards {{ grid-template-columns: repeat(3, 1fr); }}
@@ -275,6 +291,7 @@ def generate_dashboard(report: dict, output_path: Path) -> None:
       .exec-panel {{ padding: 16px; }}
       .exec-panel h2 {{ font-size: 16px; }}
       th, td {{ padding: 6px 8px; font-size: 12px; }}
+      .chart-desc {{ font-size: 12px; padding: 12px 14px; }}
     }}
 
     /* Small phone */
@@ -352,11 +369,44 @@ def generate_dashboard(report: dict, output_path: Path) -> None:
     <div class="chart-container" style="height:350px;">
       <canvas id="f1Chart"></canvas>
     </div>
+    <div class="chart-desc">
+      <p>
+        <strong>O que este gráfico mostra:</strong>
+        Para cada tipo de pergunta que o cliente pode fazer,
+        o quanto o bot está acertando — tanto em identificar
+        corretamente o assunto quanto em não deixar perguntas
+        sem resposta.
+      </p>
+      <p>
+        <strong>Como ler:</strong>
+        Barras mais longas e verdes = ótimo desempenho.
+        Barras curtas ou vermelhas = esse tipo de pergunta
+        precisa de ajuste.
+        Meta recomendada: acima de 80% em todos os itens.
+      </p>
+    </div>
   </div>
   <div class="panel">
     <h2>Precision vs Recall por Intencao</h2>
     <div class="chart-container" style="height:350px;">
       <canvas id="prChart"></canvas>
+    </div>
+    <div class="chart-desc">
+      <p>
+        <strong>O que este gráfico mostra:</strong>
+        Dois aspectos do desempenho do bot para cada
+        tipo de pergunta: se ele responde na hora certa
+        (Precisão) e se ele deixa alguma pergunta sem
+        resposta (Cobertura).
+      </p>
+      <p>
+        <strong>Como ler:</strong>
+        Pontos no canto superior direito = perfeito.
+        Pontos no centro ou canto inferior esquerdo =
+        precisa de atenção.
+        O ideal é que todos os pontos fiquem acima de 80%
+        nos dois eixos.
+      </p>
     </div>
   </div>
 </div>
@@ -378,6 +428,25 @@ def generate_dashboard(report: dict, output_path: Path) -> None:
     <h2>Acuracia por Dificuldade</h2>
     <div class="chart-container" style="height:350px;">
       <canvas id="diffChart"></canvas>
+    </div>
+    <div class="chart-desc">
+      <p>
+        <strong>O que este gráfico mostra:</strong>
+        O desempenho do bot de acordo com a complexidade
+        da pergunta do cliente.
+      </p>
+      <p>
+        <strong>Como ler:</strong>
+        <em>Fácil</em> — perguntas diretas como
+        "qual o preço da polo?" — o bot deve acertar quase
+        sempre.<br>
+        <em>Médio</em> — linguagem informal como
+        "mano, quanto fica a camisa?" — exige mais
+        inteligência do bot.<br>
+        <em>Difícil</em> — perguntas ambíguas ou complexas
+        como "qual camisa fica melhor pra minha equipe de
+        vendas?" — é normal ter um desempenho um pouco menor.
+      </p>
     </div>
   </div>
   <div class="panel">
