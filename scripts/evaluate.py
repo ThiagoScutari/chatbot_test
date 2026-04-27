@@ -76,9 +76,15 @@ def _predict_with_faq_only(message: str, faq_engine) -> tuple[str, str]:
 
 
 async def _predict_full(
-    message: str, faq_engine, llm_router, thresholds: dict
+    message: str,
+    faq_engine,
+    llm_router,
+    thresholds: dict,
+    context_engine=None,
 ) -> tuple[str, str]:
-    """Predição com Camada 1 + Camada 2. Retorna (intent_id, layer)."""
+    """Predição Camadas 1+2+3. Retorna (intent_id, layer)."""
+    from app.engines.rag_engine import is_product_question
+
     match = faq_engine.match(message)
     if match:
         return match.intent_id, "faq"
@@ -88,6 +94,12 @@ async def _predict_full(
         clf = await llm_router.classify_intent(message, {}, known)
         if clf.intent_id and clf.confidence >= thresholds.get("medium", 0.60):
             return clf.intent_id, "llm"
+
+    # Camada 3 — ContextEngine para perguntas técnicas
+    if context_engine and is_product_question(message):
+        ctx_result = await context_engine.answer(message)
+        if ctx_result.answer:
+            return "rag_response", "context"
 
     return "none", "none"
 
@@ -310,10 +322,12 @@ async def main():
     faq = FAQEngine(settings.FAQ_JSON_PATH, campaign_engine=campaign)
 
     llm_router = None
+    context_engine = None
     thresholds: dict[str, float] = {}
     if not args.no_llm and settings.ANTHROPIC_API_KEY:
         import anthropic
 
+        from app.engines.context_engine import ContextEngine
         from app.engines.llm_router import LLMRouter
 
         llm_config = json.loads(
@@ -329,6 +343,19 @@ async def main():
             f"Estimativa: ~{len(samples) * 2}s"
         )
 
+        ctx_client = anthropic.AsyncAnthropic(
+            api_key=settings.ANTHROPIC_API_KEY
+        )
+        context_engine = ContextEngine(
+            knowledge_base_path=settings.KNOWLEDGE_BASE_PATH,
+            products_path=Path("app/knowledge/products.json"),
+            anthropic_client=ctx_client,
+        )
+        print(
+            f"ContextEngine ativo "
+            f"(~{context_engine.estimated_tokens()} tokens)."
+        )
+
     results = []
     for i, sample in enumerate(samples, 1):
         if i % 20 == 0:
@@ -339,7 +366,11 @@ async def main():
             predicted, layer = _predict_with_faq_only(sample["message"], faq)
         else:
             predicted, layer = await _predict_full(
-                sample["message"], faq, llm_router, thresholds
+                sample["message"],
+                faq,
+                llm_router,
+                thresholds,
+                context_engine=context_engine,
             )
         latency = (time.perf_counter() - start) * 1000
 

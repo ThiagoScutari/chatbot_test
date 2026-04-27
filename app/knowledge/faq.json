@@ -76,7 +76,7 @@
       ],
       "response": {
         "type": "text",
-        "body": "Olá! A nossa *Polo em malha Piquet* custa:\n• *R$ 45,00* no varejo\n• *R$ 42,00* no atacado (12+ peças)\n\nFazemos bordado da sua logo sem pedido mínimo. Deseja um orçamento?"
+        "body": "👕 *Camisa Polo Camisart* tradicional em malha piquet\n\n• R$ 45,00 varejo · R$ 42,00 atacado (12+ peças)\n\nDisponível em manga curta e manga longa. Bordamos sua logo a partir de 1 peça! Deseja um orçamento?"
       },
       "follow_up_state": "menu"
     },
@@ -127,7 +127,7 @@
       ],
       "response": {
         "type": "buttons",
-        "body": "⏱️ *Prazos Camisart*\n\n• Sem bordado: *2-3 dias úteis*\n• Com bordado: *5 dias úteis*\n• Entrega nacional: +prazo dos Correios\n\nSeu pedido é:",
+        "body": "⏱️ *Prazos Camisart* (após aprovação da arte)\n\n• Peça lisa: pronta entrega (consultar disponibilidade em estoque)\n• Com bordado: 5 a 7 dias úteis\n• Com serigrafia: consultar\n• Boné personalizado: 10 a 15 dias úteis\n\n*Prazos não incluem envio pelos Correios.*\n\nSeu pedido é:",
         "buttons": [
           { "id": "prazo_normal",  "title": "🗓️ Prazo normal" },
           { "id": "prazo_urgente", "title": "⚡ É urgente" }

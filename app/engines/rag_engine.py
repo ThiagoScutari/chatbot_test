@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import uuid
 
 from pydantic import BaseModel
@@ -292,16 +293,50 @@ def _split_section(
     return sub_chunks
 
 
+_PRODUCT_QUESTION_KEYWORDS = [
+    "tecido", "material", "composição", "gramatura",
+    "aguenta", "resiste", "lavar", "lavagem",
+    "diferença", "melhor para", "indicado para",
+    "serve para", "funciona para", "como é",
+    "sublimação", "bordado funciona",
+    "qual tecido", "que tecido", "aceita sublimação",
+    "aceita bordado", "jaleco", "uniforme industrial",
+]
+
+# Padrões regex para perguntas técnicas ambíguas que substring não pega.
+# Cobrem comparação de produto, capacidade de produção, uso específico
+# e tipos de tecido. Adicionados em [fix-B] após gap medido em evaluate.py.
+_PRODUCT_QUESTION_PATTERNS = [
+    # GROUP 1 — Comparação/diferença de produto
+    r"\bdiferença\b.{0,30}\b(jaleco|polo|camisa|camiseta|tecido|modelo)\b",
+    r"\b(jaleco|polo|camisa|camiseta|tecido|modelo)\b.{0,30}\bdiferença\b",
+    r"\bmais (adequado|indicado|recomendado)\b",
+    r"\bmelhor (tecido|material|modelo|opção)\b",
+    r"\bcompatível\b.{0,30}\b(sublimação|bordado|serigrafia)\b",
+    # GROUP 2 — Experiência/capacidade de produção
+    r"\bvocês (têm|fazem|produzem|trabalham)\b",
+    r"\bfazem\b.{0,20}\b(avental|uniforme|jaleco|camiseta|polo|boné)\b",
+    r"\bexperiência\b.{0,30}\b(uniforme|jaleco|hospital|saúde|empresa)\b",
+    r"\batendem\b.{0,20}\b(hospital|clínica|escola|empresa|indústria)\b",
+    # GROUP 3 — Uso específico/ambiente
+    r"\b(hospital|cirúrg|clínica|laboratório)\b.{0,30}\b(jaleco|uniforme|tecido)\b",
+    r"\b(jaleco|uniforme|tecido)\b.{0,30}\b(hospital|cirúrg|clínica|laboratório)\b",
+    r"\blavagem\b.{0,20}\b(frequente|química|alvejante|hospital)\b",
+    r"\buso\b.{0,20}\b(industrial|hospitalar|escolar|corporativo)\b",
+    # GROUP 4 — Tipo de tecido/material
+    r"\bque tipo\b.{0,20}\b(tecido|material|malha|tecidos)\b",
+    r"\b(malha|piquet|gabardine|brim|oxford|pv|viscose)\b",
+    r"\bcomposição\b.{0,20}\b(tecido|malha|material)\b",
+]
+
+_PRODUCT_QUESTION_REGEX = [
+    re.compile(p, re.IGNORECASE) for p in _PRODUCT_QUESTION_PATTERNS
+]
+
+
 def is_product_question(text: str) -> bool:
     """Heurística: mensagem parece ser pergunta técnica sobre produto."""
-    keywords = [
-        "tecido", "material", "composição", "gramatura",
-        "aguenta", "resiste", "lavar", "lavagem",
-        "diferença", "melhor para", "indicado para",
-        "serve para", "funciona para", "como é",
-        "sublimação", "bordado funciona",
-        "qual tecido", "que tecido", "aceita sublimação",
-        "aceita bordado", "jaleco", "uniforme industrial",
-    ]
     text_lower = text.lower()
-    return any(kw in text_lower for kw in keywords)
+    if any(kw in text_lower for kw in _PRODUCT_QUESTION_KEYWORDS):
+        return True
+    return any(pat.search(text_lower) for pat in _PRODUCT_QUESTION_REGEX)

@@ -62,6 +62,8 @@ async def lifespan(app: FastAPI):
             products_path=_Path("app/knowledge/products.json"),
             anthropic_client=_context_client,
         )
+        context_engine.invalidate_cache()
+        logger.info("ContextEngine cache invalidado — knowledge base v3.")
         logger.info(
             "ContextEngine inicializado — ~%d tokens de contexto.",
             context_engine.estimated_tokens(),
