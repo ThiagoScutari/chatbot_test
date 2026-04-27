@@ -129,8 +129,46 @@ class MessagePipeline:
         # Flag tracking whether Camada 1 (FAQ) ou 2 (LLM medium+) resolveu.
         # Controla se Camada 3 (RAG) deve ser consultada depois.
         result_from_layer2_was_confident = False
+        context_already_tried = False
+        result: HandleResult | None = None
 
-        if (
+        # ── Camada 3 prioritária para perguntas técnicas [fix-C1] ───────────
+        # Quando is_product_question detecta pergunta técnica em estado aberto
+        # e sem FAQ match, consultamos o ContextEngine ANTES do LLM. Isso
+        # evita o LLM classificar perguntas como "qual a diferença do jaleco
+        # premium?" como preco_jaleco com confiança ≥0.70.
+        is_tech_question = (
+            self._context_engine is not None
+            and llm_applicable_state
+            and faq_match is None
+            and is_product_question(inbound.content)
+        )
+        if is_tech_question:
+            ctx_result = await self._context_engine.answer(
+                question=inbound.content,
+                session_context={
+                    "nome_cliente": session.nome_cliente,
+                    "current_state": session.current_state,
+                },
+            )
+            context_already_tried = True
+            if ctx_result.answer:
+                logger.info(
+                    "ContextEngine Camada 3 (prioritário): '%s'",
+                    inbound.content[:60],
+                )
+                result = HandleResult(
+                    response=FAQResponse(
+                        type="text", body=ctx_result.answer
+                    ),
+                    next_state=session.current_state or "menu",
+                    matched_intent_id="context_response",
+                )
+                result_from_layer2_was_confident = True
+
+        if result is not None:
+            pass
+        elif (
             faq_match is not None
             or not self._llm_router
             or not llm_applicable_state
@@ -209,9 +247,10 @@ class MessagePipeline:
         # ── Camada 3: ContextEngine ──────────────────────────────────────────
         # Só consulta ContextEngine se: (a) engine disponível, (b) mensagem parece
         # pergunta técnica de produto, (c) camadas anteriores não resolveram com
-        # confiança.
+        # confiança, (d) ainda não foi consultada na chamada prioritária [fix-C1].
         if (
             self._context_engine
+            and not context_already_tried
             and is_product_question(inbound.content)
             and not result_from_layer2_was_confident
         ):

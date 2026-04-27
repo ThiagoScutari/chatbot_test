@@ -82,24 +82,27 @@ async def _predict_full(
     thresholds: dict,
     context_engine=None,
 ) -> tuple[str, str]:
-    """Predição Camadas 1+2+3. Retorna (intent_id, layer)."""
+    """Predição Camadas 1+2+3 com Camada 3 prioritária para perguntas
+    técnicas [fix-C1]. Retorna (intent_id, layer)."""
     from app.engines.rag_engine import is_product_question
 
     match = faq_engine.match(message)
     if match:
         return match.intent_id, "faq"
 
+    # Camada 3 prioritária: pergunta técnica vai direto ao ContextEngine,
+    # antes do LLM. Reduz casos onde LLM classifica produto-pergunta como
+    # falar_humano/preco_jaleco com confiança ≥ medium.
+    if context_engine and is_product_question(message):
+        ctx_result = await context_engine.answer(message)
+        if ctx_result.answer:
+            return "rag_response", "context"
+
     if llm_router:
         known = faq_engine.intent_ids()
         clf = await llm_router.classify_intent(message, {}, known)
         if clf.intent_id and clf.confidence >= thresholds.get("medium", 0.60):
             return clf.intent_id, "llm"
-
-    # Camada 3 — ContextEngine para perguntas técnicas
-    if context_engine and is_product_question(message):
-        ctx_result = await context_engine.answer(message)
-        if ctx_result.answer:
-            return "rag_response", "context"
 
     return "none", "none"
 
