@@ -72,7 +72,10 @@
         "\\bcami[sz]a?\\s+polo\\b",
         "\\bpol[ou]\\b.*\\b(pre[çc][oa]|valor|quanto)\\b",
         "\\b(pre[çc][oa]|valor|quanto)\\b.*\\bpol[ou]\\b",
-        "\\bcami[zs][ai].*pol[ou]\\b"
+        "\\bcami[zs][ai].*pol[ou]\\b",
+        "\\bqto\\b.{0,20}\\b(polo|camisa|piquet)\\b",
+        "\\b(polo|camisa|piquet)\\b.{0,20}\\bqto\\b",
+        "\\b(valor|valo)\\b.{0,20}\\b(polo|camisa)\\b"
       ],
       "response": {
         "type": "text",
@@ -85,7 +88,11 @@
       "priority": 10,
       "patterns": [
         "\\b(pre[çc]o|valor|quanto)\\b.*\\bjalecos?\\b",
-        "\\bjalecos?\\b.*\\b(pre[çc]o|valor|quanto)\\b"
+        "\\bjalecos?\\b.*\\b(pre[çc]o|valor|quanto)\\b",
+        "\\bqto\\b.{0,20}\\bjaleco\\b",
+        "\\bjaleco\\b.{0,20}\\bqto\\b",
+        "\\bjaleco\\b.{0,20}\\b(ta|tá|tah)\\b",
+        "\\b(égua|eita|oxe|caramba)\\b.{0,40}\\bjaleco\\b"
       ],
       "response": {
         "type": "text",
@@ -147,7 +154,7 @@
       ],
       "response": {
         "type": "text",
-        "body": "💳 *Formas de pagamento Camisart:*\n\n• PIX (desconto à vista)\n• Cartão de débito e crédito\n• Boleto bancário\n• Transferência\n\nPara pedidos grandes, consulte condições especiais! 😊"
+        "body": "💳 *Formas de pagamento Camisart:*\n\n• PIX (condições especiais à vista — consultar)\n• Cartão de débito\n• Cartão de crédito com parcelamento (conforme operadora)\n• Boleto bancário\n• Transferência\n\nPara pedidos grandes, consulte condições especiais! 😊"
       },
       "follow_up_state": "menu"
     },
@@ -170,7 +177,14 @@
         "\\b(desconto|atacado|por\\s+atacado|lote|muitas\\s+pe[çc]as|grande\\s+quantidade)\\b",
         "\\bdesconto.*quantidade\\b",
         "\\bquantidade.*desconto\\b",
-        "\\bquanto\\s+fica\\s+\\d+\\s+pe[çc]as?\\b"
+        "\\bquanto\\s+fica\\s+\\d+\\s+pe[çc]as?\\b",
+        "\\b(comprar|compro|pedir)\\b.{0,30}\\b(pe[çc]as|unidades)\\b.{0,30}\\b(barato|desconto|pre[cç]o)\\b",
+        "\\b(barato|desconto)\\b.{0,30}\\b(quantidade|qtd|volume|pe[çc]as)\\b",
+        "\\b(volume|quantidade|qtd)\\b.{0,20}\\b(desconto|barato|pre[cç]o)\\b",
+        "\\b(50|100|200|500)\\b.{0,20}\\bpe[çc]as\\b",
+        "\\bpedido\\b.{0,20}\\b(recorrente|mensal|semanal)\\b",
+        "\\bgrande\\b.{0,15}\\bvolume\\b",
+        "\\bvolume\\b.{0,15}\\bgrande\\b"
       ],
       "response": {
         "type": "buttons",
@@ -263,7 +277,10 @@
       "patterns": [
         "\\b(endere[çc]o|onde|local|localiza\\w*|loja|f[íi]sica)\\b",
         "\\bcomo\\s+chegar\\b",
-        "\\bchegar\\s+(na|no|at[ée])\\b"
+        "\\bchegar\\s+(na|no|at[ée])\\b",
+        "\\bend\\b.{0,20}\\b(vcs|voc[êe]s|loja|camisart)\\b",
+        "\\b(vcs|voc[êe]s|loja)\\b.{0,20}\\bend\\b",
+        "\\bendere[çc]o\\b"
       ],
       "response": {
         "type": "text",
