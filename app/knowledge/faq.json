@@ -142,7 +142,12 @@
         "\\bavulso\\b",
         "\\bpe[çc]as?\\s+no\\s+m[íi]nim",
         "\\bd[aá]\\s+pra\\s+comprar\\b.*\\b(1|uma|s[oó])\\b",
-        "\\bm[íi]nimo\\s+de\\s+pe[çc]a"
+        "\\bm[íi]nimo\\s+de\\s+pe[çc]a",
+        "\\b(consigo|posso)\\b.{0,20}\\b(comprar|pedir)\\b.{0,15}\\b(s[oó]|somente|apenas)\\b",
+        "\\b(s[oó]|somente|apenas)\\b.{0,10}\\b(\\d+|uma|duas|tr[êe]s)\\b.{0,10}\\bpe[çc]as?\\b",
+        "\\bcomprar\\b.{0,15}\\b(\\d+|poucas|algumas)\\b.{0,10}\\bpe[çc]as?\\b",
+        "\\bequipe\\b.{0,20}\\b(pequena|de \\d+)\\b",
+        "\\b(\\d+)\\b.{0,10}\\bfuncion[áa]rios?\\b"
       ],
       "response": {
         "type": "text",
