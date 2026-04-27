@@ -14,6 +14,7 @@ pytest-cov>=4.1
 ruff>=0.4
 anthropic>=0.40
 pgvector>=0.3
-openai>=1.0
+# openai>=1.0  # Removido Sprint 09 — RAG substituído por contexto longo (ADR-003)
+#              # Reabilitar quando catálogo > 200 produtos (ver ADR-002 e ADR-003)
 scikit-learn>=1.4
 matplotlib>=3.8
