@@ -28,10 +28,8 @@
         "\\b(encomendar|encomenda)\\b",
         "\\bmontar (um |uma )?kit\\b",
         "\\bpreciso (de )?(un|uns|uma|umas) (jalecos?|polos?|camisetas?|uniformes?)\\b",
-        "\\buniformes?\\b.{0,20}\\b(corporativo|empresa|equipe|time|padaria|restaurante|escola)\\b",
-        "\\b(padaria|restaurante|escola|empresa|cl[íi]nica)\\b.{0,20}\\buniformes?\\b",
-        "\\bfaz\\b.{0,20}\\b(uniformes?|jalecos?|camisetas?|polos?)\\b",
-        "\\bfazem\\b.{0,20}\\b(uniformes?|jalecos?|camisetas?|polos?)\\b"
+        "\\bquero\\b.{0,20}\\buniformes?\\b.{0,20}\\b(corporativo|empresa|equipe|time)\\b",
+        "\\bbora\\b.{0,20}\\b(fazer|cotar|pedir|encomendar)\\b"
       ],
       "response": {
         "type": "text",
@@ -144,7 +142,12 @@
         "\\bavulso\\b",
         "\\bpe[çc]as?\\s+no\\s+m[íi]nim",
         "\\bd[aá]\\s+pra\\s+comprar\\b.*\\b(1|uma|s[oó])\\b",
-        "\\bm[íi]nimo\\s+de\\s+pe[çc]a"
+        "\\bm[íi]nimo\\s+de\\s+pe[çc]a",
+        "\\b(consigo|posso)\\b.{0,20}\\b(comprar|pedir)\\b.{0,15}\\b(s[oó]|somente|apenas)\\b",
+        "\\b(s[oó]|somente|apenas)\\b.{0,10}\\b(\\d+|uma|duas|tr[êe]s)\\b.{0,10}\\bpe[çc]as?\\b",
+        "\\bcomprar\\b.{0,15}\\b(\\d+|poucas|algumas)\\b.{0,10}\\bpe[çc]as?\\b",
+        "\\bequipe\\b.{0,20}\\b(pequena|de \\d+)\\b",
+        "\\b(\\d+)\\b.{0,10}\\bfuncion[áa]rios?\\b"
       ],
       "response": {
         "type": "text",
@@ -252,8 +255,10 @@
       "id": "tamanhos_disponiveis",
       "priority": 6,
       "patterns": [
-        "\\b(tamanho|tamanhos|tam|n[úu]mero|talla|grade|gg|plus\\s+size|g[0-9]|xl)\\b",
-        "\\b(tem\\s+(P|M|G|GG)|serve\\s+em|numeros\\s+que)\\b"
+        "\\b(tamanho|tamanhos|tam|talla|grade|gg|plus\\s+size|g[0-9]|xl)\\b",
+        "\\b(tem\\s+(P|M|G|GG)|serve\\s+em|numeros\\s+que)\\b",
+        "\\bn[úu]mero\\b.{0,20}\\b(tamanho|camiseta|jaleco|polo|camisa|pe[çc]a|roupa|GG|XL)\\b",
+        "\\b(tamanho|medida)\\b.{0,15}\\bn[úu]mero\\b"
       ],
       "response": {
         "type": "buttons",
@@ -270,7 +275,10 @@
       "id": "contato_whatsapp",
       "priority": 6,
       "patterns": [
-        "\\b(whatsapp|zap|n[uú]mero|contato|ligar|fone|telefone)\\b"
+        "\\b(whatsapp|zap|contato|ligar|fone|telefone)\\b",
+        "\\bqual (o |o seu )?n[uú]mero\\b(?!.{0,20}\\b(tamanho|pe[çc]a|camiseta|jaleco|polo|camisa|GG|XL|G[0-9])\\b)",
+        "\\b(me passa|passa|fala)\\b.{0,15}\\bn[uú]mero\\b",
+        "\\bn[uú]mero\\b.{0,15}\\b(telefone|celular|whatsapp|contato|zap)\\b"
       ],
       "response": {
         "type": "text",
@@ -326,9 +334,9 @@
       "id": "bordado_prazo",
       "priority": 10,
       "patterns": [
-        "^(?!.*\\b(custa|pre[cç]o|valor|programa[cç][aã]o|quanto fica|quanto sai|quanto custa|arquivo|formato|AI|CDR|PDF|PNG|primeira vez)\\b).*\\bbordad",
+        "^(?!.*\\b(custa|pre[cç]o|valor|programa[cç][aã]o|quanto fica|quanto sai|quanto custa|arquivo|formato|AI|CDR|PDF|PNG|primeira vez|lavagem|alvejante|dur[áa]vel|resistente|aguenta|aguentar|descasca|descascar|desbota|desbotar|qualidade)\\b).*\\bbordad",
         "\\bprazo\\b.*\\bborda",
-        "^(?!.*\\b(custa|pre[cç]o|valor|programa[cç][aã]o|quanto fica|quanto sai|arquivo|formato|primeira vez)\\b).*\\bbordao\\b",
+        "^(?!.*\\b(custa|pre[cç]o|valor|programa[cç][aã]o|quanto fica|quanto sai|arquivo|formato|primeira vez|lavagem|alvejante|dur[áa]vel|resistente|aguenta|descasca|desbota|qualidade)\\b).*\\bbordao\\b",
         "\\b(personaliza[çc][aã]o|personalizar|personalizad[oa])\\b",
         "\\b(prazo|demora|tempo)\\b.{0,20}\\bbordad[oa]\\b",
         "\\bbordad[oa]\\b.{0,20}\\b(prazo|demora|tempo|dia)\\b",
@@ -357,7 +365,9 @@
       "id": "segmento_negocio",
       "priority": 4,
       "patterns": [
-        "\\b(restaurante|bar|hotel|escola|creche|cl[íi]nica|sal[ãa]o|empresa|com[ée]rcio|food.?truck|delivery|pizzaria|hamburgueria)\\b"
+        "\\b(restaurante|bar|hotel|escola|creche|cl[íi]nica|sal[ãa]o|empresa|com[ée]rcio|food.?truck|delivery|pizzaria|hamburgueria|padaria)\\b",
+        "\\b(fazem|faz|atendem|atende)\\b.{0,30}\\b(restaurante|padaria|escola|hospital|cl[íi]nica|academia|loja|condom[íi]nio)\\b",
+        "\\bvoc[êe]s\\b.{0,20}\\b(fazem|tem|t[êe]m|atendem)\\b.{0,20}\\buniformes?\\b"
       ],
       "response": {
         "type": "text",

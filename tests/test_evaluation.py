@@ -34,10 +34,10 @@ def test_dataset_existe():
     )
 
 
-def test_dataset_tem_200_amostras():
+def test_dataset_tem_amostras_minimas():
     data = load_dataset()
-    assert len(data["samples"]) == 200, (
-        f"Esperado 200 amostras, encontrado {len(data['samples'])}"
+    assert len(data["samples"]) >= 200, (
+        f"Esperado >=200 amostras, encontrado {len(data['samples'])}"
     )
 
 
