@@ -56,6 +56,7 @@ class FAQIntent(BaseModel):
         "aguarda_orcamento",
         "aguarda_nome",
         "encaminhar_humano",
+        "coleta_orcamento_segmento",
     ] | None = None
 
 
