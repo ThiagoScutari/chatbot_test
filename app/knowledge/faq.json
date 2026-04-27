@@ -255,8 +255,10 @@
       "id": "tamanhos_disponiveis",
       "priority": 6,
       "patterns": [
-        "\\b(tamanho|tamanhos|tam|n[úu]mero|talla|grade|gg|plus\\s+size|g[0-9]|xl)\\b",
-        "\\b(tem\\s+(P|M|G|GG)|serve\\s+em|numeros\\s+que)\\b"
+        "\\b(tamanho|tamanhos|tam|talla|grade|gg|plus\\s+size|g[0-9]|xl)\\b",
+        "\\b(tem\\s+(P|M|G|GG)|serve\\s+em|numeros\\s+que)\\b",
+        "\\bn[úu]mero\\b.{0,20}\\b(tamanho|camiseta|jaleco|polo|camisa|pe[çc]a|roupa|GG|XL)\\b",
+        "\\b(tamanho|medida)\\b.{0,15}\\bn[úu]mero\\b"
       ],
       "response": {
         "type": "buttons",
@@ -273,7 +275,10 @@
       "id": "contato_whatsapp",
       "priority": 6,
       "patterns": [
-        "\\b(whatsapp|zap|n[uú]mero|contato|ligar|fone|telefone)\\b"
+        "\\b(whatsapp|zap|contato|ligar|fone|telefone)\\b",
+        "\\bqual (o |o seu )?n[uú]mero\\b(?!.{0,20}\\b(tamanho|pe[çc]a|camiseta|jaleco|polo|camisa|GG|XL|G[0-9])\\b)",
+        "\\b(me passa|passa|fala)\\b.{0,15}\\bn[uú]mero\\b",
+        "\\bn[uú]mero\\b.{0,15}\\b(telefone|celular|whatsapp|contato|zap)\\b"
       ],
       "response": {
         "type": "text",
