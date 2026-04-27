@@ -28,10 +28,8 @@
         "\\b(encomendar|encomenda)\\b",
         "\\bmontar (um |uma )?kit\\b",
         "\\bpreciso (de )?(un|uns|uma|umas) (jalecos?|polos?|camisetas?|uniformes?)\\b",
-        "\\buniformes?\\b.{0,20}\\b(corporativo|empresa|equipe|time|padaria|restaurante|escola)\\b",
-        "\\b(padaria|restaurante|escola|empresa|cl[íi]nica)\\b.{0,20}\\buniformes?\\b",
-        "\\bfaz\\b.{0,20}\\b(uniformes?|jalecos?|camisetas?|polos?)\\b",
-        "\\bfazem\\b.{0,20}\\b(uniformes?|jalecos?|camisetas?|polos?)\\b"
+        "\\bquero\\b.{0,20}\\buniformes?\\b.{0,20}\\b(corporativo|empresa|equipe|time)\\b",
+        "\\bbora\\b.{0,20}\\b(fazer|cotar|pedir|encomendar)\\b"
       ],
       "response": {
         "type": "text",
@@ -357,7 +355,9 @@
       "id": "segmento_negocio",
       "priority": 4,
       "patterns": [
-        "\\b(restaurante|bar|hotel|escola|creche|cl[íi]nica|sal[ãa]o|empresa|com[ée]rcio|food.?truck|delivery|pizzaria|hamburgueria)\\b"
+        "\\b(restaurante|bar|hotel|escola|creche|cl[íi]nica|sal[ãa]o|empresa|com[ée]rcio|food.?truck|delivery|pizzaria|hamburgueria|padaria)\\b",
+        "\\b(fazem|faz|atendem|atende)\\b.{0,30}\\b(restaurante|padaria|escola|hospital|cl[íi]nica|academia|loja|condom[íi]nio)\\b",
+        "\\bvoc[êe]s\\b.{0,20}\\b(fazem|tem|t[êe]m|atendem)\\b.{0,20}\\buniformes?\\b"
       ],
       "response": {
         "type": "text",
