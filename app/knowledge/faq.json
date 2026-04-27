@@ -177,7 +177,14 @@
         "\\b(desconto|atacado|por\\s+atacado|lote|muitas\\s+pe[çc]as|grande\\s+quantidade)\\b",
         "\\bdesconto.*quantidade\\b",
         "\\bquantidade.*desconto\\b",
-        "\\bquanto\\s+fica\\s+\\d+\\s+pe[çc]as?\\b"
+        "\\bquanto\\s+fica\\s+\\d+\\s+pe[çc]as?\\b",
+        "\\b(comprar|compro|pedir)\\b.{0,30}\\b(pe[çc]as|unidades)\\b.{0,30}\\b(barato|desconto|pre[cç]o)\\b",
+        "\\b(barato|desconto)\\b.{0,30}\\b(quantidade|qtd|volume|pe[çc]as)\\b",
+        "\\b(volume|quantidade|qtd)\\b.{0,20}\\b(desconto|barato|pre[cç]o)\\b",
+        "\\b(50|100|200|500)\\b.{0,20}\\bpe[çc]as\\b",
+        "\\bpedido\\b.{0,20}\\b(recorrente|mensal|semanal)\\b",
+        "\\bgrande\\b.{0,15}\\bvolume\\b",
+        "\\bvolume\\b.{0,15}\\bgrande\\b"
       ],
       "response": {
         "type": "buttons",
