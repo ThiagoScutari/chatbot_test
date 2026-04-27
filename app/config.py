@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     LLM_CONFIG_PATH: Path = Path("app/knowledge/llm_config.json")
     OPENAI_API_KEY: str = ""
     KNOWLEDGE_BASE_PATH: Path = Path("app/knowledge/camisart_knowledge_base.md")
+    CONTEXT_CONFIG_PATH: Path = Path("app/knowledge/context_config.json")
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 
