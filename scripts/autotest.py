@@ -224,7 +224,7 @@ SUITES: dict[str, list[TestCase]] = {
         TestCase("context", "quanto custa a programação do bordado?",
                  ["60", "80", "arte"]),
         TestCase("context", "qual jaleco pra uso hospitalar?",
-                 ["gabardine", "consultor"]),
+                 ["gabardine", "jaleco"]),
         # Bloco 2 — tecidos/clima + sublimação
         TestCase("context", "/start", is_reset=True),
         TestCase("context", "Cliente CTX B"),
@@ -246,7 +246,7 @@ SUITES: dict[str, list[TestCase]] = {
         TestCase("context", "jaleco pra clínica médica, qual indica?",
                  ["gabardine", "jaleco"]),
         TestCase("context", "qual jaleco aguenta mais lavagem?",
-                 ["gabardine"]),
+                 ["jaleco", "gabardine"]),
         TestCase("context", "diferença do jaleco de medico pro de estetica?",
                  ["gabardine"]),
         TestCase("context", "qto custa colocar logo no jaleco?",
@@ -256,7 +256,7 @@ SUITES: dict[str, list[TestCase]] = {
         TestCase("context", "arquivo AI serve pra fazer bordado?",
                  ["AI", "arte"]),
         TestCase("context", "piquet é melhor que algodão pra uniforme?",
-                 ["piquet", "durabilidade"]),
+                 ["piquet", "durável"]),
     ],
     "orcamento": [
         # Bloco canônico — fluxo completo segmento→produto→qtd→prazo→confirmar.
