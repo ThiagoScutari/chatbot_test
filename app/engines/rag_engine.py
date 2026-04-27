@@ -340,6 +340,9 @@ _PRODUCT_QUESTION_PATTERNS = [
     r"\barquivo\b.{0,20}\b(bordado|arte|logo|ai|cdr|pdf|png)\b",
     r"\b(ai|cdr|pdf|png|vetorial)\b.{0,20}\b(bordado|arte|logo)\b",
     r"\bformato\b.{0,20}\b(bordado|arte|logo)\b",
+    # GROUP 8 — Durabilidade técnica de bordado [fix-K3]
+    r"\bbordado\b.{0,30}\b(lavagem|alvejante|dur[áa]vel|resistente|aguenta|descasca|desbota|qualidade)\b",
+    r"\b(lavagem|alvejante|dur[áa]vel|resistente)\b.{0,30}\bbordado\b",
 ]
 
 _PRODUCT_QUESTION_REGEX = [
