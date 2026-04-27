@@ -184,32 +184,44 @@ SUITES: dict[str, list[TestCase]] = {
                  ["atacado", "12"]),
     ],
     "llm": [
-        # Bloco 1
+        # Bloco A — queries que mantêm state=menu (FAQ matches sem
+        # follow_up_state alterando para coleta de orçamento) [fix-J].
         TestCase("llm", "/start", is_reset=True),
         TestCase("llm", "Cliente LLM A"),
         TestCase("llm", "quanto fica aquela camisa com gola?",
-                 ["polo", "piquet"]),
-        TestCase("llm", "quero uniforme pra minha empresa",
-                 ["uniforme", "orçamento"]),
+                 ["polo"]),
         TestCase("llm", "tô querendo uma camisa com gola pro meu pessoal",
                  ["polo"]),
-        TestCase("llm", "mano, que camisa fica bem pra equipe de vendas?",
-                 ["polo"]),
-        TestCase("llm", "égua, faz uniforme pra padaria não?",
-                 ["uniforme"]),
-        # Bloco 2
-        TestCase("llm", "/start", is_reset=True),
-        TestCase("llm", "Cliente LLM B"),
-        TestCase("llm", "bora fazer uns uniforme corporativo",
-                 ["uniforme"]),
         TestCase("llm", "qual roupa boa pra dentista?",
                  ["jaleco"]),
         TestCase("llm", "tô afim de personalizar umas peças pro meu time",
                  ["personaliz"]),
-        TestCase("llm", "quero algo profissional pra minha recepção",
-                 ["polo"]),
         TestCase("llm", "tem roupa pra academia?",
                  ["esport"]),
+        # Bloco B — queries que dependem de LLM real (em mock caem em
+        # fallback de menu — sem state change, mas teste falha em mock).
+        TestCase("llm", "/start", is_reset=True),
+        TestCase("llm", "Cliente LLM B"),
+        TestCase("llm", "mano, que camisa fica bem pra equipe de vendas?",
+                 ["polo"]),
+        TestCase("llm", "quero algo profissional pra minha recepção",
+                 ["polo"]),
+        # Bloco C — orcamento_trigger 1 (isolado: state vai para
+        # coleta_orcamento_segmento, contamina mensagens seguintes).
+        TestCase("llm", "/start", is_reset=True),
+        TestCase("llm", "Cliente LLM C"),
+        TestCase("llm", "quero uniforme pra minha empresa",
+                 ["uniforme"]),
+        # Bloco D — orcamento_trigger 2 (isolado).
+        TestCase("llm", "/start", is_reset=True),
+        TestCase("llm", "Cliente LLM D"),
+        TestCase("llm", "égua, faz uniforme pra padaria não?",
+                 ["uniforme"]),
+        # Bloco E — orcamento_trigger 3 (isolado).
+        TestCase("llm", "/start", is_reset=True),
+        TestCase("llm", "Cliente LLM E"),
+        TestCase("llm", "bora fazer uns uniforme corporativo",
+                 ["uniforme"]),
     ],
     "context": [
         # Bloco 1 — originais + tecidos/clima
