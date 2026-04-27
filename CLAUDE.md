@@ -163,6 +163,17 @@ Pydantic models used for documentation and type hints.
 Parsing happens in adapter.py which is tested.
 Direct schema tests would be redundant.
 
+### knowledge_chunks (Sprint 07 — inativa desde Sprint 09)
+A tabela knowledge_chunks existe no banco mas não é usada desde Sprint 09.
+O RAGEngine foi substituído pelo ContextEngine (ADR-003).
+NÃO fazer rollback — preservar para migração futura.
+Condição de migração de volta: catálogo > 200 produtos (~50.000 tokens).
+Ver: docs/decisions/ADRs.md — ADR-002 e ADR-003.
+
+### app/engines/rag_engine.py — mantido mas inativo
+O arquivo existe para referência histórica e para eventual migração futura.
+Os testes em test_rag_engine.py estão marcados como skip.
+
 ### tests/helpers/conversation_simulator.py — teste manual permanente C03
 C03 (session timeout de 2h) não tem cobertura automatizada por natureza —
 requer passagem real de tempo. É o único cenário do dogfooding que permanece

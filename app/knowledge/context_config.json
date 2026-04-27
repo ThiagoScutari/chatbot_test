@@ -1,0 +1,11 @@
+{
+  "_comment": "Configuração do ContextEngine — Camada 3 via contexto longo.",
+  "_decision": "ADR-003: substitui RAGEngine para catálogos < 50.000 tokens.",
+  "_migrate_when": "Catálogo > 200 produtos (~50k tokens) — ver ADR-002.",
+  "version": "1.0",
+  "model": "claude-haiku-4-5-20251001",
+  "max_tokens": 400,
+  "timeout_seconds": 10.0,
+  "estimated_context_tokens": 6000,
+  "max_context_tokens_before_migration": 50000
+}

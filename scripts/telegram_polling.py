@@ -73,9 +73,11 @@ async def main() -> None:
     # impacta a experiência. Habilitar apenas em produção via webhook FastAPI.
     import anthropic as _anthropic
     import json as _json
+    from app.engines.context_engine import ContextEngine
     from app.engines.llm_router import LLMRouter
     _llm_config = {}
     _llm_router = None
+    context_engine = None
     if settings.ANTHROPIC_API_KEY:
         _llm_config = _json.loads(
             settings.LLM_CONFIG_PATH.read_text(encoding='utf-8')
@@ -86,11 +88,20 @@ async def main() -> None:
             api_key=settings.ANTHROPIC_API_KEY
         )
         _llm_router = LLMRouter(settings.LLM_CONFIG_PATH, client=_llm_client)
+        _ctx_client = _anthropic.AsyncAnthropic(
+            api_key=settings.ANTHROPIC_API_KEY
+        )
+        context_engine = ContextEngine(
+            knowledge_base_path=settings.KNOWLEDGE_BASE_PATH,
+            products_path=Path("app/knowledge/products.json"),
+            anthropic_client=_ctx_client,
+        )
     pipeline = MessagePipeline(
         faq_engine=faq_engine,
         campaign_engine=campaign_engine,
         llm_router=_llm_router,
         llm_config=_llm_config,
+        context_engine=context_engine,
     )
     clear()
     register(adapter)

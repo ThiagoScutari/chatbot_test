@@ -1,0 +1,4 @@
+[run]
+omit =
+    app/engines/rag_engine.py
+    app/migrations/*

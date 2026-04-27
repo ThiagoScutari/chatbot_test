@@ -194,6 +194,19 @@ def test_admin_llm_status_invalid_token(client):
     assert r.status_code == 403
 
 
+def test_context_engine_nao_importado_em_adapters():
+    """Contrato arquitetural: ContextEngine não deve ser importado em adapters."""
+    for f in pathlib.Path("app/adapters").rglob("*.py"):
+        src = f.read_text(encoding="utf-8")
+        tree = ast.parse(src)
+        for node in ast.walk(tree):
+            if isinstance(node, (ast.Import, ast.ImportFrom)):
+                module = getattr(node, "module", "") or ""
+                assert "context_engine" not in module, (
+                    f"VIOLATION: {f} importa context_engine linha {node.lineno}"
+                )
+
+
 def test_llm_router_nao_importado_em_adapters():
     """Contrato arquitetural: LLMRouter não deve ser importado em adapters."""
     for f in pathlib.Path("app/adapters").rglob("*.py"):

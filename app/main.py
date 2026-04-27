@@ -22,11 +22,12 @@ async def lifespan(app: FastAPI):
     import json as _json
 
     import anthropic as _anthropic
+    from pathlib import Path as _Path
 
-    from app.database import Base, SessionLocal, engine
+    from app.database import Base, engine
     from app.engines.campaign_engine import CampaignEngine
+    from app.engines.context_engine import ContextEngine
     from app.engines.llm_router import LLMRouter
-    from app.engines.rag_engine import RAGEngine
     from app.engines.regex_engine import FAQEngine
     from app.pipeline.message_pipeline import MessagePipeline
     import app.models.knowledge_chunk  # noqa: F401  — registra tabela no Base.metadata
@@ -51,20 +52,23 @@ async def lifespan(app: FastAPI):
             "LLMRouter desativado, apenas Camada 1 (FAQ regex)."
         )
 
-    rag_engine = None
-    if settings.OPENAI_API_KEY:
-        import openai as _openai
-
-        openai_client = _openai.AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
-        rag_engine = RAGEngine(
-            db_session_factory=SessionLocal,
-            openai_client=openai_client,
+    context_engine = None
+    if settings.ANTHROPIC_API_KEY:
+        _context_client = _anthropic.AsyncAnthropic(
+            api_key=settings.ANTHROPIC_API_KEY
         )
-        logger.info("RAGEngine inicializado.")
+        context_engine = ContextEngine(
+            knowledge_base_path=settings.KNOWLEDGE_BASE_PATH,
+            products_path=_Path("app/knowledge/products.json"),
+            anthropic_client=_context_client,
+        )
+        logger.info(
+            "ContextEngine inicializado — ~%d tokens de contexto.",
+            context_engine.estimated_tokens(),
+        )
     else:
         logger.info(
-            "OPENAI_API_KEY não configurada — "
-            "RAGEngine desativado, apenas Camadas 1 e 2."
+            "ANTHROPIC_API_KEY não configurada — ContextEngine desativado."
         )
 
     pipeline = MessagePipeline(
@@ -72,10 +76,10 @@ async def lifespan(app: FastAPI):
         campaign_engine=campaign_engine,
         llm_router=llm_router,
         llm_config=llm_config,
-        rag_engine=rag_engine,
+        context_engine=context_engine,
     )
     app.state.llm_router = llm_router
-    app.state.rag_engine = rag_engine
+    app.state.context_engine = context_engine
     app.state.pipeline = pipeline
 
     from app.adapters.registry import (

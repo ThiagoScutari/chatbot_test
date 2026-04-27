@@ -92,40 +92,52 @@ async def llm_status(request: Request) -> StandardResponse:
 
 
 @router.get(
-    "/rag/status",
+    "/context/status",
     dependencies=[Depends(verify_admin_token)],
 )
-async def rag_status(request: Request) -> StandardResponse:
+async def context_status(request: Request) -> StandardResponse:
     """
-    Estatísticas do RAGEngine: chunks indexados por fonte.
+    Status do ContextEngine (Camada 3).
 
-    Como usar:
-        curl https://seu-dominio.com/admin/rag/status \
-             -H "X-Admin-Token: seu_token"
-
-    Para re-indexar após atualizar o catálogo:
-        python scripts/index_knowledge.py --clear
+    Mostra tamanho do catálogo em tokens e quando migrar para RAG.
     """
-    rag = getattr(request.app.state, "rag_engine", None)
-    if not rag:
+    engine = getattr(request.app.state, "context_engine", None)
+    if not engine:
         return StandardResponse(
             data={
                 "enabled": False,
-                "reason": (
-                    "OPENAI_API_KEY não configurada — "
-                    "bot opera apenas com Camadas 1 e 2."
-                ),
+                "reason": "ANTHROPIC_API_KEY não configurada.",
             }
         )
 
-    try:
-        total = await rag.count_chunks()
-        return StandardResponse(
-            data={
-                "enabled": True,
-                "total_chunks": total,
-                "reindex_command": "python scripts/index_knowledge.py --clear",
-            }
-        )
-    except Exception as exc:  # noqa: BLE001
-        return StandardResponse(data={"enabled": True, "error": str(exc)})
+    tokens = engine.estimated_tokens()
+    pct = round(tokens / 50000 * 100, 1)
+
+    return StandardResponse(
+        data={
+            "enabled": True,
+            "model": engine._config.get("model"),
+            "estimated_context_tokens": tokens,
+            "max_before_migration": 50000,
+            "usage_percent": pct,
+            "recommendation": (
+                "OK — contexto longo adequado para este tamanho de catálogo"
+                if tokens < 30000
+                else "ATENÇÃO — considerar migração para RAG (ADR-002)"
+            ),
+        }
+    )
+
+
+@router.get(
+    "/rag/status",
+    dependencies=[Depends(verify_admin_token)],
+)
+async def rag_status_deprecated(request: Request) -> StandardResponse:
+    """Deprecated — use /admin/context/status instead."""
+    return StandardResponse(
+        data={
+            "deprecated": True,
+            "message": "Use GET /admin/context/status (ADR-003)",
+        }
+    )
