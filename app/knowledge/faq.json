@@ -20,7 +20,9 @@
       "patterns": [
         "\\bor[çc]amento\\b",
         "\\bcotar\\b",
-        "\\bcota[çc][ãa]o\\b",
+        "\\bcota[çc][ãa]o\\b.{0,25}\\b(uniformes?|jalecos?|polos?|camisetas?|bordado|pe[çc]a|pe[çc]as|roupa)\\b",
+        "\\bcota[çc][ãa]o\\b.{0,25}\\b(de pre[cç]o|de valor|de custo)\\b",
+        "\\b(uniformes?|jalecos?|polos?|camisetas?|roupa)\\b.{0,25}\\bcota[çc][ãa]o\\b",
         "\\bquero (fazer|solicitar|pedir)\\b.{0,20}\\bpedido\\b",
         "\\bfazer (um |uma )?pedido\\b",
         "\\bpreciso (de )?(um |uma )?uniformes?\\b",
