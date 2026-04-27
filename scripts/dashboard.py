@@ -49,6 +49,41 @@ def grade_label(value: float) -> str:
     return "Precisa melhorar"
 
 
+LAYER_LABELS = {
+    "faq":     "FAQ Automático",
+    "llm":     "Entendimento Avançado",
+    "rag":     "Consulta Técnica",
+    "context": "Consulta Técnica",
+    "none":    "Fora do Escopo",
+}
+
+INTENT_LABELS = {
+    "preco_polo":           "Preço da Polo",
+    "preco_jaleco":         "Preço do Jaleco",
+    "bordado_prazo":        "Prazo/Info do Bordado",
+    "pedido_minimo":        "Pedido Mínimo",
+    "prazo_entrega":        "Prazo de Entrega",
+    "entrega_nacional":     "Entrega Nacional",
+    "falar_humano":         "Falar com Atendente",
+    "pagamento":            "Formas de Pagamento",
+    "feminino":             "Linha Feminina",
+    "desconto_quantidade":  "Desconto por Quantidade",
+    "tamanhos_disponiveis": "Tamanhos Disponíveis",
+    "endereco":             "Endereço",
+    "contato_whatsapp":     "Contato WhatsApp",
+    "manga_longa":          "Manga Longa",
+    "dry_fit":              "Uniformes Esportivos",
+    "instagram_referencia": "Referência do Instagram",
+    "segmento_negocio":     "Segmento do Negócio",
+    "estoque_pronto":       "Estoque / Pronta Entrega",
+    "pos_venda":            "Pós-venda",
+    "orcamento_trigger":    "Solicitar Orçamento",
+    "rag_response":         "Pergunta Técnica",
+    "none":                 "Fora do Escopo",
+    "context_response":     "Resposta Técnica",
+}
+
+
 def generate_dashboard(report: dict, output_path: Path) -> None:
     intents = list(report["f1_per_intent"].keys())
     f1_values = [report["f1_per_intent"][i] * 100 for i in intents]
@@ -65,15 +100,18 @@ def generate_dashboard(report: dict, output_path: Path) -> None:
         reverse=True,
     )
     intents_s = [p[0] for p in sorted_pairs]
+    intents_s_display = [INTENT_LABELS.get(i, i) for i in intents_s]
     f1_s = [p[1] for p in sorted_pairs]
     precision_s = [p[2] for p in sorted_pairs]
     recall_s = [p[3] for p in sorted_pairs]
 
     cm = report["confusion_matrix"]
     cm_labels = report["confusion_labels"]
+    cm_labels_display = [INTENT_LABELS.get(label, label) for label in cm_labels]
 
     layers = report.get("accuracy_by_layer", {})
     layer_names = list(layers.keys())
+    layer_names_display = [LAYER_LABELS.get(n, n) for n in layer_names]
     layer_accs = [v * 100 for v in layers.values()]
 
     diffs = report.get("accuracy_by_difficulty", {})
@@ -85,6 +123,11 @@ def generate_dashboard(report: dict, output_path: Path) -> None:
 
     lats = report.get("avg_latency_by_layer", {})
     lat_faq = lats.get("faq", 0)
+    diff_labels_display = {
+        {"easy": "Fácil", "medium": "Médio", "hard": "Difícil"}.get(k, k): v
+        for k, v in diffs.items()
+    }
+    lat_labels_display = {LAYER_LABELS.get(k, k): v for k, v in lats.items()}
 
     top_errors = report.get("top_errors", [])[:5]
     errors_html = ""
@@ -92,22 +135,22 @@ def generate_dashboard(report: dict, output_path: Path) -> None:
         examples = "<br>".join(
             f'<em>"{ex[:60]}"</em>' for ex in err.get("examples", [])[:2]
         )
+        expected_label = INTENT_LABELS.get(err["expected"], err["expected"])
+        predicted_label = INTENT_LABELS.get(err["predicted"], err["predicted"])
         errors_html += f"""
         <tr>
-          <td style="padding:8px;border-bottom:1px solid #e5e7eb">
+          <td>
             <span style="background:#fee2e2;color:#991b1b;padding:2px 8px;
-            border-radius:4px;font-size:12px">{err["expected"]}</span>
+            border-radius:4px;font-size:12px">{expected_label}</span>
             &rarr; <span style="background:#e0e7ff;color:#3730a3;padding:2px 8px;
-            border-radius:4px;font-size:12px">{err["predicted"]}</span>
+            border-radius:4px;font-size:12px">{predicted_label}</span>
           </td>
-          <td style="padding:8px;border-bottom:1px solid #e5e7eb;
-          text-align:center;font-weight:bold">{err["count"]}x</td>
-          <td style="padding:8px;border-bottom:1px solid #e5e7eb;
-          font-size:13px;color:#6b7280">{examples}</td>
+          <td style="text-align:center;font-weight:bold">{err["count"]}x</td>
+          <td style="color:#6b7280">{examples}</td>
         </tr>"""
 
-    good_intents = [i for i, f in zip(intents_s, f1_s) if f >= 90]
-    weak_intents = [i for i, f in zip(intents_s, f1_s) if f < 80]
+    good_intents = [INTENT_LABELS.get(i, i) for i, f in zip(intents_s, f1_s) if f >= 90]
+    weak_intents = [INTENT_LABELS.get(i, i) for i, f in zip(intents_s, f1_s) if f < 80]
     exec_good = ", ".join(good_intents[:4]) if good_intents else "-"
     exec_weak = ", ".join(weak_intents[:3]) if weak_intents else "nenhum"
 
@@ -135,7 +178,10 @@ def generate_dashboard(report: dict, output_path: Path) -> None:
     * {{ box-sizing: border-box; margin: 0; padding: 0; }}
     body {{
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #f8fafc; color: #1e293b; padding: 24px;
+      background: #f8fafc; color: #1e293b;
+      padding: 16px;
+      max-width: 1400px;
+      margin: 0 auto;
     }}
     .header {{
       background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
@@ -144,8 +190,11 @@ def generate_dashboard(report: dict, output_path: Path) -> None:
     }}
     .header h1 {{ font-size: 28px; font-weight: 700; margin-bottom: 6px; }}
     .header p {{ opacity: 0.8; font-size: 15px; }}
-    .cards {{ display: grid; grid-template-columns: repeat(5, 1fr);
-              gap: 16px; margin-bottom: 24px; }}
+    .cards {{
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px; margin-bottom: 24px;
+    }}
     .card {{
       background: white; border-radius: 12px; padding: 20px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.08); text-align: center;
@@ -180,13 +229,42 @@ def generate_dashboard(report: dict, output_path: Path) -> None:
       background: #fef9c3; color: #854d0e; padding: 3px 10px;
       border-radius: 20px; font-size: 13px; font-weight: 500;
     }}
-    table {{ width: 100%; border-collapse: collapse; }}
+    .table-wrap {{ overflow-x: auto; -webkit-overflow-scrolling: touch; }}
+    table {{ width: 100%; border-collapse: collapse; min-width: 400px; }}
     th {{ text-align: left; padding: 8px; background: #f8fafc;
           font-size: 13px; color: #64748b; border-bottom: 2px solid #e2e8f0; }}
-    canvas {{ max-height: 350px; }}
-    @media (max-width: 900px) {{
-      .cards {{ grid-template-columns: repeat(2, 1fr); }}
-      .grid-2, .grid-3 {{ grid-template-columns: 1fr; }}
+    td {{ padding: 8px; border-bottom: 1px solid #e5e7eb;
+          font-size: 13px; vertical-align: top; }}
+    .chart-container {{ position: relative; width: 100%; }}
+    canvas {{ width: 100% !important; }}
+
+    /* Tablet */
+    @media (max-width: 1024px) {{
+      .cards {{ grid-template-columns: repeat(3, 1fr); }}
+    }}
+
+    /* Mobile */
+    @media (max-width: 768px) {{
+      body {{ padding: 12px; }}
+      .header {{ padding: 20px; border-radius: 12px; }}
+      .header h1 {{ font-size: 20px; }}
+      .header p {{ font-size: 13px; }}
+      .cards {{ grid-template-columns: repeat(2, 1fr); gap: 8px; }}
+      .card {{ padding: 14px; }}
+      .card .value {{ font-size: 26px; }}
+      .card .label {{ font-size: 11px; }}
+      .grid-2, .grid-3 {{ grid-template-columns: 1fr; gap: 12px; }}
+      .panel {{ padding: 16px; }}
+      .panel h2 {{ font-size: 14px; }}
+      .exec-panel {{ padding: 16px; }}
+      .exec-panel h2 {{ font-size: 16px; }}
+      th, td {{ padding: 6px 8px; font-size: 12px; }}
+    }}
+
+    /* Small phone */
+    @media (max-width: 480px) {{
+      .cards {{ grid-template-columns: 1fr 1fr; }}
+      .card .value {{ font-size: 22px; }}
     }}
   </style>
 </head>
@@ -195,7 +273,7 @@ def generate_dashboard(report: dict, output_path: Path) -> None:
 <div class="header">
   <h1>Camisart AI - Relatorio de Desempenho</h1>
   <p>Avaliacao em {total} mensagens reais | {date_str} |
-     Arquitetura: FAQ + LLM Router + RAG (3 camadas)</p>
+     FAQ Automático · Entendimento Avançado · Consulta Técnica</p>
 </div>
 
 <div class="cards">
@@ -255,57 +333,77 @@ def generate_dashboard(report: dict, output_path: Path) -> None:
 <div class="grid-2">
   <div class="panel">
     <h2>F1 Score por Intencao</h2>
-    <canvas id="f1Chart"></canvas>
+    <div class="chart-container" style="height:350px;">
+      <canvas id="f1Chart"></canvas>
+    </div>
   </div>
   <div class="panel">
     <h2>Precision vs Recall por Intencao</h2>
-    <canvas id="prChart"></canvas>
+    <div class="chart-container" style="height:350px;">
+      <canvas id="prChart"></canvas>
+    </div>
   </div>
 </div>
 
 <div class="grid-3">
   <div class="panel">
     <h2>Distribuicao por Camada</h2>
-    <canvas id="layerChart"></canvas>
+    <div class="chart-container" style="height:350px;">
+      <canvas id="layerChart"></canvas>
+    </div>
+    <div style="margin-top:12px;font-size:12px;color:#64748b;line-height:2">
+      <b>FAQ Automático</b> — respostas instantâneas para perguntas frequentes<br>
+      <b>Entendimento Avançado</b> — interpreta linguagem livre e informal<br>
+      <b>Consulta Técnica</b> — responde dúvidas técnicas sobre produtos<br>
+      <b>Fora do Escopo</b> — perguntas não relacionadas à Camisart
+    </div>
   </div>
   <div class="panel">
     <h2>Acuracia por Dificuldade</h2>
-    <canvas id="diffChart"></canvas>
+    <div class="chart-container" style="height:350px;">
+      <canvas id="diffChart"></canvas>
+    </div>
   </div>
   <div class="panel">
     <h2>Latencia por Camada</h2>
-    <canvas id="latChart"></canvas>
+    <div class="chart-container" style="height:350px;">
+      <canvas id="latChart"></canvas>
+    </div>
   </div>
 </div>
 
 <div class="panel" style="margin-bottom:24px">
   <h2>Matriz de Confusao</h2>
-  <canvas id="cmChart" style="max-height:500px"></canvas>
+  <div class="chart-container" style="height:500px;">
+    <canvas id="cmChart"></canvas>
+  </div>
 </div>
 
 <div class="panel" style="margin-bottom:24px">
   <h2>Erros Mais Frequentes</h2>
+  <div class="table-wrap">
   <table>
     <tr>
-      <th>Confusao (real -&gt; predito)</th>
+      <th>Confusão (real → predito)</th>
       <th>Qtd</th>
       <th>Exemplos de mensagens</th>
     </tr>
     {errors_html if errors_html else '<tr><td colspan="3" style="padding:16px;text-align:center;color:#6b7280">Nenhum erro registrado</td></tr>'}
   </table>
+  </div>
 </div>
 
 <script>
-const intents = {json.dumps(intents_s)};
+const intents = {json.dumps(intents_s_display, ensure_ascii=False)};
 const f1Values = {json.dumps([round(v, 1) for v in f1_s])};
 const precValues = {json.dumps([round(v, 1) for v in precision_s])};
 const recValues = {json.dumps([round(v, 1) for v in recall_s])};
 const cmData = {json.dumps(cm)};
-const cmLabels = {json.dumps(cm_labels)};
-const layerNames = {json.dumps(layer_names)};
+const cmLabels = {json.dumps(cm_labels_display, ensure_ascii=False)};
+const layerNames = {json.dumps(layer_names_display, ensure_ascii=False)};
 const layerAccs = {json.dumps([round(v, 1) for v in layer_accs])};
-const diffData = {json.dumps({k: round(v * 100, 1) for k, v in diffs.items()})};
-const latData = {json.dumps({k: round(v, 0) for k, v in lats.items()})};
+const diffData = {json.dumps({k: round(v * 100, 1) for k, v in diff_labels_display.items()}, ensure_ascii=False)};
+const latData = {json.dumps({k: round(v, 0) for k, v in lat_labels_display.items()}, ensure_ascii=False)};
 
 const COLORS = [
   '#3b82f6','#22c55e','#f59e0b','#ef4444','#8b5cf6',
@@ -332,6 +430,8 @@ new Chart(document.getElementById('f1Chart'), {{
     }}]
   }},
   options: {{
+    responsive: true,
+    maintainAspectRatio: false,
     indexAxis: 'y',
     plugins: {{ legend: {{ display: false }} }},
     scales: {{
@@ -353,6 +453,8 @@ new Chart(document.getElementById('prChart'), {{
     }}))
   }},
   options: {{
+    responsive: true,
+    maintainAspectRatio: false,
     plugins: {{
       legend: {{ position: 'right', labels: {{ font: {{ size: 11 }} }} }},
       tooltip: {{
@@ -378,6 +480,8 @@ new Chart(document.getElementById('layerChart'), {{
     }}]
   }},
   options: {{
+    responsive: true,
+    maintainAspectRatio: false,
     plugins: {{
       legend: {{ position: 'bottom' }},
       tooltip: {{ callbacks: {{ label: ctx => ctx.label + ': ' + ctx.parsed + '%' }} }}
@@ -388,8 +492,7 @@ new Chart(document.getElementById('layerChart'), {{
 new Chart(document.getElementById('diffChart'), {{
   type: 'bar',
   data: {{
-    labels: Object.keys(diffData).map(k =>
-      ({{easy:'Facil',medium:'Medio',hard:'Dificil'}})[k] || k),
+    labels: Object.keys(diffData),
     datasets: [{{
       label: 'Accuracy (%)',
       data: Object.values(diffData),
@@ -398,6 +501,8 @@ new Chart(document.getElementById('diffChart'), {{
     }}]
   }},
   options: {{
+    responsive: true,
+    maintainAspectRatio: false,
     plugins: {{ legend: {{ display: false }} }},
     scales: {{ y: {{ min: 0, max: 100 }} }}
   }}
@@ -415,6 +520,8 @@ new Chart(document.getElementById('latChart'), {{
     }}]
   }},
   options: {{
+    responsive: true,
+    maintainAspectRatio: false,
     plugins: {{ legend: {{ display: false }} }},
     scales: {{ y: {{ title: {{ display: true, text: 'ms' }} }} }}
   }}
@@ -442,6 +549,8 @@ new Chart(document.getElementById('cmChart'), {{
   type: 'scatter',
   data: {{ datasets: cmDatasets }},
   options: {{
+    responsive: true,
+    maintainAspectRatio: false,
     plugins: {{ legend: {{ display: false }},
       tooltip: {{ callbacks: {{ label: ctx => ctx.dataset.label }} }}
     }},
