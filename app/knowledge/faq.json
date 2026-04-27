@@ -249,8 +249,9 @@
         "\\b(outro estado|outros estados|qualquer estado)\\b",
         "\\bfora d[eo] bel[eé]m\\b",
         "\\bfora d[eo] par[aá]\\b",
-        "\\b(entregam|enviam|mandam)\\b",
-        "\\b(entregam|enviam|mandam)\\b.*\\b(fora|outro|outros)\\b"
+        "\\b(entregam|enviam|mandam)\\b.{0,30}\\b(fora|outro|outros|brasil|correios|estado|nacional|interior|para)\\b",
+        "\\b(fora|outro|outros|brasil|correios|estado|nacional|interior)\\b.{0,30}\\b(entregam|enviam|mandam)\\b",
+        "^(?!.*\\b(tempo|quando|prazo|dias|demora|semana|hoje|amanh)\\b).*\\b(entregam|enviam|mandam)\\b"
       ],
       "response": {
         "type": "text",
@@ -386,8 +387,8 @@
       "id": "estoque_pronto",
       "priority": 9,
       "patterns": [
-        "\\b(estoque|pronto|pronta\\s+entrega|imediat[ao]|disponivel|disponível|j[áa]\\s+tem|tem\\s+pronto)\\b",
-        "\\b(tem|t[êe]m)\\b.{0,20}\\b(dispon[íi]vel|em estoque|pronto)\\b",
+        "\\b(estoque|pronta\\s+entrega|imediat[ao]|disponivel|disponível|j[áa]\\s+tem|tem\\s+pronto)\\b",
+        "\\b(tem|t[êe]m)\\b.{0,20}\\b(dispon[íi]vel|em estoque)\\b",
         "\\b(tem|t[êe]m|t[áa])\\b.{0,10}\\b(agora|hoje|essa semana|logo)\\b",
         "\\bpreciso\\b.{0,20}\\b(essa semana|amanh[ãa]|hoje|urgente|logo)\\b.{0,20}\\btem\\b",
         "\\b(pronta entrega|pronto pra entregar)\\b",
