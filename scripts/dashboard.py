@@ -107,7 +107,23 @@ def generate_dashboard(report: dict, output_path: Path) -> None:
 
     cm = report["confusion_matrix"]
     cm_labels = report["confusion_labels"]
-    cm_labels_display = [INTENT_LABELS.get(label, label) for label in cm_labels]
+
+    # Acertos por intent (substitui matriz de confusão) [fix-M4]
+    support_per_intent = report.get("support_per_intent", {})
+    intent_accuracy = {}
+    for intent in intents:
+        if intent not in cm_labels:
+            continue
+        idx = cm_labels.index(intent)
+        tp = cm[idx][idx]
+        total = support_per_intent.get(intent, 0)
+        if total > 0:
+            intent_accuracy[intent] = {
+                "label": INTENT_LABELS.get(intent, intent),
+                "correct": int(tp),
+                "total": int(total),
+                "pct": round(tp / total * 100, 1),
+            }
 
     layers = report.get("accuracy_by_layer", {})
     layer_names = list(layers.keys())
@@ -373,9 +389,12 @@ def generate_dashboard(report: dict, output_path: Path) -> None:
 </div>
 
 <div class="panel" style="margin-bottom:24px">
-  <h2>Matriz de Confusao</h2>
-  <div class="chart-container" style="height:500px;">
-    <canvas id="cmChart"></canvas>
+  <h2>✅ Acertos por Tipo de Pergunta</h2>
+  <p style="font-size:13px;color:#64748b;margin-bottom:16px">
+    Para cada tipo de pergunta, quantas vezes o bot respondeu corretamente.
+  </p>
+  <div class="chart-container" style="height:550px;">
+    <canvas id="accuracyChart"></canvas>
   </div>
 </div>
 
@@ -398,8 +417,7 @@ const intents = {json.dumps(intents_s_display, ensure_ascii=False)};
 const f1Values = {json.dumps([round(v, 1) for v in f1_s])};
 const precValues = {json.dumps([round(v, 1) for v in precision_s])};
 const recValues = {json.dumps([round(v, 1) for v in recall_s])};
-const cmData = {json.dumps(cm)};
-const cmLabels = {json.dumps(cm_labels_display, ensure_ascii=False)};
+const accuracyData = {json.dumps(intent_accuracy, ensure_ascii=False)};
 const layerNames = {json.dumps(layer_names_display, ensure_ascii=False)};
 const layerAccs = {json.dumps([round(v, 1) for v in layer_accs])};
 const diffData = {json.dumps({k: round(v * 100, 1) for k, v in diff_labels_display.items()}, ensure_ascii=False)};
@@ -527,45 +545,48 @@ new Chart(document.getElementById('latChart'), {{
   }}
 }});
 
-const cmMax = Math.max(...cmData.flat());
-const cmDatasets = [];
-for (let i = 0; i < cmLabels.length; i++) {{
-  for (let j = 0; j < cmLabels.length; j++) {{
-    const v = cmData[i][j];
-    const intensity = cmMax > 0 ? v / cmMax : 0;
-    const bg = i === j
-      ? `rgba(34,197,94,${{0.3 + intensity * 0.7}})`
-      : v > 0 ? `rgba(239,68,68,${{0.2 + intensity * 0.8}})` : 'rgba(0,0,0,0.03)';
-    cmDatasets.push({{
-      data: [{{ x: j, y: cmLabels.length - 1 - i, v }}],
-      backgroundColor: bg,
-      pointRadius: 22,
-      pointStyle: 'rect',
-      label: `${{cmLabels[i]}} -> ${{cmLabels[j]}}: ${{v}}`,
-    }});
-  }}
-}}
-new Chart(document.getElementById('cmChart'), {{
-  type: 'scatter',
-  data: {{ datasets: cmDatasets }},
+const sortedAccuracy = Object.entries(accuracyData)
+  .filter(([k, v]) => v.total > 0)
+  .sort((a, b) => b[1].pct - a[1].pct);
+
+new Chart(document.getElementById('accuracyChart'), {{
+  type: 'bar',
+  data: {{
+    labels: sortedAccuracy.map(([k, v]) => v.label),
+    datasets: [
+      {{
+        label: 'Acertos',
+        data: sortedAccuracy.map(([k, v]) => v.correct),
+        backgroundColor: '#22c55e',
+        borderRadius: 4,
+      }},
+      {{
+        label: 'Erros',
+        data: sortedAccuracy.map(([k, v]) => v.total - v.correct),
+        backgroundColor: '#ef4444',
+        borderRadius: 4,
+      }}
+    ]
+  }},
   options: {{
     responsive: true,
     maintainAspectRatio: false,
-    plugins: {{ legend: {{ display: false }},
-      tooltip: {{ callbacks: {{ label: ctx => ctx.dataset.label }} }}
+    indexAxis: 'y',
+    plugins: {{
+      legend: {{ position: 'top' }},
+      tooltip: {{
+        callbacks: {{
+          afterBody: (items) => {{
+            const idx = items[0].dataIndex;
+            const d = sortedAccuracy[idx][1];
+            return ['Acurácia: ' + d.pct + '% (' + d.correct + '/' + d.total + ')'];
+          }}
+        }}
+      }}
     }},
     scales: {{
-      x: {{
-        min: -0.5, max: cmLabels.length - 0.5,
-        ticks: {{ callback: v => cmLabels[v] || '', font: {{ size: 10 }} }},
-        title: {{ display: true, text: 'Predito' }}
-      }},
-      y: {{
-        min: -0.5, max: cmLabels.length - 0.5,
-        ticks: {{ callback: v => cmLabels[cmLabels.length-1-v] || '',
-                  font: {{ size: 10 }} }},
-        title: {{ display: true, text: 'Real' }}
-      }}
+      x: {{ stacked: true, title: {{ display: true, text: 'Número de perguntas' }} }},
+      y: {{ stacked: true, ticks: {{ font: {{ size: 11 }} }} }}
     }}
   }}
 }});

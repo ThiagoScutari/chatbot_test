@@ -231,7 +231,7 @@ def test_dashboard_contem_secoes_obrigatorias(tmp_path):
         "F1 Score por Intencao",
         "Precision vs Recall",
         "Distribuicao por Camada",
-        "Matriz de Confusao",
+        "Acertos por Tipo de Pergunta",
         "Erros Mais Frequentes",
     ]:
         assert section in content, (
