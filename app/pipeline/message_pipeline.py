@@ -26,8 +26,8 @@ from app.services import (
 )
 
 if TYPE_CHECKING:
+    from app.engines.context_engine import ContextEngine
     from app.engines.llm_router import LLMRouter
-    from app.engines.rag_engine import RAGEngine
 
 
 logger = logging.getLogger(__name__)
@@ -42,46 +42,13 @@ class MessagePipeline:
         campaign_engine: CampaignEngine | None = None,
         llm_router: "LLMRouter | None" = None,
         llm_config: dict | None = None,
-        rag_engine: "RAGEngine | None" = None,
+        context_engine: "ContextEngine | None" = None,
     ) -> None:
         self._faq_engine = faq_engine
         self._campaign_engine = campaign_engine
         self._llm_router = llm_router
         self._llm_config = llm_config or {}
-        self._rag_engine = rag_engine
-
-    async def _generate_rag_response(
-        self,
-        question: str,
-        chunks: list[str],
-        session: SessionModel,
-    ) -> str:
-        """Gera resposta usando chunks do RAG como contexto."""
-        if not self._llm_router:
-            return chunks[0][:600] if chunks else ""
-
-        context = "\n\n---\n\n".join(chunks[:3])
-        nome = session.nome_cliente or "cliente"
-
-        prompt = (
-            f"Você é o assistente da Camisart Belém, loja de uniformes em Belém/PA.\n"
-            f"Responda a pergunta de {nome} usando APENAS as informações abaixo.\n"
-            f"Se a informação não estiver no contexto, diga que um consultor pode ajudar melhor.\n"
-            f"Seja direto, amigável e em português. Máximo 200 palavras.\n\n"
-            f"Informações da Camisart:\n{context}\n\n"
-            f"Pergunta: {question}"
-        )
-        try:
-            response = await self._llm_router._client.messages.create(
-                model="claude-haiku-4-5-20251001",
-                max_tokens=300,
-                messages=[{"role": "user", "content": prompt}],
-                timeout=8.0,
-            )
-            return response.content[0].text.strip()
-        except Exception as exc:  # noqa: BLE001
-            logger.error("RAG generation error: %s", exc)
-            return chunks[0][:400] if chunks else ""
+        self._context_engine = context_engine
 
     def _build_llm_context(
         self, session: SessionModel, db: Session
@@ -239,32 +206,32 @@ class MessagePipeline:
                     campaign_engine=self._campaign_engine,
                 )
 
-        # ── Camada 3: RAGEngine ──────────────────────────────────────────────
-        # Só consulta RAG se: (a) engine disponível, (b) mensagem parece pergunta
-        # técnica de produto, (c) camadas anteriores não resolveram com confiança.
+        # ── Camada 3: ContextEngine ──────────────────────────────────────────
+        # Só consulta ContextEngine se: (a) engine disponível, (b) mensagem parece
+        # pergunta técnica de produto, (c) camadas anteriores não resolveram com
+        # confiança.
         if (
-            self._rag_engine
+            self._context_engine
             and is_product_question(inbound.content)
             and not result_from_layer2_was_confident
         ):
-            rag_result = await self._rag_engine.query(
-                inbound.content, top_k=3
+            ctx_result = await self._context_engine.answer(
+                question=inbound.content,
+                session_context={
+                    "nome_cliente": session.nome_cliente,
+                    "current_state": session.current_state,
+                },
             )
-            if rag_result.chunks:
+            if ctx_result.answer:
                 logger.info(
-                    "RAG Camada 3: '%s' → %d chunks encontrados",
+                    "ContextEngine Camada 3: '%s' → resposta gerada (%d tokens contexto)",
                     inbound.content[:50],
-                    rag_result.top_k,
-                )
-                rag_text = await self._generate_rag_response(
-                    question=inbound.content,
-                    chunks=rag_result.chunks,
-                    session=session,
+                    ctx_result.tokens_used,
                 )
                 result = HandleResult(
-                    response=FAQResponse(type="text", body=rag_text),
+                    response=FAQResponse(type="text", body=ctx_result.answer),
                     next_state=session.current_state or "menu",
-                    matched_intent_id="rag_response",
+                    matched_intent_id="context_response",
                 )
 
         # state_machine pode mutar session.session_data in-place

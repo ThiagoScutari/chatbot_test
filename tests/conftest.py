@@ -190,7 +190,7 @@ def pipeline(db):
         faq_engine=faq,
         campaign_engine=campaign,
         llm_router=None,  # testes usam apenas Camada 1 por padrão
-        rag_engine=None,  # testes usam apenas Camadas 1 e 2
+        context_engine=None,  # testes usam apenas Camadas 1 e 2
     )
 
 
