@@ -94,9 +94,9 @@ class AutoTestResult:
 SUITES: dict[str, list[TestCase]] = {
     "onboarding": [
         TestCase("onboarding", "/start", is_reset=True,
-                 expected_keywords=["nome", "Camisart"]),
+                 expected_keywords=["Camisart", "prazer"]),
         TestCase("onboarding", "Thiago Autotest",
-                 expected_keywords=["menu", "ajud"]),
+                 expected_keywords=["Prazer", "ajud"]),
     ],
     "faq": [
         TestCase("faq", "/start", is_reset=True),
