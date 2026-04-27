@@ -478,9 +478,11 @@ def handle(
         )
 
     if estado_atual == COLETA_ORCAMENTO_QTD:
-        try:
-            qtd = int(texto)
-        except ValueError:
+        # Extrai o primeiro número da mensagem — aceita "12 peças",
+        # "umas 50", "por volta de 30", "200 unidades", etc. [fix-Q1]
+        import re as _re
+        _match = _re.search(r"\d+", texto)
+        if not _match:
             # Permite FAQ (ex.: endereço) interromper o fluxo sem perder contexto
             if faq_match is not None:
                 return HandleResult(
@@ -490,10 +492,13 @@ def handle(
                 )
             return HandleResult(
                 response=_text(
-                    "Número inválido. Me diga quantas peças você precisa (ex: 50)."
+                    "Não entendi a quantidade 😊\n"
+                    "Pode me dizer só o número?\n"
+                    "Exemplo: 10, 50 ou 200"
                 ),
                 next_state=COLETA_ORCAMENTO_QTD,
             )
+        qtd = int(_match.group())
         if qtd <= 0:
             return HandleResult(
                 response=_text(
