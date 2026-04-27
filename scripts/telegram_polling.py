@@ -63,6 +63,12 @@ async def main() -> None:
         logger.error("TELEGRAM_BOT_TOKEN não configurado. Adicione em .env")
         return
 
+    # ── Garante que o banco está inicializado ────────────────────────
+    from app.database import engine as _engine
+    from app.database_init import ensure_tables
+    ensure_tables(_engine)
+    logger.info("Banco de dados verificado.")
+
     campaign_engine = CampaignEngine(settings.CAMPAIGNS_JSON_PATH)
     campaign_engine.reload()
     faq_engine = FAQEngine(

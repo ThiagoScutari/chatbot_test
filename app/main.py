@@ -24,7 +24,8 @@ async def lifespan(app: FastAPI):
     import anthropic as _anthropic
     from pathlib import Path as _Path
 
-    from app.database import Base, engine
+    from app.database import engine
+    from app.database_init import ensure_tables
     from app.engines.campaign_engine import CampaignEngine
     from app.engines.context_engine import ContextEngine
     from app.engines.llm_router import LLMRouter
@@ -32,7 +33,8 @@ async def lifespan(app: FastAPI):
     from app.pipeline.message_pipeline import MessagePipeline
     import app.models.knowledge_chunk  # noqa: F401  — registra tabela no Base.metadata
 
-    Base.metadata.create_all(bind=engine)
+    ensure_tables(engine)
+    logger.info("Banco de dados verificado.")
     campaign_engine = CampaignEngine(settings.CAMPAIGNS_JSON_PATH)
     campaign_engine.reload()
     faq_engine = FAQEngine(settings.FAQ_JSON_PATH, campaign_engine=campaign_engine)
