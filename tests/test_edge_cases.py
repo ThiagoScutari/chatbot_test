@@ -78,6 +78,7 @@ async def test_multiplos_orcamentos_mesma_sessao(sim, db):
     await sim.send("Camisa Polo")
     await sim.send("30")
     await sim.send("Bordado")
+    await sim.send("1")  # [fix-Q3] tem_arte
     await sim.send("15 dias")
     await sim.send("sim")
     assert len(sim.leads_captured()) == 1

@@ -29,6 +29,21 @@ CHART_JS_CDN = (
 )
 
 
+def fetch_chartjs() -> str | None:
+    """Baixa Chart.js e retorna o conteúdo JS para embutir.
+
+    Retorna None em caso de erro — caller deve usar CDN como fallback.
+    """
+    import urllib.request
+    try:
+        with urllib.request.urlopen(CHART_JS_CDN, timeout=15) as resp:
+            return resp.read().decode("utf-8")
+    except Exception as e:  # noqa: BLE001
+        print(f"Aviso: não foi possível baixar Chart.js ({e})")
+        print("Usando CDN como fallback.")
+        return None
+
+
 def grade_color(value: float) -> str:
     if value >= 0.95:
         return "#22c55e"
@@ -84,7 +99,11 @@ INTENT_LABELS = {
 }
 
 
-def generate_dashboard(report: dict, output_path: Path) -> None:
+def generate_dashboard(
+    report: dict,
+    output_path: Path,
+    chartjs_js: str | None = None,
+) -> None:
     intents = list(report["f1_per_intent"].keys())
     f1_values = [report["f1_per_intent"][i] * 100 for i in intents]
     precision_values = [
@@ -183,13 +202,18 @@ def generate_dashboard(report: dict, output_path: Path) -> None:
         else "esta acima da meta de 10% - revisar intents com recall baixo."
     )
 
+    if chartjs_js:
+        chartjs_tag = f"<script>{chartjs_js}</script>"
+    else:
+        chartjs_tag = f'<script src="{CHART_JS_CDN}"></script>'
+
     html = f"""<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Camisart AI - Relatorio de Desempenho</title>
-  <script src="{CHART_JS_CDN}"></script>
+  {chartjs_tag}
   <style>
     * {{ box-sizing: border-box; margin: 0; padding: 0; }}
     body {{
@@ -665,8 +689,12 @@ new Chart(document.getElementById('accuracyChart'), {{
 </html>"""
 
     output_path.write_text(html, encoding="utf-8")
-    print(f"Dashboard salvo em: {output_path}")
-    print(f"   Abrir no browser: file:///{output_path.resolve()}")
+    if chartjs_js:
+        print(f"[OK] Dashboard standalone salvo em: {output_path}")
+        print("     Pode ser compartilhado sem internet!")
+    else:
+        print(f"[OK] Dashboard salvo em: {output_path}")
+    print(f"     Abrir no browser: file:///{output_path.resolve()}")
 
 
 def main():
@@ -674,6 +702,11 @@ def main():
     parser.add_argument(
         "--report",
         help="Caminho do JSON gerado por evaluate.py --export",
+    )
+    parser.add_argument(
+        "--standalone",
+        action="store_true",
+        help="Gera HTML com Chart.js embutido — funciona sem internet",
     )
     args = parser.parse_args()
 
@@ -690,9 +723,16 @@ def main():
 
     report = json.loads(report_path.read_text(encoding="utf-8"))
     date_str = report_path.stem.replace("_report", "")
-    output_path = REPORTS_DIR / f"{date_str}_dashboard.html"
 
-    generate_dashboard(report, output_path)
+    chartjs_js = None
+    if args.standalone:
+        print("Modo standalone: embutindo Chart.js no HTML...")
+        chartjs_js = fetch_chartjs()
+        output_path = REPORTS_DIR / f"{date_str}_dashboard_standalone.html"
+    else:
+        output_path = REPORTS_DIR / f"{date_str}_dashboard.html"
+
+    generate_dashboard(report, output_path, chartjs_js=chartjs_js)
 
 
 if __name__ == "__main__":

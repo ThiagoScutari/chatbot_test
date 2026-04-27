@@ -179,6 +179,11 @@ async def test_C12_fluxo_orcamento_completo(sim):
 
     # Personalização
     await sim.send("Bordado")
+    # [fix-Q3] bordado agora pede info de arte antes do prazo
+    assert sim.state == "coleta_bordado_info"
+
+    # Bordado info
+    await sim.send("1")  # tem_arte
     assert sim.state == "coleta_orcamento_prazo"
 
     # Prazo
@@ -222,6 +227,7 @@ async def test_C14_corrigir_volta_para_quantidade(sim):
     await sim.send("Camisa Polo")
     await sim.send("50")
     await sim.send("Bordado")
+    await sim.send("1")  # [fix-Q3] tem_arte
     await sim.send("15 dias")
     assert sim.state == "confirmacao_orcamento"
     await sim.send("corrigir")
@@ -237,6 +243,7 @@ async def test_C15_lead_gravado_no_banco(sim, db):
     await sim.send("Jaleco Tradicional")
     await sim.send("10")
     await sim.send("Bordado")
+    await sim.send("1")  # [fix-Q3] tem_arte
     await sim.send("urgente")
     await sim.send("sim")
 
