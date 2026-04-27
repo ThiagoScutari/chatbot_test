@@ -266,7 +266,7 @@ SUITES: dict[str, list[TestCase]] = {
         # do threshold medium=0.70 e cai no state_machine.handle() em MENU,
         # que detecta o trigger via _is_orcamento_trigger e inicia o fluxo.
         TestCase("orcamento", "/start", is_reset=True),
-        TestCase("orcamento", "Cliente Orcamento Canônico"),
+        TestCase("orcamento", "Cliente Canônico"),
         TestCase("orcamento", "orçamento",
                  expected_keywords=["segmento", "uniforme"]),
         TestCase("orcamento", "Saúde",
