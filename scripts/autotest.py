@@ -23,7 +23,6 @@ import argparse
 import asyncio
 import html
 import json
-import os
 import sys
 import time
 import uuid
@@ -47,7 +46,7 @@ if hasattr(sys.stdout, "reconfigure"):
 load_dotenv()
 
 # Imports após sys.path
-from sqlalchemy import create_engine, text  # noqa: E402
+from sqlalchemy import create_engine  # noqa: E402
 from sqlalchemy.orm import sessionmaker  # noqa: E402
 
 from app.config import settings  # noqa: E402
@@ -713,7 +712,10 @@ def print_summary(results: list[AutoTestResult]) -> None:
 
     print()
     print("=" * 60)
-    print(f"RESULTADO: {passed}/{total} passed ({pct:.1f}%)")
+    print(
+        f"RESULTADO: {passed}/{total} passed · "
+        f"{failed} failed ({pct:.1f}%)"
+    )
     print(f"Suites: {' '.join(suite_status)}")
     print(f"Latência média: {layer_avgs}")
     print("=" * 60)
