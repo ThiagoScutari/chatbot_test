@@ -160,11 +160,11 @@
       "priority": 8,
       "patterns": [
         "\\bprazo\\b",
-        "\\b(demora|quanto\\s+tempo|quando\\s+fica|dias\\s+para|entrega\\s+em|fica\\s+pronto|dias\\s+fica)\\b",
-        "\\b(urgente|r[áa]pido|preciso\\s+para\\s+amanh[ãa]|preciso\\s+logo)\\b",
+        "\\b(demora|quanto\\s+tempo|quando\\s+fica|dias\\s+para|entrega\\s+em|fica\\s+pronto|dias\\s+fica)\\b.{0,30}\\b(produ[çc][ãa]o|entrega|chegar|fica|pronto)\\b",
+        "\\b(produ[çc][ãa]o|entrega|chegar)\\b.{0,30}\\b(demora|quanto\\s+tempo|quando\\s+fica|dias)\\b",
         "\\btempo\\s+de\\s+produ[çc][ãa]o\\b",
-        "\\bpreciso\\s+(pra|para)\\b.*\\b(semana|amanh|hoje|urgente|logo)",
-        "\\bsemana\\s+que\\s+vem\\b"
+        "\\bsemana\\s+que\\s+vem\\b",
+        "\\bdias\\s+[úu]teis\\b"
       ],
       "response": {
         "type": "buttons",
@@ -377,9 +377,15 @@
     },
     {
       "id": "estoque_pronto",
-      "priority": 4,
+      "priority": 9,
       "patterns": [
-        "\\b(estoque|pronto|pronta\\s+entrega|imediat[ao]|disponivel|disponível|j[áa]\\s+tem|tem\\s+pronto)\\b"
+        "\\b(estoque|pronto|pronta\\s+entrega|imediat[ao]|disponivel|disponível|j[áa]\\s+tem|tem\\s+pronto)\\b",
+        "\\b(tem|t[êe]m)\\b.{0,20}\\b(dispon[íi]vel|em estoque|pronto)\\b",
+        "\\b(tem|t[êe]m|t[áa])\\b.{0,10}\\b(agora|hoje|essa semana|logo)\\b",
+        "\\bpreciso\\b.{0,20}\\b(essa semana|amanh[ãa]|hoje|urgente|logo)\\b.{0,20}\\btem\\b",
+        "\\b(pronta entrega|pronto pra entregar)\\b",
+        "\\b(pegar|retirar|levar)\\b.{0,15}\\b(hoje|agora|j[áa]|amanh[ãa])\\b",
+        "\\bconsigo\\b.{0,20}\\b(pegar|levar|retirar|comprar)\\b.{0,15}\\b(hoje|agora|j[áa])\\b"
       ],
       "response": {
         "type": "text",
