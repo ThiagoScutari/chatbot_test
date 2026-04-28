@@ -193,6 +193,31 @@ real e avise o time técnico para rodar invalidate_cache.
 * **Catálogo:** Disponível para consulta — solicitar ao consultor.
 * **Entrega:** Todo o Brasil via Correios.
 
+#### Camisa Polo Copa do Brasil ⭐ Edição Especial
+* **Produto:** Camisa polo temática em homenagem ao Brasil.
+  Peça exclusiva com identidade visual patriótica,
+  ideal para torcedores, eventos esportivos e
+  comemorações da seleção brasileira.
+* **Modelo:** Polo manga curta
+* **Tecido:** Malha Piquet — toque diferenciado,
+  durabilidade e caimento elegante
+* **Diferenciais:**
+  * Detalhes personalizados na gola e nos punhos
+    com o nome do Brasil
+  * Brasão do Brasil bordado no peito
+* **Preços:** R$ 50,00/peça
+* **Personalização:** Bordado exclusivo do brasão
+  já incluso no produto. Adicional de nome ou número
+  nas costas sob consulta.
+* **Tamanhos:** P, M, G, GG. Tamanhos especiais sob consulta.
+* **Disponibilidade:** Edição especial — consultar
+  disponibilidade de estoque com o consultor.
+* **Indicado para:** Torcedores da seleção, eventos
+  esportivos, bares e restaurantes temáticos,
+  grupos de amigos, presentes corporativos durante
+  Copa do Brasil.
+* **Entrega:** Todo o Brasil via Correios.
+
 #### Temáticos Religiosos
 * **Produto:** Camisetas para eventos e grupos religiosos.
   Segue o fluxo padrão de peça estampada.

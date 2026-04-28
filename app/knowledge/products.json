@@ -167,6 +167,32 @@
       "rag_texto": "Camiseta do Pará da Camisart — linha permanente com estampas e símbolos culturais do estado. Única linha temática permanente do catálogo. Preço R$ 29,00 varejo e R$ 25,00 atacado (12+ peças). Personalização com serigrafia e sublimação. Catálogo disponível para consulta — solicitar ao consultor."
     },
     {
+      "id": "polo_copa_brasil",
+      "nome": "Camisa Polo Copa do Brasil",
+      "categoria": "tematico",
+      "subcategoria": "esportivo",
+      "disponibilidade": "edicao_especial",
+      "tecidos": ["piquet"],
+      "preco_varejo": 50.00,
+      "preco_atacado": null,
+      "preco_nota": "Edição especial — preço único R$ 50,00",
+      "personalizacao": ["bordado_incluso"],
+      "tamanhos": ["P", "M", "G", "GG"],
+      "diferenciais": [
+        "Detalhes personalizados na gola e punhos com nome do Brasil",
+        "Brasão do Brasil bordado no peito",
+        "Malha piquet toque diferenciado"
+      ],
+      "indicado_para": [
+        "Torcedores",
+        "Eventos esportivos",
+        "Copa do Brasil",
+        "Bares e restaurantes temáticos",
+        "Presentes corporativos"
+      ],
+      "rag_texto": "Camisa Polo Copa do Brasil da Camisart — edição especial em malha piquet com toque diferenciado. Detalhes personalizados na gola e nos punhos com o nome do Brasil. Brasão do Brasil bordado no peito. Preço R$ 50,00/peça. Tamanhos P ao GG. Disponibilidade sujeita a estoque — consultar."
+    },
+    {
       "id": "tematico_religioso",
       "nome": "Camiseta Temática Religiosa",
       "categoria": "tematico",
