@@ -343,6 +343,13 @@ _PRODUCT_QUESTION_PATTERNS = [
     # GROUP 8 — Durabilidade técnica de bordado [fix-K3]
     r"\bbordado\b.{0,30}\b(lavagem|alvejante|dur[áa]vel|resistente|aguenta|descasca|desbota|qualidade)\b",
     r"\b(lavagem|alvejante|dur[áa]vel|resistente)\b.{0,30}\bbordado\b",
+    # GROUP 9 — Polo Copa do Brasil edição especial [fix-bug2]
+    # Roteia "polo copa", "camisa do brasil", "polo da seleção" para Camada 3
+    # antes da FAQ (preco_polo) capturar via "quanto custa polo".
+    r"\b(copa|brasil|sele[çc][ãa]o|brasao|bras[ãa]o|patriot)\b.{0,30}\b(polo|camisa|camiseta)\b",
+    r"\b(polo|camisa|camiseta)\b.{0,30}\b(copa|brasil|sele[çc][ãa]o|brasao|bras[ãa]o)\b",
+    r"\bpolo\b.{0,15}\b(copa|brasil)\b",
+    r"\b(copa do brasil|sele[çc][ãa]o brasileira)\b",
 ]
 
 _PRODUCT_QUESTION_REGEX = [
@@ -353,6 +360,13 @@ _PRODUCT_QUESTION_REGEX = [
 def is_product_question(text: str) -> bool:
     """Heurística: mensagem parece ser pergunta técnica sobre produto."""
     text_lower = text.lower()
+    # FAQ resolve "polo piquet" via preco_polo — não desviar para Camada 3.
+    # [fix-bug2] evita falso positivo do keyword `piquet` no GROUP 4.
+    if re.search(
+        r"\bpolo\b.{0,15}\bpiquet\b|\bpiquet\b.{0,15}\bpolo\b",
+        text_lower,
+    ):
+        return False
     if any(kw in text_lower for kw in _PRODUCT_QUESTION_KEYWORDS):
         return True
     return any(pat.search(text_lower) for pat in _PRODUCT_QUESTION_REGEX)
