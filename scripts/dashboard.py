@@ -98,9 +98,10 @@ INTENT_LABELS = {
     "estoque_pronto":       "Estoque / Pronta Entrega",
     "pos_venda":            "Pós-venda",
     "orcamento_trigger":    "Solicitar Orçamento",
+    # rag_response: label antigo, mantido para relatórios pré-Sprint 09
     "rag_response":         "Pergunta Técnica",
+    "context_response":     "Pergunta Técnica sobre Produto",
     "none":                 "Fora do Escopo",
-    "context_response":     "Resposta Técnica",
 }
 
 
