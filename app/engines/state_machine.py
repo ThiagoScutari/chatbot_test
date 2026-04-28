@@ -144,11 +144,24 @@ AGUARDA_RETORNO_MESSAGE = (
 
 
 PRODUTOS_POR_SEGMENTO: dict[str, list[str]] = {
+    # Polo e camiseta básica entram como itens universais em todo segmento —
+    # mesmo na Saúde (recepção, administrativo, enfermeiras), Doméstica, etc.
+    # [fix-U2]
     "corporativo": ["Camisa Polo", "Básica Algodão"],
-    "saude": ["Jaleco Tradicional", "Jaleco Premium"],
-    "industria": ["Camisa Polo", "Básica PV"],
-    "domestica": ["Uniforme Doméstica"],
-    "outro": ["Camisa Polo", "Básica Algodão", "Regata"],
+    "saude": [
+        "Jaleco Tradicional",
+        "Jaleco Premium",
+        "Camisa Polo",
+        "Básica Algodão",
+    ],
+    "industria": ["Camisa Polo", "Básica PV", "Básica Algodão"],
+    "domestica": ["Uniforme Doméstica", "Camisa Polo", "Básica Algodão"],
+    "outro": [
+        "Camisa Polo",
+        "Básica Algodão",
+        "Regata",
+        "Jaleco Tradicional",
+    ],
 }
 
 
@@ -343,6 +356,14 @@ def handle(
         )
 
     if estado_atual == AGUARDA_NOME:
+        # [fix-U1] Se a sessão já tem nome (estado dessincronizado, /start
+        # parcial ou loop entre estados), não pergunta de novo — re-roteia
+        # a mensagem como se viesse do MENU para que o intent atual seja
+        # processado normalmente. Sem isso, intents com follow_up_state
+        # (ex.: orçamento) deixavam o usuário preso em AGUARDA_NOME.
+        if session.nome_cliente:
+            session.current_state = MENU
+            return handle(message, session, faq_engine, campaign_engine)
         if faq_match is not None and faq_match.follow_up_state:
             # Um intent bem-vindo foi detectado antes do nome — responde,
             # mas ainda pede o nome em seguida.
