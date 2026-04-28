@@ -21,6 +21,9 @@ def get_valid_intents():
     )
     ids = {i["id"] for i in faq["intents"]}
     ids.add("none")
+    # context_response = nova nomenclatura (Sprint 09 / ADR-003);
+    # rag_response permanece válido para compatibilidade com datasets antigos.
+    ids.add("context_response")
     ids.add("rag_response")
     return ids
 

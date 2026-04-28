@@ -1087,96 +1087,96 @@
     {
       "id": "S135",
       "message": "qual tecido é melhor para jaleco?",
-      "expected_intent": "rag_response",
-      "expected_layer": "rag",
+      "expected_intent": "context_response",
+      "expected_layer": "context",
       "difficulty": "easy",
       "notes": "pergunta técnica clássica"
     },
     {
       "id": "S136",
       "message": "que tipo de tecido vocês usam?",
-      "expected_intent": "rag_response",
-      "expected_layer": "rag",
+      "expected_intent": "context_response",
+      "expected_layer": "context",
       "difficulty": "easy",
       "notes": "material"
     },
     {
       "id": "S137",
       "message": "a gabardine é resistente?",
-      "expected_intent": "rag_response",
-      "expected_layer": "rag",
+      "expected_intent": "context_response",
+      "expected_layer": "context",
       "difficulty": "easy",
       "notes": "propriedade do tecido"
     },
     {
       "id": "S138",
       "message": "o bordado aguenta lavagem com alvejante?",
-      "expected_intent": "rag_response",
-      "expected_layer": "rag",
+      "expected_intent": "context_response",
+      "expected_layer": "context",
       "difficulty": "medium",
       "notes": "durabilidade + químico"
     },
     {
       "id": "S139",
       "message": "qual tecido respira mais no calor de Belém?",
-      "expected_intent": "rag_response",
-      "expected_layer": "rag",
+      "expected_intent": "context_response",
+      "expected_layer": "context",
       "difficulty": "medium",
       "notes": "conforto térmico"
     },
     {
       "id": "S140",
       "message": "tem diferença entre malha piquet e malha fria?",
-      "expected_intent": "rag_response",
-      "expected_layer": "rag",
+      "expected_intent": "context_response",
+      "expected_layer": "context",
       "difficulty": "medium",
       "notes": "comparação tecidos"
     },
     {
       "id": "S141",
       "message": "o uniforme encolhe depois de lavar?",
-      "expected_intent": "rag_response",
-      "expected_layer": "rag",
+      "expected_intent": "context_response",
+      "expected_layer": "context",
       "difficulty": "medium",
       "notes": "cuidado com tecido"
     },
     {
       "id": "S142",
       "message": "qual a diferença do jaleco premium para uso em centro cirúrgico?",
-      "expected_intent": "rag_response",
-      "expected_layer": "rag",
+      "expected_intent": "context_response",
+      "expected_layer": "context",
       "difficulty": "hard",
       "notes": "uso especializado"
     },
     {
       "id": "S143",
       "message": "a malha piquet da polo é compatível com sublimação total ou só serigrafia?",
-      "expected_intent": "rag_response",
-      "expected_layer": "rag",
+      "expected_intent": "context_response",
+      "expected_layer": "context",
       "difficulty": "hard",
       "notes": "compatibilidade técnica"
     },
     {
       "id": "S144",
       "message": "para ambiente com exposição a óleos e gorduras de cozinha industrial, qual composição de tecido vocês indicam?",
-      "expected_intent": "rag_response",
-      "expected_layer": "rag",
+      "expected_intent": "context_response",
+      "expected_layer": "context",
       "difficulty": "hard",
       "notes": "requisito ocupacional"
     },
     {
       "id": "S145",
       "message": "sobre a durabilidade do bordado em peças lavadas 3x por semana, qual o tempo médio antes de desbotar?",
-      "expected_intent": "rag_response",
-      "expected_layer": "rag",
+      "expected_intent": "context_response",
+      "expected_layer": "context",
       "difficulty": "hard",
       "notes": "vida útil"
     },
     {
       "id": "S146",
       "message": "qual a gramatura exata do tecido do jaleco tradicional comparado ao premium?",
-      "expected_intent": "rag_response",
-      "expected_layer": "rag",
+      "expected_intent": "context_response",
+      "expected_layer": "context",
       "difficulty": "hard",
       "notes": "especificação técnica"
     },

@@ -96,7 +96,7 @@ async def _predict_full(
     if context_engine and is_product_question(message):
         ctx_result = await context_engine.answer(message)
         if ctx_result.answer:
-            return "rag_response", "context"
+            return "context_response", "context"
 
     if llm_router:
         known = faq_engine.intent_ids()
