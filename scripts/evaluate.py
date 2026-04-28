@@ -293,6 +293,14 @@ async def main():
         action="store_true",
         help="Usar apenas Camada 1 (mais rapido)",
     )
+    parser.add_argument(
+        "--output",
+        help=(
+            "Nome base do relatório (ex: 2026-04-28_manual). "
+            "Default: data atual (YYYY-MM-DD)."
+        ),
+        default=None,
+    )
     args = parser.parse_args()
 
     dataset = json.loads(DATASET_PATH.read_text(encoding="utf-8"))
@@ -396,14 +404,18 @@ async def main():
 
     if args.export:
         REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-        report_path = REPORTS_DIR / f"{datetime.now():%Y-%m-%d}_report.json"
+        base_name = args.output or datetime.now().strftime("%Y-%m-%d")
+        report_path = REPORTS_DIR / f"{base_name}_report.json"
         report_dict = asdict(report)
         report_path.write_text(
             json.dumps(report_dict, ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
         print(f"\nRelatorio salvo em: {report_path}")
-        print("Para gerar o dashboard: python scripts/dashboard.py")
+        print(
+            "Para gerar o dashboard: "
+            f"python scripts/dashboard.py --output {base_name}"
+        )
 
 
 if __name__ == "__main__":

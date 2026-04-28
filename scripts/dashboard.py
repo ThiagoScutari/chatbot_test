@@ -846,10 +846,29 @@ def main():
         action="store_true",
         help="Gera HTML com Chart.js embutido — funciona sem internet",
     )
+    parser.add_argument(
+        "--output",
+        help=(
+            "Nome base do relatório/dashboard "
+            "(ex: 2026-04-28_manual). Procura "
+            "REPORTS_DIR/<output>_report.json."
+        ),
+        default=None,
+    )
     args = parser.parse_args()
 
     if args.report:
         report_path = Path(args.report)
+    elif args.output:
+        report_path = REPORTS_DIR / f"{args.output}_report.json"
+        if not report_path.exists():
+            print(f"Relatorio nao encontrado: {report_path}")
+            print(
+                f"Execute primeiro: python scripts/evaluate.py --export "
+                f"--output {args.output}"
+            )
+            return
+        print(f"Usando relatorio: {report_path.name}")
     else:
         reports = sorted(REPORTS_DIR.glob("*_report.json"), reverse=True)
         if not reports:
