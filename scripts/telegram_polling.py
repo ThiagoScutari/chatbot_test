@@ -31,6 +31,7 @@ logging.basicConfig(level="INFO")
 logger = logging.getLogger(__name__)
 
 # Imports após sys.path
+from app.adapters.telegram import client as telegram_client  # noqa: E402
 from app.adapters.telegram.adapter import TelegramAdapter  # noqa: E402
 from app.config import settings  # noqa: E402
 from app.database import SessionLocal  # noqa: E402
@@ -38,6 +39,12 @@ from app.engines.campaign_engine import CampaignEngine  # noqa: E402
 from app.engines.regex_engine import FAQEngine  # noqa: E402
 from app.pipeline.message_pipeline import MessagePipeline  # noqa: E402
 from app.adapters.registry import register, clear  # noqa: E402
+from app.services.audio_service import AudioService  # noqa: E402
+
+
+AUDIO_FALLBACK_MSG = (
+    "Não consegui entender o áudio 😊 Pode repetir por favor"
+)
 
 
 TELEGRAM_LONGPOLL_TIMEOUT = 30
@@ -109,6 +116,21 @@ async def main() -> None:
         llm_config=_llm_config,
         context_engine=context_engine,
     )
+
+    audio_service: AudioService | None = None
+    if settings.OPENAI_API_KEY and settings.TELEGRAM_BOT_TOKEN:
+        audio_service = AudioService(
+            telegram_token=settings.TELEGRAM_BOT_TOKEN,
+            openai_api_key=settings.OPENAI_API_KEY,
+        )
+        logger.info(
+            "AudioService inicializado — transcrição de áudio ativa."
+        )
+    else:
+        logger.info(
+            "AudioService desativado — OPENAI_API_KEY não configurada."
+        )
+
     clear()
     register(adapter)
     logger.info("Registry: adapter 'telegram' registrado.")
@@ -122,6 +144,40 @@ async def main() -> None:
             updates = await get_updates(offset)
             for update in updates:
                 offset = update["update_id"] + 1
+
+                # Transcrição de áudio: se a mensagem tem voice/audio,
+                # transcrevemos via Whisper e injetamos o texto em
+                # update["message"]["text"] para que o adapter siga
+                # o fluxo normal (canal-agnóstico).
+                message = update.get("message") or {}
+                voice = message.get("voice") or message.get("audio")
+                if voice and not message.get("text"):
+                    chat_id = message.get("chat", {}).get("id")
+                    if audio_service is None:
+                        logger.info(
+                            "Áudio recebido mas AudioService desativado."
+                        )
+                        if chat_id is not None:
+                            await telegram_client.send_text(
+                                int(chat_id), AUDIO_FALLBACK_MSG
+                            )
+                        continue
+                    file_id = voice.get("file_id")
+                    logger.info(
+                        "Áudio recebido (file_id=%s) — transcrevendo...",
+                        file_id,
+                    )
+                    transcribed = await audio_service.transcribe(file_id)
+                    if transcribed:
+                        logger.info("Transcrição: %s", transcribed[:80])
+                        message["text"] = transcribed
+                    else:
+                        if chat_id is not None:
+                            await telegram_client.send_text(
+                                int(chat_id), AUDIO_FALLBACK_MSG
+                            )
+                        continue
+
                 inbound = await adapter.parse_inbound(update, {})
                 if inbound:
                     db = SessionLocal()
