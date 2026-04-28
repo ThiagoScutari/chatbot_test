@@ -182,6 +182,21 @@ SUITES: dict[str, list[TestCase]] = {
                  ["atacado", "especial"]),
         TestCase("faq", "preço de atacado como funciona?",
                  ["atacado", "12"]),
+        # Bloco 6 — preco_camiseta (camiseta vs polo) [fix-bug1]
+        TestCase("faq", "/start", is_reset=True),
+        TestCase("faq", "Cliente FAQ F"),
+        TestCase("faq", "tem camiseta lisa?",
+                 ["camiseta", "29"]),
+        TestCase("faq", "camiseta básica algodão",
+                 ["camiseta", "29"]),
+        TestCase("faq", "quero camiseta colorida",
+                 ["camiseta"]),
+        TestCase("faq", "tem baby look?",
+                 ["camiseta", "baby"]),
+        TestCase("faq", "não quero polo, quero camiseta",
+                 ["camiseta"]),
+        TestCase("faq", "camiseta algodão preço",
+                 ["camiseta", "29"]),
     ],
     "llm": [
         # Bloco A — queries que mantêm state=menu (FAQ matches sem
@@ -269,6 +284,17 @@ SUITES: dict[str, list[TestCase]] = {
                  ["bordado"]),
         TestCase("context", "piquet é melhor que algodão pra uniforme?",
                  ["piquet", "durável"]),
+        # Bloco 4 — Polo Copa do Brasil edição especial [fix-bug2]
+        TestCase("context", "/start", is_reset=True),
+        TestCase("context", "Cliente CTX D"),
+        TestCase("context", "quanto custa a polo copa do brasil?",
+                 ["50", "copa"]),
+        TestCase("context", "polo brasil",
+                 ["Brasil", "50"]),
+        TestCase("context", "tem polo da seleção?",
+                 ["Brasil"]),
+        TestCase("context", "camisa da copa do brasil?",
+                 ["copa", "50"]),
     ],
     "orcamento": [
         # Bloco canônico — fluxo completo segmento→produto→qtd→prazo→confirmar.
@@ -351,6 +377,19 @@ SUITES: dict[str, list[TestCase]] = {
                  [], note="emoji-only — qualquer resposta ok"),
         TestCase("edge", "💰❓",
                  [], note="emoji-only — qualquer resposta ok"),
+        # Bloco 3 — escape de coleta_orcamento_segmento via falar_humano [fix-bug3]
+        TestCase("edge", "/start", is_reset=True),
+        TestCase("edge", "Thiago Escape",
+                 ["ajudar"]),
+        TestCase("edge", "quero fazer um orçamento",
+                 ["segmento"]),
+        TestCase("edge", "quero falar com atendente",
+                 ["consultor"]),
+        # Bloco 4 — typo tolerance / casos isolados
+        TestCase("edge", "/start", is_reset=True),
+        TestCase("edge", "Cliente Edge C"),
+        TestCase("edge", "borgado",
+                 ["bordado"], note="typo bordado — depende de LLM ou fallback"),
     ],
 }
 
