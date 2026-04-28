@@ -92,21 +92,42 @@
       "id": "preco_polo",
       "priority": 10,
       "patterns": [
-        "\\b(pre[çc]o|valor|quanto)\\b.*\\bpolo\\b",
-        "\\bpolo\\b.*\\b(pre[çc]o|valor|quanto)\\b",
-        "\\bcami[sz]a?\\s+polo\\b",
-        "\\bpol[ou]\\b.*\\b(pre[çc][oa]|valor|quanto)\\b",
-        "\\b(pre[çc][oa]|valor|quanto)\\b.*\\bpol[ou]\\b",
-        "\\bcami[zs][ai].*pol[ou]\\b",
-        "\\bqto\\b.{0,20}\\b(polo|camisa|piquet)\\b",
-        "\\b(polo|camisa|piquet)\\b.{0,20}\\bqto\\b",
-        "\\b(valor|valo)\\b.{0,20}\\b(polo|camisa)\\b",
+        "\\b(pre[çc]o|valor|quanto)\\b.*\\bpolo\\b(?!.{0,30}\\b(copa|brasil|sele[çc][ãa]o|brasao)\\b)",
+        "\\bpolo\\b(?!.{0,30}\\b(copa|brasil|sele[çc][ãa]o|brasao)\\b).*\\b(pre[çc]o|valor|quanto)\\b",
+        "\\bcami[sz]a?\\s+polo\\b(?!.{0,40}\\b(copa|brasil|sele[çc][ãa]o|brasao)\\b)",
+        "\\bpol[ou]\\b(?!.{0,30}\\b(copa|brasil|sele[çc][ãa]o|brasao)\\b).*\\b(pre[çc][oa]|valor|quanto)\\b",
+        "\\b(pre[çc][oa]|valor|quanto)\\b.*\\bpol[ou]\\b(?!.{0,30}\\b(copa|brasil|sele[çc][ãa]o|brasao)\\b)",
+        "\\bcami[zs][ai].*pol[ou]\\b(?!.{0,30}\\b(copa|brasil|sele[çc][ãa]o|brasao)\\b)",
+        "\\bqto\\b.{0,20}\\b(polo|camisa|piquet)\\b(?!.{0,30}\\b(copa|brasil|sele[çc][ãa]o|brasao)\\b)",
+        "\\b(polo|camisa|piquet)\\b(?!.{0,30}\\b(copa|brasil|sele[çc][ãa]o|brasao)\\b).{0,20}\\bqto\\b",
+        "\\b(valor|valo)\\b.{0,20}\\b(polo|camisa)\\b(?!.{0,30}\\b(copa|brasil|sele[çc][ãa]o|brasao)\\b)",
         "\\bcamisa\\b.{0,20}\\bgola\\b",
-        "\\bgola\\b.{0,20}\\b(polo|camisa|listrada|botões|bot[ãa]o)\\b"
+        "\\bgola\\b.{0,20}\\b(polo|camisa|listrada|botões|bot[ãa]o)\\b",
+        "\\bpolo\\b.{0,15}\\bpiquet\\b(?!.{0,30}\\b(copa|brasil|sele[çc][ãa]o|brasao)\\b)",
+        "\\bpiquet\\b.{0,15}\\bpolo\\b(?!.{0,30}\\b(copa|brasil|sele[çc][ãa]o|brasao)\\b)"
       ],
       "response": {
         "type": "text",
         "body": "👕 *Camisa Polo Camisart* tradicional em malha piquet\n\n• R$ 45,00 varejo · R$ 42,00 atacado (12+ peças)\n\nDisponível em manga curta e manga longa. Bordamos sua logo a partir de 1 peça! Deseja um orçamento?"
+      },
+      "follow_up_state": "menu"
+    },
+    {
+      "id": "preco_camiseta",
+      "priority": 10,
+      "patterns": [
+        "\\bcamiseta\\b(?!.*\\b(polo|gola)\\b)",
+        "\\bcamiseta\\b.{0,20}\\b(básica|basica|lisa|algodão|algodao)\\b",
+        "\\b(básica|basica|lisa)\\b.{0,20}\\bcamiseta\\b",
+        "\\bcamiseta\\b.{0,20}\\b(colorida|estampada|cor)\\b",
+        "\\b(camiseta|camisa)\\b.{0,20}\\b(lisa|sem gola|básica|algodão)\\b",
+        "\\bbasica\\b.{0,15}\\b(algodão|algodao|pv|poliéster|poliester)\\b",
+        "\\bblusa\\b(?!.*\\b(polo|gola)\\b)",
+        "\\bbaby.?look\\b"
+      ],
+      "response": {
+        "type": "text",
+        "body": "👕 *Camiseta Básica Camisart*\n\n• Algodão: R$ 29,00 varejo · R$ 25,00 atacado (12+ peças)\n• PV / Poliéster / Misto: A consultar\n\nDisponível em manga curta, manga longa, regata e baby look (sob encomenda).\nPersonalização: bordado (1+ peça), serigrafia (20+ peças), sublimação (PV/poliéster).\n\n*Sublimação NÃO funciona em algodão.*\n\nDeseja um orçamento?"
       },
       "follow_up_state": "menu"
     },
