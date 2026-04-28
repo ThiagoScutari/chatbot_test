@@ -102,11 +102,32 @@
         "\\b(polo|camisa|piquet)\\b.{0,20}\\bqto\\b",
         "\\b(valor|valo)\\b.{0,20}\\b(polo|camisa)\\b",
         "\\bcamisa\\b.{0,20}\\bgola\\b",
-        "\\bgola\\b.{0,20}\\b(polo|camisa|listrada|botões|bot[ãa]o)\\b"
+        "\\bgola\\b.{0,20}\\b(polo|camisa|listrada|botões|bot[ãa]o)\\b",
+        "\\bpolo\\b.{0,15}\\bpiquet\\b",
+        "\\bpiquet\\b.{0,15}\\bpolo\\b"
       ],
       "response": {
         "type": "text",
         "body": "👕 *Camisa Polo Camisart* tradicional em malha piquet\n\n• R$ 45,00 varejo · R$ 42,00 atacado (12+ peças)\n\nDisponível em manga curta e manga longa. Bordamos sua logo a partir de 1 peça! Deseja um orçamento?"
+      },
+      "follow_up_state": "menu"
+    },
+    {
+      "id": "preco_camiseta",
+      "priority": 10,
+      "patterns": [
+        "\\bcamiseta\\b(?!.*\\b(polo|gola)\\b)",
+        "\\bcamiseta\\b.{0,20}\\b(básica|basica|lisa|algodão|algodao)\\b",
+        "\\b(básica|basica|lisa)\\b.{0,20}\\bcamiseta\\b",
+        "\\bcamiseta\\b.{0,20}\\b(colorida|estampada|cor)\\b",
+        "\\b(camiseta|camisa)\\b.{0,20}\\b(lisa|sem gola|básica|algodão)\\b",
+        "\\bbasica\\b.{0,15}\\b(algodão|algodao|pv|poliéster|poliester)\\b",
+        "\\bblusa\\b(?!.*\\b(polo|gola)\\b)",
+        "\\bbaby.?look\\b"
+      ],
+      "response": {
+        "type": "text",
+        "body": "👕 *Camiseta Básica Camisart*\n\n• Algodão: R$ 29,00 varejo · R$ 25,00 atacado (12+ peças)\n• PV / Poliéster / Misto: A consultar\n\nDisponível em manga curta, manga longa e regata.\nPersonalização: bordado (1+ peça), serigrafia (20+ peças), sublimação (PV/poliéster).\n\n*Sublimação NÃO funciona em algodão.*\n\nDeseja um orçamento?"
       },
       "follow_up_state": "menu"
     },
