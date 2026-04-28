@@ -16,7 +16,7 @@ from typing import Any, Literal
 from pydantic import BaseModel
 
 from app.engines.campaign_engine import CampaignEngine
-from app.engines.regex_engine import FAQEngine, FAQResponse
+from app.engines.regex_engine import FAQEngine, FAQMatch, FAQResponse
 from app.models.session import Session as SessionModel
 
 
@@ -177,6 +177,22 @@ class HandleResult(BaseModel):
 
 def _text(body: str) -> FAQResponse:
     return FAQResponse(type="text", body=body)
+
+
+def _check_escape(faq_match: FAQMatch | None) -> "HandleResult | None":
+    """Escape hatch: falar_humano interrompe qualquer fluxo de coleta.
+
+    Sem isso o usuário fica preso aguardando input estruturado (segmento,
+    quantidade, prazo) sem opção visível de sair. [fix-bug3]
+    """
+    if faq_match is not None and faq_match.intent_id == "falar_humano":
+        return HandleResult(
+            response=faq_match.response,
+            next_state=AGUARDA_RETORNO_HUMANO,
+            matched_intent_id="falar_humano",
+            action="forward_to_human",
+        )
+    return None
 
 
 def _menu_buttons() -> FAQResponse:
@@ -458,6 +474,9 @@ def handle(
         )
 
     if estado_atual == COLETA_ORCAMENTO_SEGMENTO:
+        escape = _check_escape(faq_match)
+        if escape:
+            return escape
         segmento_id = _resolve_choice(texto, SEGMENTO_MAP)
         if segmento_id is None:
             return HandleResult(
@@ -490,6 +509,9 @@ def handle(
         )
 
     if estado_atual == COLETA_ORCAMENTO_PRODUTO:
+        escape = _check_escape(faq_match)
+        if escape:
+            return escape
         segmento_id = session.session_data.get("orcamento_segmento", "outro")
         produtos = PRODUTOS_POR_SEGMENTO.get(
             segmento_id, PRODUTOS_POR_SEGMENTO["outro"]
@@ -526,6 +548,9 @@ def handle(
         )
 
     if estado_atual == COLETA_ORCAMENTO_QTD:
+        escape = _check_escape(faq_match)
+        if escape:
+            return escape
         # Extrai o primeiro número da mensagem — aceita "12 peças",
         # "umas 50", "por volta de 30", "200 unidades", etc. [fix-Q1]
         import re as _re
@@ -569,6 +594,9 @@ def handle(
         )
 
     if estado_atual == COLETA_ORCAMENTO_PERSONALIZACAO:
+        escape = _check_escape(faq_match)
+        if escape:
+            return escape
         personalizacao = _resolve_choice(texto, PERSONALIZACAO_MAP)
         if personalizacao is None:
             return HandleResult(
@@ -605,6 +633,9 @@ def handle(
         )
 
     if estado_atual == COLETA_BORDADO_INFO:
+        escape = _check_escape(faq_match)
+        if escape:
+            return escape
         arte_map = {
             "1": "tem_arte",
             "sim": "tem_arte",
@@ -663,6 +694,9 @@ def handle(
         )
 
     if estado_atual == COLETA_ORCAMENTO_PRAZO:
+        escape = _check_escape(faq_match)
+        if escape:
+            return escape
         if not texto:
             return HandleResult(
                 response=_text(
@@ -677,6 +711,9 @@ def handle(
         )
 
     if estado_atual == CONFIRMACAO_ORCAMENTO:
+        escape = _check_escape(faq_match)
+        if escape:
+            return escape
         escolha = _resolve_choice(texto, CONFIRMACAO_MAP)
         if escolha == "confirmar":
             nome = session.nome_cliente or "cliente"
