@@ -20,6 +20,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import sys
+import time
 from pathlib import Path
 
 import httpx
@@ -39,6 +40,7 @@ from app.engines.campaign_engine import CampaignEngine  # noqa: E402
 from app.engines.regex_engine import FAQEngine  # noqa: E402
 from app.pipeline.message_pipeline import MessagePipeline  # noqa: E402
 from app.adapters.registry import register, clear  # noqa: E402
+from app.services.audio_metrics import record_audio_event  # noqa: E402
 from app.services.audio_service import AudioService  # noqa: E402
 
 
@@ -151,11 +153,21 @@ async def main() -> None:
                 # o fluxo normal (canal-agnóstico).
                 message = update.get("message") or {}
                 voice = message.get("voice") or message.get("audio")
+                # Telemetria: preenchido se houve transcrição bem-sucedida —
+                # o evento "success" é registrado APÓS o pipeline para
+                # capturar o intent_id.
+                audio_success_meta: dict | None = None
+
                 if voice and not message.get("text"):
                     chat_id = message.get("chat", {}).get("id")
                     if audio_service is None:
                         logger.info(
                             "Áudio recebido mas AudioService desativado."
+                        )
+                        record_audio_event(
+                            status="no_service",
+                            duration_ms=0,
+                            channel_user_id=str(chat_id) if chat_id else "",
                         )
                         if chat_id is not None:
                             await telegram_client.send_text(
@@ -167,11 +179,23 @@ async def main() -> None:
                         "Áudio recebido (file_id=%s) — transcrevendo...",
                         file_id,
                     )
+                    _t0 = time.perf_counter()
                     transcribed = await audio_service.transcribe(file_id)
+                    duration_ms = (time.perf_counter() - _t0) * 1000.0
                     if transcribed:
                         logger.info("Transcrição: %s", transcribed[:80])
                         message["text"] = transcribed
+                        audio_success_meta = {
+                            "duration_ms": duration_ms,
+                            "text_length": len(transcribed),
+                            "channel_user_id": str(chat_id) if chat_id else "",
+                        }
                     else:
+                        record_audio_event(
+                            status="failed",
+                            duration_ms=duration_ms,
+                            channel_user_id=str(chat_id) if chat_id else "",
+                        )
                         if chat_id is not None:
                             await telegram_client.send_text(
                                 int(chat_id), AUDIO_FALLBACK_MSG
@@ -187,6 +211,20 @@ async def main() -> None:
                             await adapter.send(outbound)
                         # db.commit() é chamado dentro de pipeline.process()
                         # via check_rate_limit — não commitar novamente aqui.
+                        if audio_success_meta is not None:
+                            intent_id = (
+                                getattr(outbound, "matched_intent_id", "")
+                                or ""
+                            )
+                            record_audio_event(
+                                status="success",
+                                duration_ms=audio_success_meta["duration_ms"],
+                                text_length=audio_success_meta["text_length"],
+                                intent_id=intent_id,
+                                channel_user_id=audio_success_meta[
+                                    "channel_user_id"
+                                ],
+                            )
                     except Exception:  # noqa: BLE001
                         logger.exception("Erro ao processar mensagem:")
                         db.rollback()

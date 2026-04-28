@@ -23,6 +23,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from app.services.audio_metrics import (  # noqa: E402
+    compute_audio_stats,
+    load_audio_metrics,
+)
+
 REPORTS_DIR = Path("docs/evaluation/reports")
 CHART_JS_CDN = (
     "https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"
@@ -207,6 +212,85 @@ def generate_dashboard(
     else:
         chartjs_tag = f'<script src="{CHART_JS_CDN}"></script>'
 
+    # Audio metrics (telemetria local — pode estar vazia)
+    audio_events = load_audio_metrics()
+    audio_stats = compute_audio_stats(audio_events)
+
+    if audio_stats["total"] == 0:
+        audio_section_html = """
+      <div class="panel" style="margin-bottom:24px;border-left:4px solid #8b5cf6">
+        <h2>🎤 Mensagens de Áudio — Whisper AI</h2>
+        <p style="color:#64748b;font-size:14px;padding:16px 0">
+          Nenhuma mensagem de áudio recebida ainda.<br>
+          Quando clientes enviarem áudios, as métricas aparecerão aqui.
+        </p>
+      </div>
+        """
+    else:
+        failed_color = "#22c55e" if audio_stats["failed"] == 0 else "#f59e0b"
+        audio_section_html = f"""
+      <div style="margin-bottom:24px">
+        <div style="border-left:4px solid #8b5cf6;padding-left:12px;margin-bottom:16px">
+          <h2 style="font-size:18px;font-weight:700;color:#1e293b">
+            🎤 Mensagens de Áudio — Whisper AI
+          </h2>
+          <p style="font-size:13px;color:#64748b;margin-top:4px">
+            Clientes que enviaram mensagens de voz — transcritas automaticamente
+          </p>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px">
+          <div class="card" style="border-top:3px solid #8b5cf6">
+            <div class="value" style="color:#8b5cf6">{audio_stats['total']}</div>
+            <div class="label">Áudios Recebidos</div>
+          </div>
+          <div class="card" style="border-top:3px solid #22c55e">
+            <div class="value" style="color:#22c55e">{audio_stats['success_rate']}%</div>
+            <div class="label">Taxa de Sucesso</div>
+            <div class="grade" style="color:#22c55e">
+              {audio_stats['success']} transcritos
+            </div>
+          </div>
+          <div class="card" style="border-top:3px solid #3b82f6">
+            <div class="value" style="color:#3b82f6">{audio_stats['avg_duration_ms']:.0f}ms</div>
+            <div class="label">Tempo Médio</div>
+            <div class="grade" style="color:#64748b">por transcrição</div>
+          </div>
+          <div class="card" style="border-top:3px solid {failed_color}">
+            <div class="value" style="color:{failed_color}">{audio_stats['failed']}</div>
+            <div class="label">Falhas</div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="panel">
+            <h2>📈 Áudios por Dia (últimos 7 dias)</h2>
+            <div class="chart-container" style="height:220px">
+              <canvas id="audioByDayChart"></canvas>
+            </div>
+            <div class="chart-desc">
+              <p><strong>O que mostra:</strong> volume diário de mensagens de voz recebidas.</p>
+            </div>
+          </div>
+          <div class="panel">
+            <h2>🎯 Assuntos Mais Perguntados via Áudio</h2>
+            <div class="chart-container" style="height:220px">
+              <canvas id="audioIntentsChart"></canvas>
+            </div>
+            <div class="chart-desc">
+              <p><strong>O que mostra:</strong> quais perguntas os clientes fazem por áudio.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+        """
+
+    audio_by_day_json = json.dumps(audio_stats["by_day"], ensure_ascii=False)
+    audio_top_intents_json = json.dumps(
+        audio_stats["top_intents"], ensure_ascii=False
+    )
+    audio_intent_labels_json = json.dumps(INTENT_LABELS, ensure_ascii=False)
+
     html = f"""<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -363,6 +447,8 @@ def generate_dashboard(
     <div class="grade" style="color:#8b5cf6">ground truth</div>
   </div>
 </div>
+
+{audio_section_html}
 
 <div class="exec-panel">
   <h2>Analise Executiva</h2>
@@ -683,6 +769,58 @@ new Chart(document.getElementById('accuracyChart'), {{
     }}
   }}
 }});
+
+// ── Áudio (Whisper) — só renderiza se houver dados ───────────────────
+const audioByDay = {audio_by_day_json};
+const audioTopIntents = {audio_top_intents_json};
+const audioIntentLabels = {audio_intent_labels_json};
+
+if (audioByDay.length > 0 && document.getElementById('audioByDayChart')) {{
+  new Chart(document.getElementById('audioByDayChart'), {{
+    type: 'bar',
+    data: {{
+      labels: audioByDay.map(d => d.day),
+      datasets: [
+        {{
+          label: 'Transcritos',
+          data: audioByDay.map(d => d.success || 0),
+          backgroundColor: '#22c55e',
+          borderRadius: 4,
+        }},
+        {{
+          label: 'Falhas',
+          data: audioByDay.map(d => d.failed || 0),
+          backgroundColor: '#ef4444',
+          borderRadius: 4,
+        }}
+      ]
+    }},
+    options: {{
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {{ legend: {{ position: 'top' }} }},
+      scales: {{ x: {{ stacked: true }}, y: {{ stacked: true }} }}
+    }}
+  }});
+}}
+
+if (audioTopIntents.length > 0 && document.getElementById('audioIntentsChart')) {{
+  new Chart(document.getElementById('audioIntentsChart'), {{
+    type: 'doughnut',
+    data: {{
+      labels: audioTopIntents.map(i => audioIntentLabels[i.intent] || i.intent),
+      datasets: [{{
+        data: audioTopIntents.map(i => i.count),
+        backgroundColor: ['#8b5cf6','#3b82f6','#22c55e','#f59e0b','#ef4444'],
+      }}]
+    }},
+    options: {{
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {{ legend: {{ position: 'right' }} }}
+    }}
+  }});
+}}
 </script>
 
 </body>

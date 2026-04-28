@@ -25,3 +25,6 @@ fix_state.py
 docs/evaluation/reports/*.json
 docs/evaluation/reports/*.html
 docs/evaluation/qualitative/*.json
+
+# Telemetria local de áudio (feat-T) — não versionar dados de execução
+docs/evaluation/audio_metrics.jsonl

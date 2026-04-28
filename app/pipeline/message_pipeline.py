@@ -355,4 +355,5 @@ class MessagePipeline:
             channel_id=inbound.channel_id,
             channel_user_id=inbound.channel_user_id,
             response=result.response.model_dump(),
+            matched_intent_id=result.matched_intent_id,
         )

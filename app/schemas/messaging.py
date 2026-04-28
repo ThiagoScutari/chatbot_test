@@ -23,3 +23,4 @@ class OutboundMessage(BaseModel):
     channel_user_id: str
     channel_message_id: str | None = None  # preenchido após adapter.send()
     response: dict[str, Any]  # FAQResponse serializado (type, body, buttons, ...)
+    matched_intent_id: str | None = None  # propagado para telemetria de canal
