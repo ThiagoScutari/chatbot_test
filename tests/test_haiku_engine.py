@@ -10,9 +10,16 @@ from app.engines.haiku_engine import HaikuEngine
 
 
 def make_mock_response(json_content: dict) -> MagicMock:
-    """Create a mock Anthropic API response."""
+    """Create a mock Anthropic API response.
+
+    Engine uses prefill (assistant starts with '{'), so the API only
+    returns the continuation. We strip the leading '{' to simulate that.
+    """
     mock = MagicMock()
-    mock.content = [MagicMock(text=json.dumps(json_content, ensure_ascii=False))]
+    text = json.dumps(json_content, ensure_ascii=False)
+    if text.startswith("{"):
+        text = text[1:]
+    mock.content = [MagicMock(text=text)]
     mock.usage = MagicMock(input_tokens=100, output_tokens=50)
     return mock
 
@@ -51,12 +58,10 @@ async def test_valid_json_response(engine) -> None:
 
 @pytest.mark.asyncio
 async def test_json_with_backticks(engine) -> None:
-    """JSON wrapped in ```json...``` is cleaned and parsed."""
+    """JSON continuation (after prefill) without fences parses correctly."""
     raw = (
-        '```json\n'
-        '{"resposta": "Oi!", "dados_extraidos": {}, '
-        '"acao": "continuar", "intent": "saudacao"}\n'
-        '```'
+        '"resposta": "Oi!", "dados_extraidos": {}, '
+        '"acao": "continuar", "intent": "saudacao"}'
     )
     mock = MagicMock()
     mock.content = [MagicMock(text=raw)]
@@ -76,7 +81,8 @@ async def test_malformed_json_fallback(engine) -> None:
     engine._client.messages.create.return_value = mock
 
     result = await engine.process("oi", [], {})
-    assert result.resposta == "Isso não é JSON nenhum"
+    # Prefill prepends '{' to the raw response before parsing
+    assert "Isso não é JSON nenhum" in result.resposta
     assert result.intent == "parse_error"
 
 
@@ -127,8 +133,10 @@ async def test_conversation_history_forwarded(engine) -> None:
 
     call_kwargs = engine._client.messages.create.call_args
     messages = call_kwargs.kwargs.get("messages", [])
-    assert len(messages) == 3
-    assert messages[-1]["content"] == "tudo bem?"
+    # 2 history + 1 current user + 1 prefill assistant '{'
+    assert len(messages) == 4
+    assert messages[-2]["content"] == "tudo bem?"
+    assert messages[-1] == {"role": "assistant", "content": "{"}
 
 
 @pytest.mark.asyncio
@@ -163,10 +171,10 @@ async def test_transferir_humano_action(engine) -> None:
 
 @pytest.mark.asyncio
 async def test_json_with_text_before(engine) -> None:
-    """JSON with text before it is extracted correctly."""
+    """JSON continuation parses correctly even with stray prefix text."""
+    # Prefill makes this rare, but parser should still handle leading garbage
     raw = (
-        'Aqui está minha resposta:\n'
-        '{"resposta": "Oi!", "dados_extraidos": {}, '
+        '"resposta": "Oi!", "dados_extraidos": {}, '
         '"acao": "continuar", "intent": "saudacao"}'
     )
     mock = MagicMock()
@@ -183,7 +191,7 @@ async def test_json_with_text_before(engine) -> None:
 async def test_json_nested_braces(engine) -> None:
     """Nested JSON objects are parsed correctly."""
     raw = (
-        '{"resposta": "Polo R$42,00", '
+        '"resposta": "Polo R$42,00", '
         '"dados_extraidos": {"nome": "Carlos", "produto": "polo"}, '
         '"acao": "continuar", "intent": "preco"}'
     )
@@ -195,3 +203,27 @@ async def test_json_nested_braces(engine) -> None:
     result = await engine.process("quanto custa polo", [], {})
     assert result.dados_extraidos["nome"] == "Carlos"
     assert result.dados_extraidos["produto"] == "polo"
+
+
+@pytest.mark.asyncio
+async def test_prefill_prepends_brace(engine) -> None:
+    """Prefill: engine adds '{' role=assistant message and prepends '{' to raw."""
+    raw_continuation = (
+        '"resposta": "Oi!", "dados_extraidos": {}, '
+        '"acao": "continuar", "intent": "saudacao"}'
+    )
+    mock = MagicMock()
+    mock.content = [MagicMock(text=raw_continuation)]
+    mock.usage = MagicMock(input_tokens=100, output_tokens=50)
+    engine._client.messages.create.return_value = mock
+
+    result = await engine.process("oi", [], {})
+
+    assert result.resposta == "Oi!"
+    assert result.intent == "saudacao"
+
+    call_kwargs = engine._client.messages.create.call_args
+    messages = call_kwargs.kwargs.get("messages", [])
+    last_msg = messages[-1]
+    assert last_msg["role"] == "assistant"
+    assert last_msg["content"] == "{"
