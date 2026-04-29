@@ -428,9 +428,10 @@
       "type": "buttons",
       "body": "Não entendi sua mensagem 😊 Como posso ajudar?",
       "buttons": [
-        { "id": "consultar_pedido", "title": "📦 Meu pedido" },
+        { "id": "orcamento",        "title": "💰 Fazer orçamento" },
         { "id": "ver_catalogo",     "title": "👕 Ver catálogo" },
-        { "id": "falar_humano",     "title": "🧑 Falar com atendente" }
+        { "id": "consultar_pedido", "title": "📦 Meu pedido" },
+        { "id": "falar_humano",     "title": "🧑 Falar atendente" }
       ]
     }
   }

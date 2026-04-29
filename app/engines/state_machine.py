@@ -196,12 +196,15 @@ def _check_escape(faq_match: FAQMatch | None) -> "HandleResult | None":
 
 
 def _menu_buttons() -> FAQResponse:
+    # [fix-4] Menu unificado — mesmo conjunto e ordem em todos os pontos do
+    # bot (aguarda_nome, fallback de FAQ, retorno do catálogo, lead capturado).
     return FAQResponse(
         type="buttons",
         body="Como posso te ajudar?",
         buttons=[  # type: ignore[arg-type]
-            {"id": "consultar_pedido", "title": "📦 Meu pedido"},
+            {"id": "orcamento", "title": "💰 Fazer orçamento"},
             {"id": "ver_catalogo", "title": "👕 Ver catálogo"},
+            {"id": "consultar_pedido", "title": "📦 Meu pedido"},
             {"id": "falar_humano", "title": "🧑 Falar atendente"},
         ],
     )
