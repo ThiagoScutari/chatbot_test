@@ -327,6 +327,10 @@ _PRODUCT_QUESTION_PATTERNS = [
     r"\bque tipo\b.{0,20}\b(tecido|material|malha|tecidos)\b",
     r"\b(malha|piquet|gabardine|brim|oxford|pv|viscose)\b",
     r"\bcomposição\b.{0,20}\b(tecido|malha|material)\b",
+    # GROUP 4b — Conforto térmico do tecido [fix-6]
+    # Pega "qual tecido respira mais no calor de Belém?" e similares.
+    r"\btecido\b.{0,30}\b(respira|respir[áa]vel|fresc[ao]|leve|calor|ver[ãa]o|tropical)\b",
+    r"\b(respira|fresc[ao]|leve)\b.{0,20}\b(calor|ver[ãa]o|tropical|bel[ée]m|par[áa]|norte)\b",
     # GROUP 5 — Sublimação com erros de digitação [fix-G2]
     r"\bsublima[cç][aã]o?\b",
     r"\bsublimax\b",

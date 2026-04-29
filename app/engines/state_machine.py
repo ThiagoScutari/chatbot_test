@@ -196,12 +196,15 @@ def _check_escape(faq_match: FAQMatch | None) -> "HandleResult | None":
 
 
 def _menu_buttons() -> FAQResponse:
+    # [fix-4] Menu unificado — mesmo conjunto e ordem em todos os pontos do
+    # bot (aguarda_nome, fallback de FAQ, retorno do catálogo, lead capturado).
     return FAQResponse(
         type="buttons",
         body="Como posso te ajudar?",
         buttons=[  # type: ignore[arg-type]
-            {"id": "consultar_pedido", "title": "📦 Meu pedido"},
+            {"id": "orcamento", "title": "💰 Fazer orçamento"},
             {"id": "ver_catalogo", "title": "👕 Ver catálogo"},
+            {"id": "consultar_pedido", "title": "📦 Meu pedido"},
             {"id": "falar_humano", "title": "🧑 Falar atendente"},
         ],
     )
@@ -217,6 +220,31 @@ _ORCAMENTO_TRIGGERS = {
     "pedir orcamento",
     "pedir orçamento",
 }
+
+
+# [fix-1] Saudações comuns não devem ser aceitas como nome em AGUARDA_NOME.
+# Sem este filtro, o cliente que envia "Olá" após /start vê "Prazer, Olá! Como
+# posso te ajudar?" — confuso e quebra o onboarding.
+_GREETINGS = {
+    "oi", "ola", "ola!", "bom dia", "boa tarde", "boa noite",
+    "eae", "eai", "e ai", "e aí", "fala", "salve", "opa", "opa!",
+    "hey", "hello", "hi", "ei", "olá",
+}
+
+
+# [fix-3] Frases curtas de "nada mais" em AGUARDA_RETORNO_HUMANO. Match exato
+# após _norm (lower + sem acentos). Frases mais longas usam _NEGATIVE_TOKENS.
+_NEGATIVE_RESPONSES = {
+    "nao", "n", "no", "nope", "nada", "nenhuma", "nenhum",
+    "ta bom", "ta", "tah", "ok", "okay", "beleza", "blz",
+    "obrigado", "obrigada", "valeu", "vlw", "tamo junto", "tmj",
+    "tchau", "flw", "falou", "ate logo", "ate", "ja era",
+    "ja falei que nao", "nao preciso", "aff", "ufa",
+}
+
+# Tokens que, presentes em qualquer parte da mensagem, indicam intenção
+# negativa de continuar a conversa (sem ter que enumerar variações).
+_NEGATIVE_TOKENS = {"nao", "tchau", "obrigad", "valeu", "aff", "nada"}
 
 
 _SEGMENTO_LABELS: dict[str, str] = {
@@ -391,6 +419,15 @@ def handle(
         if not texto:
             return HandleResult(
                 response=_text("Por favor, digite o seu nome."),
+                next_state=AGUARDA_NOME,
+            )
+        # [fix-1] Saudações ("Olá", "oi", "bom dia") não são nomes — re-pergunta
+        # de forma educada em vez de gravar a saudação como nome do cliente.
+        if _norm(texto) in _GREETINGS:
+            return HandleResult(
+                response=_text(
+                    "Olá! 😊 Para te atender melhor, me diz o seu nome?"
+                ),
                 next_state=AGUARDA_NOME,
             )
         session.nome_cliente = texto
@@ -814,6 +851,24 @@ def handle(
                 response=faq_match.response,
                 next_state=faq_match.follow_up_state or AGUARDA_RETORNO_HUMANO,
                 matched_intent_id=faq_match.intent_id,
+            )
+        # [fix-3] Negações ("não", "tchau", "nada", "obrigado") encerram o
+        # ping-pong "Posso ajudar com mais alguma coisa?". Sem este filtro o
+        # bot insiste com o mesmo prompt indefinidamente, mesmo após o cliente
+        # já ter dito que não precisa de mais nada.
+        texto_norm = _norm(texto)
+        is_negative = (
+            texto_norm in _NEGATIVE_RESPONSES
+            or any(tok in texto_norm for tok in _NEGATIVE_TOKENS)
+        )
+        if is_negative:
+            return HandleResult(
+                response=_text(
+                    "Tudo bem! 😊 Se precisar de algo, é só me chamar.\n\n"
+                    "Um consultor entrará em contato em breve.\n"
+                    "Obrigado pela preferência — Camisart Belém! 🧵"
+                ),
+                next_state=AGUARDA_RETORNO_HUMANO,
             )
         return HandleResult(
             response=_text(AGUARDA_RETORNO_MESSAGE),

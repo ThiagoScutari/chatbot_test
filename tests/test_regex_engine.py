@@ -110,11 +110,15 @@ def test_priority_higher_wins(tmp_path):
     assert m.intent_id == "high"
 
 
-def test_fallback_is_buttons_with_three(engine):
+def test_fallback_is_buttons_with_four(engine):
+    # [fix-4] Menu unificado: 4 botões — orçamento, catálogo, pedido, atendente.
     fb = engine.fallback_response()
     assert fb.type == "buttons"
     assert fb.buttons is not None
-    assert len(fb.buttons) == 3
+    assert len(fb.buttons) == 4
+    assert [b.id for b in fb.buttons] == [
+        "orcamento", "ver_catalogo", "consultar_pedido", "falar_humano",
+    ]
 
 
 def test_start_command_match(engine):

@@ -31,7 +31,11 @@
         "\\bmontar (um |uma )?kit\\b",
         "\\bpreciso (de )?(un|uns|uma|umas) (jalecos?|polos?|camisetas?|uniformes?)\\b",
         "\\bquero\\b.{0,20}\\buniformes?\\b.{0,20}\\b(corporativo|empresa|equipe|time)\\b",
-        "\\bbora\\b.{0,20}\\b(fazer|cotar|pedir|encomendar)\\b"
+        "\\bbora\\b.{0,20}\\b(fazer|cotar|pedir|encomendar)\\b",
+        "\\b(uniformiz[áa]r|uniformizada?|uniformizados?)\\b",
+        "\\bpadronizar\\b.{0,30}\\b(equipe|time|turma|funcion[áa]rios?|pessoal|empresa)\\b",
+        "\\b(equipe|time|turma|funcion[áa]rios?|pessoal)\\b.{0,30}\\bpadronizar\\b",
+        "\\b(vou|preciso)\\s+precisar\\b.{0,20}\\b(uniformes?|jalecos?|polos?|camisetas?|camisas?)\\b"
       ],
       "response": {
         "type": "text",
@@ -428,9 +432,10 @@
       "type": "buttons",
       "body": "Não entendi sua mensagem 😊 Como posso ajudar?",
       "buttons": [
-        { "id": "consultar_pedido", "title": "📦 Meu pedido" },
+        { "id": "orcamento",        "title": "💰 Fazer orçamento" },
         { "id": "ver_catalogo",     "title": "👕 Ver catálogo" },
-        { "id": "falar_humano",     "title": "🧑 Falar com atendente" }
+        { "id": "consultar_pedido", "title": "📦 Meu pedido" },
+        { "id": "falar_humano",     "title": "🧑 Falar atendente" }
       ]
     }
   }

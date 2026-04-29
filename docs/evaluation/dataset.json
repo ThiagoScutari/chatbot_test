@@ -3,12 +3,12 @@
   "description": "Dataset de avaliação do Camisart AI — 200 mensagens rotuladas",
   "created_at": "2026-04-23",
   "stats": {
-    "total": 200,
+    "total": 227,
     "intents": 16,
     "by_difficulty": {
-      "easy": 92,
-      "medium": 62,
-      "hard": 46
+      "easy": 104,
+      "medium": 72,
+      "hard": 51
     }
   },
   "samples": [
@@ -1755,6 +1755,78 @@
       "expected_layer": "llm",
       "difficulty": "hard",
       "notes": "urgência + disponibilidade"
+    },
+    {
+      "id": "S219",
+      "message": "tem camiseta lisa?",
+      "expected_intent": "preco_camiseta",
+      "expected_layer": "faq",
+      "difficulty": "easy",
+      "notes": "camiseta sem gola"
+    },
+    {
+      "id": "S220",
+      "message": "quanto custa a camiseta básica?",
+      "expected_intent": "preco_camiseta",
+      "expected_layer": "faq",
+      "difficulty": "easy",
+      "notes": "camiseta básica"
+    },
+    {
+      "id": "S221",
+      "message": "camiseta de algodão preço",
+      "expected_intent": "preco_camiseta",
+      "expected_layer": "faq",
+      "difficulty": "easy",
+      "notes": "algodão"
+    },
+    {
+      "id": "S222",
+      "message": "preço da camiseta",
+      "expected_intent": "preco_camiseta",
+      "expected_layer": "faq",
+      "difficulty": "easy",
+      "notes": "preço direto"
+    },
+    {
+      "id": "S223",
+      "message": "quero camiseta colorida pra meu time",
+      "expected_intent": "preco_camiseta",
+      "expected_layer": "faq",
+      "difficulty": "medium",
+      "notes": "camiseta colorida — não é polo"
+    },
+    {
+      "id": "S224",
+      "message": "camiseta sem gola, tem?",
+      "expected_intent": "preco_camiseta",
+      "expected_layer": "faq",
+      "difficulty": "medium",
+      "notes": "exclusão explícita de gola"
+    },
+    {
+      "id": "S225",
+      "message": "não quero polo, quero a básica",
+      "expected_intent": "preco_camiseta",
+      "expected_layer": "llm",
+      "difficulty": "medium",
+      "notes": "negação polo"
+    },
+    {
+      "id": "S226",
+      "message": "aquela camisa simples sem nada, tem?",
+      "expected_intent": "preco_camiseta",
+      "expected_layer": "llm",
+      "difficulty": "hard",
+      "notes": "linguagem informal — camiseta básica"
+    },
+    {
+      "id": "S227",
+      "message": "tô querendo algo mais simples que a polo",
+      "expected_intent": "preco_camiseta",
+      "expected_layer": "llm",
+      "difficulty": "hard",
+      "notes": "comparação contra polo"
     }
   ]
 }
