@@ -27,22 +27,105 @@ def _norm(text: str) -> str:
     return "".join(c for c in t if unicodedata.category(c) != "Mn")
 
 
-SEGMENTO_MAP: dict[str, str] = {
-    "corporativo": "corporativo", "corp": "corporativo",
-    "empresa": "corporativo", "empresarial": "corporativo",
-    "escritorio": "corporativo", "escritório": "corporativo",
-    "saude": "saude", "saúde": "saude",
-    "medico": "saude", "médico": "saude",
-    "hospital": "saude", "clinica": "saude", "clínica": "saude",
-    "jaleco": "saude", "odonto": "saude", "estetica": "saude",
-    "industria": "industria", "indústria": "industria",
-    "fabrica": "industria", "fábrica": "industria",
-    "industrial": "industria",
-    "domestica": "domestica", "doméstica": "domestica",
-    "diarista": "domestica", "baba": "domestica", "babá": "domestica",
-    "cuidadora": "domestica", "limpeza": "domestica",
-    "outro": "outro", "outros": "outro", "outra": "outro",
-    "nenhum": "outro", "diferente": "outro",
+# [redesign-orcamento] Segmento agora é INFORMATIVO para o consultor —
+# o bot nunca rejeita o que o cliente disser. Aliases mapeiam linguagem
+# coloquial para o rótulo de exibição. Texto desconhecido vira "Outro
+# (texto livre)" e segue o fluxo. Chaves já normalizadas (lowercase,
+# sem acentos) — comparação via _norm.
+SEGMENT_ALIASES: dict[str, str] = {
+    # Rótulos canônicos (também são os ids dos botões da WhatsApp list)
+    "corporativo": "Corporativo",
+    "saude": "Saúde",
+    "educacao": "Educação",
+    "industria": "Indústria",
+    "domestica": "Doméstica",
+    "outro": "Outro",
+    # Aliases — Educação
+    "escolar": "Educação", "escola": "Educação", "faculdade": "Educação",
+    "colegio": "Educação", "curso": "Educação", "professor": "Educação",
+    "creche": "Educação",
+    # Aliases — Corporativo
+    "empresa": "Corporativo", "escritorio": "Corporativo",
+    "loja": "Corporativo", "comercio": "Corporativo",
+    "comercial": "Corporativo", "corp": "Corporativo",
+    "empresarial": "Corporativo",
+    # Aliases — Saúde
+    "hospital": "Saúde", "clinica": "Saúde", "dentista": "Saúde",
+    "medico": "Saúde", "consultorio": "Saúde", "odonto": "Saúde",
+    "estetica": "Saúde", "enfermagem": "Saúde", "saude e estetica": "Saúde",
+    # Aliases — Indústria
+    "fabrica": "Indústria", "obra": "Indústria",
+    "construcao": "Indústria", "industrial": "Indústria",
+    "metalurgica": "Indústria",
+    # Aliases — Doméstica
+    "casa": "Doméstica", "baba": "Doméstica", "diarista": "Doméstica",
+    "cuidadora": "Doméstica", "limpeza": "Doméstica",
+}
+
+# Mapa numeral exato (1..6) — corresponde à ordem do menu de segmento.
+SEGMENT_NUMERAL: dict[str, str] = {
+    "1": "Corporativo",
+    "2": "Saúde",
+    "3": "Educação",
+    "4": "Indústria",
+    "5": "Doméstica",
+    "6": "Outro",
+}
+
+# Lista de produtos exibida sempre, independentemente do segmento.
+TODOS_PRODUTOS: list[str] = [
+    "Camisa Polo",
+    "Camiseta Básica",
+    "Regata",
+    "Jaleco Tradicional",
+    "Jaleco Premium",
+    "Uniforme Industrial",
+    "Uniforme Doméstico",
+    "Boné Personalizado",
+]
+
+# Aliases para mapear linguagem livre → rótulo canônico do produto.
+# Chaves normalizadas (_norm). Substring match só p/ chaves com len ≥ 4
+# para evitar que numerais ("1", "2", ...) batam dentro de "100", "200".
+PRODUTO_ALIASES: dict[str, str] = {
+    # Camisa Polo
+    "polo": "Camisa Polo",
+    "camisa polo": "Camisa Polo",
+    "polo piquet": "Camisa Polo",
+    "piquet": "Camisa Polo",
+    # Camiseta Básica
+    "camiseta": "Camiseta Básica",
+    "basica": "Camiseta Básica",
+    "camiseta basica": "Camiseta Básica",
+    "baby look": "Camiseta Básica",
+    # Regata
+    "regata": "Regata",
+    # Jaleco Tradicional / Premium (premium primeiro p/ specificidade,
+    # mas a iteração por len decrescente já garante isso)
+    "jaleco tradicional": "Jaleco Tradicional",
+    "jaleco premium": "Jaleco Premium",
+    "jaleco": "Jaleco Tradicional",
+    # Uniforme Industrial
+    "uniforme industrial": "Uniforme Industrial",
+    "industrial": "Uniforme Industrial",
+    # Uniforme Doméstico
+    "uniforme domestico": "Uniforme Doméstico",
+    "domestico": "Uniforme Doméstico",
+    # Boné
+    "bone personalizado": "Boné Personalizado",
+    "bone": "Boné Personalizado",
+    "bones": "Boné Personalizado",
+}
+
+PRODUTO_NUMERAL: dict[str, str] = {
+    "1": "Camisa Polo",
+    "2": "Camiseta Básica",
+    "3": "Regata",
+    "4": "Jaleco Tradicional",
+    "5": "Jaleco Premium",
+    "6": "Uniforme Industrial",
+    "7": "Uniforme Doméstico",
+    "8": "Boné Personalizado",
 }
 
 
@@ -143,28 +226,6 @@ AGUARDA_RETORNO_MESSAGE = (
 )
 
 
-PRODUTOS_POR_SEGMENTO: dict[str, list[str]] = {
-    # Polo e camiseta básica entram como itens universais em todo segmento —
-    # mesmo na Saúde (recepção, administrativo, enfermeiras), Doméstica, etc.
-    # [fix-U2]
-    "corporativo": ["Camisa Polo", "Básica Algodão"],
-    "saude": [
-        "Jaleco Tradicional",
-        "Jaleco Premium",
-        "Camisa Polo",
-        "Básica Algodão",
-    ],
-    "industria": ["Camisa Polo", "Básica PV", "Básica Algodão"],
-    "domestica": ["Uniforme Doméstica", "Camisa Polo", "Básica Algodão"],
-    "outro": [
-        "Camisa Polo",
-        "Básica Algodão",
-        "Regata",
-        "Jaleco Tradicional",
-    ],
-}
-
-
 class HandleResult(BaseModel):
     response: FAQResponse
     next_state: str
@@ -247,15 +308,6 @@ _NEGATIVE_RESPONSES = {
 _NEGATIVE_TOKENS = {"nao", "tchau", "obrigad", "valeu", "aff", "nada"}
 
 
-_SEGMENTO_LABELS: dict[str, str] = {
-    "corporativo": "Corporativo",
-    "saude": "Saúde",
-    "industria": "Indústria",
-    "domestica": "Doméstica",
-    "outro": "Outro",
-}
-
-
 def _is_orcamento_trigger(text: str) -> bool:
     norm = text.lower().strip()
     if norm in _ORCAMENTO_TRIGGERS:
@@ -266,13 +318,19 @@ def _is_orcamento_trigger(text: str) -> bool:
 
 
 def _segmento_list() -> FAQResponse:
+    # [redesign-orcamento] Educação adicionada como 3º item — escolas, creches
+    # e cursos eram capturadas em "Outro" sem visibilidade adequada.
     return FAQResponse(
         type="list",
-        body="Para qual segmento é o uniforme?",
+        body=(
+            "Para qual segmento é o uniforme? "
+            "(Pode escolher pelo número ou descrever.)"
+        ),
         list_button_label="Selecionar",
         list_items=[  # type: ignore[arg-type]
             {"id": "corporativo", "title": "Corporativo"},
             {"id": "saude", "title": "Saúde"},
+            {"id": "educacao", "title": "Educação"},
             {"id": "industria", "title": "Indústria"},
             {"id": "domestica", "title": "Doméstica"},
             {"id": "outro", "title": "Outro"},
@@ -280,33 +338,87 @@ def _segmento_list() -> FAQResponse:
     )
 
 
-def _produto_options(segmento_id: str) -> FAQResponse:
-    produtos = PRODUTOS_POR_SEGMENTO.get(
-        segmento_id, PRODUTOS_POR_SEGMENTO["outro"]
+def _todos_produtos_prompt(segmento: str) -> FAQResponse:
+    """Lista TODOS os produtos disponíveis após captura de segmento.
+
+    [redesign-orcamento] Antes filtrávamos produtos por segmento via
+    PRODUTOS_POR_SEGMENTO — quem vinha de "Educação" não via "Camisa Polo",
+    quem vinha de "Outro (pet shop)" não via nada. Agora todo cliente vê
+    os 8 produtos e ainda pode escrever livremente.
+    """
+    if segmento.startswith("Outro ("):
+        intro = "Anotado! 📋"
+    else:
+        intro = f"Ótimo, *{segmento}*! 📋"
+    return _text(
+        f"{intro}\n\n"
+        "O que você gostaria de fazer?\n\n"
+        "Nossos principais produtos:\n"
+        "1. 👕 Camisa Polo\n"
+        "2. 👕 Camiseta Básica\n"
+        "3. 💪 Regata\n"
+        "4. 🥼 Jaleco Tradicional\n"
+        "5. 🥼 Jaleco Premium\n"
+        "6. 🏭 Uniforme Industrial\n"
+        "7. 👗 Uniforme Doméstico\n"
+        "8. 🧢 Boné Personalizado\n\n"
+        "Pode escolher pelo número ou descrever o que precisa "
+        "— mesmo que não esteja na lista! 😊"
     )
-    if len(produtos) <= 3:
-        return FAQResponse(
-            type="buttons",
-            body="Qual produto você precisa?",
-            buttons=[  # type: ignore[arg-type]
-                {"id": p, "title": p[:20]} for p in produtos
-            ],
-        )
-    return FAQResponse(
-        type="list",
-        body="Qual produto você precisa?",
-        list_button_label="Ver produtos",
-        list_items=[  # type: ignore[arg-type]
-            {"id": p, "title": p[:24]} for p in produtos
-        ],
-    )
+
+
+def _resolve_segment(text: str) -> str:
+    """Resolve a entrada do cliente para um rótulo de segmento.
+
+    Nunca retorna None. Se não bater nenhum alias/numeral, devolve
+    "Outro (texto livre)" — preserva o que o cliente escreveu para o
+    consultor humano.
+    """
+    norm = _norm(text)
+    if not norm:
+        return "Outro"
+    # 1. Match exato no alias
+    if norm in SEGMENT_ALIASES:
+        return SEGMENT_ALIASES[norm]
+    # 2. Numeral exato
+    if norm in SEGMENT_NUMERAL:
+        return SEGMENT_NUMERAL[norm]
+    # 3. Substring — chaves longas primeiro p/ specificidade.
+    #    Filtro len ≥ 4 evita falsos positivos com palavras curtas.
+    for key in sorted(SEGMENT_ALIASES.keys(), key=len, reverse=True):
+        if len(key) >= 4 and key in norm:
+            return SEGMENT_ALIASES[key]
+    # 4. Texto livre — armazena com prefixo "Outro (...)"
+    return f"Outro ({text.strip()})"
+
+
+def _resolve_produto(text: str) -> str:
+    """Resolve a entrada do cliente para um produto.
+
+    Match APENAS exato (alias ou numeral). Descrições livres como
+    "camiseta estampada com logo da escola" são preservadas como
+    vieram — o consultor lê o resumo e entende o pedido completo.
+    Substring match aqui prejudicaria descrições ricas (ex.: substring
+    "camiseta" em texto longo vira só "Camiseta Básica" e perde detalhe).
+    """
+    norm = _norm(text)
+    if not norm:
+        return text.strip()
+    # 1. Numeral exato (1..8)
+    if norm in PRODUTO_NUMERAL:
+        return PRODUTO_NUMERAL[norm]
+    # 2. Match exato em alias
+    if norm in PRODUTO_ALIASES:
+        return PRODUTO_ALIASES[norm]
+    # 3. Texto livre — preserva como veio
+    return text.strip()
 
 
 def _orcamento_resumo(session: SessionModel) -> FAQResponse:
     data = session.session_data or {}
-    segmento = _SEGMENTO_LABELS.get(
-        data.get("orcamento_segmento", ""), data.get("orcamento_segmento", "?")
-    )
+    # [redesign-orcamento] segmento agora é o próprio rótulo de exibição
+    # (ex.: "Saúde", "Outro (pet shop)"), sem necessidade de lookup.
+    segmento = data.get("orcamento_segmento") or "?"
     produto = data.get("orcamento_produto", "?")
     quantidade = data.get("orcamento_quantidade", "?")
     personalizacao = data.get("orcamento_personalizacao", "?")
@@ -514,34 +626,13 @@ def handle(
         escape = _check_escape(faq_match)
         if escape:
             return escape
-        segmento_id = _resolve_choice(texto, SEGMENTO_MAP)
-        if segmento_id is None:
-            return HandleResult(
-                response=_text(
-                    "Não entendi. Para qual segmento é o uniforme?\n\n"
-                    "1. Corporativo\n"
-                    "2. Saúde\n"
-                    "3. Indústria\n"
-                    "4. Doméstica\n"
-                    "5. Outro"
-                ),
-                next_state=COLETA_ORCAMENTO_SEGMENTO,
-            )
-        session.session_data["orcamento_segmento"] = segmento_id
-        produtos = PRODUTOS_POR_SEGMENTO.get(
-            segmento_id, PRODUTOS_POR_SEGMENTO["outro"]
-        )
-        if len(produtos) == 1:
-            session.session_data["orcamento_produto"] = produtos[0]
-            return HandleResult(
-                response=_text(
-                    f"Produto selecionado: *{produtos[0]}*\n\n"
-                    "Quantas peças você precisa?"
-                ),
-                next_state=COLETA_ORCAMENTO_QTD,
-            )
+        # [redesign-orcamento] NUNCA rejeita o segmento — _resolve_segment
+        # devolve "Outro (texto livre)" para entradas desconhecidas e o fluxo
+        # avança. Segmento é informativo para o consultor humano.
+        segmento = _resolve_segment(texto)
+        session.session_data["orcamento_segmento"] = segmento
         return HandleResult(
-            response=_produto_options(segmento_id),
+            response=_todos_produtos_prompt(segmento),
             next_state=COLETA_ORCAMENTO_PRODUTO,
         )
 
@@ -549,34 +640,13 @@ def handle(
         escape = _check_escape(faq_match)
         if escape:
             return escape
-        segmento_id = session.session_data.get("orcamento_segmento", "outro")
-        produtos = PRODUTOS_POR_SEGMENTO.get(
-            segmento_id, PRODUTOS_POR_SEGMENTO["outro"]
-        )
-        normalized_input = _norm(texto)
-        produto_escolhido = None
-
-        # Match por número (1, 2, 3...)
-        if texto.strip().isdigit():
-            idx = int(texto.strip()) - 1
-            if 0 <= idx < len(produtos):
-                produto_escolhido = produtos[idx]
-
-        # Match parcial por nome
-        if not produto_escolhido:
-            for p in produtos:
-                if _norm(p) in normalized_input or normalized_input in _norm(p):
-                    produto_escolhido = p
-                    break
-
-        if not produto_escolhido:
-            lista = "\n".join(f"{i + 1}. {p}" for i, p in enumerate(produtos))
-            return HandleResult(
-                response=_text(f"Não encontrei esse produto. Escolha:\n\n{lista}"),
-                next_state=COLETA_ORCAMENTO_PRODUTO,
-            )
-
-        session.session_data["orcamento_produto"] = produto_escolhido
+        # [redesign-orcamento] NUNCA rejeita o produto — texto livre é
+        # preservado como veio. Casos suportados:
+        # - "1" → "Camisa Polo" (numeral)
+        # - "polo" → "Camisa Polo" (alias)
+        # - "uniforme com saia bordada" → texto livre, armazenado como veio
+        produto = _resolve_produto(texto)
+        session.session_data["orcamento_produto"] = produto
         return HandleResult(
             response=_text(
                 "Quantas peças você precisa? (ex: 10, 50, 200)"
