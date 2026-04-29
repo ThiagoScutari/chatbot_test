@@ -59,11 +59,13 @@ from scripts.flowtest.persona_agent import PersonaAgent  # noqa: E402
 
 
 def build_pipeline() -> MessagePipeline:
-    """Initialize all 3 layers — same pattern as scripts/autotest.py."""
+    """Initialize HaikuEngine (primary) + regex fallback (Camadas 1-3)."""
     import anthropic
 
     from app.engines.context_engine import ContextEngine
+    from app.engines.haiku_engine import HaikuEngine
     from app.engines.llm_router import LLMRouter
+    from app.engines.response_validator import ResponseValidator
 
     campaign = CampaignEngine(settings.CAMPAIGNS_JSON_PATH)
     campaign.reload()
@@ -79,9 +81,21 @@ def build_pipeline() -> MessagePipeline:
         anthropic_client=ctx_client,
     )
 
+    haiku_client = anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
+    haiku_engine = HaikuEngine(
+        prompt_path=Path("app/knowledge/camisart_prompt.md"),
+        client=haiku_client,
+    )
+
+    validator = ResponseValidator(
+        products_path=Path("app/knowledge/products.json"),
+    )
+
     return MessagePipeline(
         faq_engine=faq,
         campaign_engine=campaign,
+        haiku_engine=haiku_engine,
+        validator=validator,
         llm_router=llm_router,
         context_engine=context_engine,
     )
