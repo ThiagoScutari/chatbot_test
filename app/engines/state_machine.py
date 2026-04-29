@@ -229,6 +229,21 @@ _GREETINGS = {
 }
 
 
+# [fix-3] Frases curtas de "nada mais" em AGUARDA_RETORNO_HUMANO. Match exato
+# após _norm (lower + sem acentos). Frases mais longas usam _NEGATIVE_TOKENS.
+_NEGATIVE_RESPONSES = {
+    "nao", "n", "no", "nope", "nada", "nenhuma", "nenhum",
+    "ta bom", "ta", "tah", "ok", "okay", "beleza", "blz",
+    "obrigado", "obrigada", "valeu", "vlw", "tamo junto", "tmj",
+    "tchau", "flw", "falou", "ate logo", "ate", "ja era",
+    "ja falei que nao", "nao preciso", "aff", "ufa",
+}
+
+# Tokens que, presentes em qualquer parte da mensagem, indicam intenção
+# negativa de continuar a conversa (sem ter que enumerar variações).
+_NEGATIVE_TOKENS = {"nao", "tchau", "obrigad", "valeu", "aff", "nada"}
+
+
 _SEGMENTO_LABELS: dict[str, str] = {
     "corporativo": "Corporativo",
     "saude": "Saúde",
@@ -833,6 +848,24 @@ def handle(
                 response=faq_match.response,
                 next_state=faq_match.follow_up_state or AGUARDA_RETORNO_HUMANO,
                 matched_intent_id=faq_match.intent_id,
+            )
+        # [fix-3] Negações ("não", "tchau", "nada", "obrigado") encerram o
+        # ping-pong "Posso ajudar com mais alguma coisa?". Sem este filtro o
+        # bot insiste com o mesmo prompt indefinidamente, mesmo após o cliente
+        # já ter dito que não precisa de mais nada.
+        texto_norm = _norm(texto)
+        is_negative = (
+            texto_norm in _NEGATIVE_RESPONSES
+            or any(tok in texto_norm for tok in _NEGATIVE_TOKENS)
+        )
+        if is_negative:
+            return HandleResult(
+                response=_text(
+                    "Tudo bem! 😊 Se precisar de algo, é só me chamar.\n\n"
+                    "Um consultor entrará em contato em breve.\n"
+                    "Obrigado pela preferência — Camisart Belém! 🧵"
+                ),
+                next_state=AGUARDA_RETORNO_HUMANO,
             )
         return HandleResult(
             response=_text(AGUARDA_RETORNO_MESSAGE),
