@@ -8,6 +8,7 @@ The flowtest never runs in mock mode; it always uses the real Claude API.
 """
 from __future__ import annotations
 
+import asyncio
 import random
 import re
 import time
@@ -160,11 +161,14 @@ async def run_single_interaction(
     ))
 
     conversation_history: list[dict] = [
-        {"role": "assistant", "content": bot_resp.text or "(sem resposta)"}
+        {"role": "user", "content": bot_resp.text or "(sem resposta)"}
     ]
 
     completed = False
     for turn_num in range(1, max_turns):
+        # Delay between turns to avoid rate limit (10 msgs/min per user)
+        await asyncio.sleep(1.5)
+
         client_msg = await persona_agent.generate_message(
             persona_doc=persona_doc,
             flow_doc=flow_doc,
@@ -190,10 +194,10 @@ async def run_single_interaction(
         ))
 
         conversation_history.append(
-            {"role": "user", "content": client_msg}
+            {"role": "assistant", "content": client_msg}
         )
         conversation_history.append(
-            {"role": "assistant", "content": bot_resp.text or "(sem resposta)"}
+            {"role": "user", "content": bot_resp.text or "(sem resposta)"}
         )
 
     return FlowTestResult(

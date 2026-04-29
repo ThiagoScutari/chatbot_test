@@ -218,6 +218,7 @@ async def amain() -> int:
     print(
         f"Data: {today} | Rounds: {len(assignments)} | Seed: {seed_label}"
     )
+    print("Delay entre turnos: 1.5s")
     print("=" * 64)
     print()
 

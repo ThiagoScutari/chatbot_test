@@ -45,11 +45,12 @@ class PersonaAgent:
     ) -> str:
         """Generate the next simulated client message.
 
-        ``conversation_history`` format:
+        ``conversation_history`` format (from Haiku's perspective —
+        Haiku IS the assistant in this API call, role-playing the persona):
             [
-                {"role": "assistant", "content": "bot reply to /start"},
-                {"role": "user", "content": "previous client message"},
-                {"role": "assistant", "content": "bot reply"},
+                {"role": "user", "content": "resposta do bot ao /start"},
+                {"role": "assistant", "content": "mensagem anterior do cliente (gerada por Haiku)"},
+                {"role": "user", "content": "resposta do bot"},
                 ...
             ]
 
