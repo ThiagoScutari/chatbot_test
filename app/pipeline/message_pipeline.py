@@ -188,22 +188,27 @@ class MessagePipeline:
         session.nome_cliente = None
         flag_modified(session, "session_data")
 
+        # Mantém compatibilidade com os testes/fluxo regex: /start → aguarda_nome.
+        # O Haiku lê session_data para identidade do cliente, então o nome do
+        # estado é irrelevante para o caminho LLM-first.
+        next_state = "aguarda_nome"
+
         message_service.record_inbound(
             db,
             session,
             inbound,
             matched_intent_id="start_command",
             state_before=state_before,
-            state_after="inicio",
+            state_after=next_state,
         )
-        session_service.update_state(db, session, "inicio")
+        session_service.update_state(db, session, next_state)
 
         message_service.record_outbound(
             db,
             session,
             content=START_WELCOME_MESSAGE,
             state_before=state_before,
-            state_after="inicio",
+            state_after=next_state,
             raw_payload={"type": "text", "body": START_WELCOME_MESSAGE},
         )
 
