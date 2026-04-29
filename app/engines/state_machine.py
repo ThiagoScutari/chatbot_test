@@ -189,6 +189,7 @@ CONFIRMACAO_ORCAMENTO = "confirmacao_orcamento"
 LEAD_CAPTURADO = "lead_capturado"
 ENCAMINHAR_HUMANO = "encaminhar_humano"
 AGUARDA_RETORNO_HUMANO = "aguarda_retorno_humano"
+CONVERSA_FINALIZADA = "conversa_finalizada"
 FIM = "fim"
 
 
@@ -208,6 +209,7 @@ KNOWN_STATES = {
     LEAD_CAPTURADO,
     ENCAMINHAR_HUMANO,
     AGUARDA_RETORNO_HUMANO,
+    CONVERSA_FINALIZADA,
     FIM,
 }
 
@@ -240,19 +242,199 @@ def _text(body: str) -> FAQResponse:
     return FAQResponse(type="text", body=body)
 
 
-def _check_escape(faq_match: FAQMatch | None) -> "HandleResult | None":
-    """Escape hatch: falar_humano interrompe qualquer fluxo de coleta.
+# IDs canônicos de botões — quando o canal envia um click de botão, o id
+# vem como texto literal (ex.: "ver_catalogo"). O interceptor global de
+# linguagem natural (catálogo / menu) precisa pular esses casos para que
+# o handler de estado faça o despacho canônico (ex.: send_catalog action).
+_CHANNEL_BUTTON_IDS = frozenset({
+    "ver_catalogo", "consultar_pedido", "orcamento", "menu",
+})
 
-    Sem isso o usuário fica preso aguardando input estruturado (segmento,
-    quantidade, prazo) sem opção visível de sair. [fix-bug3]
+
+# ── Triggers do interceptor global ───────────────────────────────────────
+# Texto natural — comparado em substring sobre texto_lower (sem acento via
+# _norm quando necessário). Mantidos como tuplas para velocidade.
+
+_HUMANO_TRIGGERS: tuple[str, ...] = (
+    "falar com atendente", "falar com humano",
+    "falar c humano", "falar c/ atendente",
+    "quero falar com alguem", "quero falar com alguém",
+    "me passa pra um humano", "atendente",
+    "falar com um atendente", "humano",
+)
+
+_FINALIZAR_TRIGGERS: tuple[str, ...] = (
+    "finalizar", "encerrar", "fechar",
+    "finalizar conversa", "encerrar conversa",
+    "finalizar atendimento", "encerrar atendimento",
+    "era só isso", "era isso", "só isso",
+    "por enquanto é isso", "por enquanto é só",
+)
+
+_MENU_TRIGGERS: tuple[str, ...] = (
+    "menu", "voltar", "voltar ao menu",
+    "menu principal", "início", "inicio",
+)
+
+_CATALOGO_TRIGGERS: tuple[str, ...] = (
+    "ver catálogo", "ver catalogo", "catálogo", "catalogo",
+    "ver produtos", "produtos",
+    "o que vocês tem", "o que vcs tem",
+    "quero ver o catálogo",
+)
+
+# Estados pós-atendimento — onde negativos isolados ("não", "tchau") devem
+# encerrar a conversa em vez de manter o ping-pong de "posso ajudar?"
+_POS_ATENDIMENTO_STATES = frozenset({
+    LEAD_CAPTURADO,
+    AGUARDA_RETORNO_HUMANO,
+    CONVERSA_FINALIZADA,
+})
+
+_NEGATIVE_EXATO_NORM = {
+    "nao", "n", "nada", "tchau", "flw",
+    "valeu", "vlw", "obrigado", "obrigada",
+    "ok", "ta bom", "beleza",
+    "aff", "ja falei", "nenhuma", "nenhum",
+}
+
+# Substring tokens — "ja falei que nao", "obrigado pela atencao", etc.
+_NEGATIVE_TOKEN_SUBSTRINGS = ("nao", "tchau", "obrigad", "valeu", "aff", "nada")
+
+
+def _global_intercept(
+    texto: str,
+    texto_lower: str,
+    estado_atual: str,
+    session: SessionModel,
+    faq_match: FAQMatch | None,
+    campaign_engine: CampaignEngine | None,
+) -> "HandleResult | None":
+    """Intercepta comportamentos globais ANTES do handler de estado.
+
+    Substitui o antigo `_check_escape` per-state: comportamentos como
+    "/start", "falar com humano", "finalizar", "ver catálogo" e "menu"
+    funcionam universalmente, sem precisar repetir lógica em cada handler.
+
+    Retorna `HandleResult` se a mensagem foi interceptada; `None` se o
+    handler de estado deve continuar normalmente.
+
+    Ordem de prioridade:
+      1. /start  — reset universal preservando contadores rl_*
+      2. Falar com humano (FAQ ou triggers livres)
+      3. Finalizar conversa
+      4. Negação pós-atendimento (LEAD/HUMANO/FINALIZADA)
+      5. Voltar ao menu
+      6. Ver catálogo
     """
-    if faq_match is not None and faq_match.intent_id == "falar_humano":
+    # ── 1. /start — reset universal ──────────────────────────────
+    if texto == "/start":
+        data = session.session_data or {}
+        preserved = {k: v for k, v in data.items() if k.startswith("rl_")}
+        session.nome_cliente = None
+        session.session_data = preserved
         return HandleResult(
-            response=faq_match.response,
-            next_state=AGUARDA_RETORNO_HUMANO,
-            matched_intent_id="falar_humano",
-            action="forward_to_human",
+            response=_text(_greeting(session, campaign_engine)),
+            next_state=AGUARDA_NOME,
+            matched_intent_id="start_command",
         )
+
+    is_button_id = texto_lower in _CHANNEL_BUTTON_IDS
+
+    # ── 2. Falar com humano (qualquer estado exceto AGUARDA_NOME) ─
+    if estado_atual != AGUARDA_NOME:
+        humano_via_faq = (
+            faq_match is not None and faq_match.intent_id == "falar_humano"
+        )
+        humano_via_text = any(t in texto_lower for t in _HUMANO_TRIGGERS)
+        if humano_via_faq or humano_via_text:
+            response = (
+                faq_match.response if humano_via_faq else _text(
+                    "👤 Vou te conectar com um consultor!\n\n"
+                    "Atendimento: *segunda a sexta, 8h às 18h*.\n"
+                    "Em breve alguém vai te responder. 😊"
+                )
+            )
+            return HandleResult(
+                response=response,
+                next_state=AGUARDA_RETORNO_HUMANO,
+                matched_intent_id="falar_humano",
+                action="forward_to_human",
+            )
+
+    # ── 3. Finalizar conversa ────────────────────────────────────
+    if any(t in texto_lower for t in _FINALIZAR_TRIGGERS):
+        nome = session.nome_cliente or ""
+        prefix = f", {nome}" if nome else ""
+        return HandleResult(
+            response=_text(
+                f"Obrigado pelo contato{prefix}! 😊\n\n"
+                "Se precisar de algo, é só me chamar.\n"
+                "Camisart Belém — sua loja de uniformes! 🧵"
+            ),
+            next_state=CONVERSA_FINALIZADA,
+            matched_intent_id="finalizar_conversa",
+        )
+
+    # ── 4. Negação pós-atendimento ───────────────────────────────
+    if estado_atual in _POS_ATENDIMENTO_STATES:
+        texto_norm = _norm(texto)
+        is_negative = (
+            texto_norm in _NEGATIVE_EXATO_NORM
+            or any(tok in texto_norm for tok in _NEGATIVE_TOKEN_SUBSTRINGS)
+        )
+        if is_negative:
+            nome = session.nome_cliente or ""
+            prefix = f", {nome}" if nome else ""
+            return HandleResult(
+                response=_text(
+                    f"Tudo bem{prefix}! 😊\n\n"
+                    "Se precisar de algo, é só me chamar.\n"
+                    "Camisart Belém — sua loja de uniformes! 🧵"
+                ),
+                next_state=CONVERSA_FINALIZADA,
+            )
+
+    # ── 5. Voltar ao menu ────────────────────────────────────────
+    # Exceção CONFIRMACAO_ORCAMENTO: "voltar" lá significa "corrigir"
+    # (CONFIRMACAO_MAP), não "ir pro menu". O handler do estado lida.
+    if (
+        estado_atual not in (AGUARDA_NOME, CONFIRMACAO_ORCAMENTO)
+        and any(t in texto_lower for t in _MENU_TRIGGERS)
+    ):
+        return HandleResult(
+            response=_menu_buttons(),
+            next_state=MENU,
+        )
+
+    # ── 6. Ver catálogo ──────────────────────────────────────────
+    # Pula button id ("ver_catalogo") — o handler do MENU envia o PDF
+    # via action=send_catalog. Texto natural recebe versão em texto.
+    if (
+        estado_atual != AGUARDA_NOME
+        and not is_button_id
+        and any(t in texto_lower for t in _CATALOGO_TRIGGERS)
+    ):
+        return HandleResult(
+            response=_text(
+                "👕 *Catálogo Camisart Belém:*\n\n"
+                "• Camisa Polo — a partir de R$ 42,00\n"
+                "• Camiseta Básica — a partir de R$ 25,00\n"
+                "• Regata — a partir de R$ 20,00\n"
+                "• Jaleco Tradicional — R$ 120,00\n"
+                "• Jaleco Premium — R$ 145,00\n"
+                "• Uniforme Industrial — A consultar\n"
+                "• Uniforme Doméstico — R$ 120,00\n"
+                "• Boné Personalizado — R$ 35,00\n"
+                "• 🇧🇷 Polo Copa do Brasil — R$ 50,00\n\n"
+                "Quer saber mais sobre algum produto?\n"
+                "Ou deseja fazer um orçamento? 😊"
+            ),
+            next_state=MENU,
+            matched_intent_id="ver_catalogo",
+        )
+
+    # Não interceptado — handler de estado prossegue
     return None
 
 
@@ -291,21 +473,6 @@ _GREETINGS = {
     "eae", "eai", "e ai", "e aí", "fala", "salve", "opa", "opa!",
     "hey", "hello", "hi", "ei", "olá",
 }
-
-
-# [fix-3] Frases curtas de "nada mais" em AGUARDA_RETORNO_HUMANO. Match exato
-# após _norm (lower + sem acentos). Frases mais longas usam _NEGATIVE_TOKENS.
-_NEGATIVE_RESPONSES = {
-    "nao", "n", "no", "nope", "nada", "nenhuma", "nenhum",
-    "ta bom", "ta", "tah", "ok", "okay", "beleza", "blz",
-    "obrigado", "obrigada", "valeu", "vlw", "tamo junto", "tmj",
-    "tchau", "flw", "falou", "ate logo", "ate", "ja era",
-    "ja falei que nao", "nao preciso", "aff", "ufa",
-}
-
-# Tokens que, presentes em qualquer parte da mensagem, indicam intenção
-# negativa de continuar a conversa (sem ter que enumerar variações).
-_NEGATIVE_TOKENS = {"nao", "tchau", "obrigad", "valeu", "aff", "nada"}
 
 
 def _is_orcamento_trigger(text: str) -> bool:
@@ -484,25 +651,21 @@ def handle(
     """
     estado_atual = session.current_state or INICIO
     texto = (message or "").strip()
+    texto_lower = texto.lower()
 
     # ── Tenta FAQEngine em qualquer estado "aberto" ──────────────────────
     faq_match = faq_engine.match(texto) if texto else None
 
-    # ── Escape hatch universal: /start reseta qualquer estado ───────────
-    # Garante que o usuário NUNCA fique preso em nenhum estado.
-    # start_command tem priority=100 no faq.json. Preserva contadores
-    # de rate limit (rl_*) — esses não são workflow, são abuso-prevenção
-    # e não devem ser bypassáveis via /start.
-    if faq_match is not None and faq_match.intent_id == "start_command":
-        data = session.session_data or {}
-        preserved = {k: v for k, v in data.items() if k.startswith("rl_")}
-        session.nome_cliente = None
-        session.session_data = preserved
-        return HandleResult(
-            response=_text(_greeting(session, campaign_engine)),
-            next_state=AGUARDA_NOME,
-            matched_intent_id="start_command",
-        )
+    # ════════════════════════════════════════════════════════════════════
+    # GLOBAL INTERCEPTOR — comportamentos que devem funcionar em qualquer
+    # estado (escape hatches universais). Roda ANTES dos handlers per-state
+    # e substitui o antigo `_check_escape` espalhado pelos coleta_*.
+    # ════════════════════════════════════════════════════════════════════
+    intercepted = _global_intercept(
+        texto, texto_lower, estado_atual, session, faq_match, campaign_engine
+    )
+    if intercepted is not None:
+        return intercepted
 
     # ── Estado INICIO: envia saudação e avança para AGUARDA_NOME ──────────
     if estado_atual == INICIO:
@@ -623,9 +786,6 @@ def handle(
         )
 
     if estado_atual == COLETA_ORCAMENTO_SEGMENTO:
-        escape = _check_escape(faq_match)
-        if escape:
-            return escape
         # [redesign-orcamento] NUNCA rejeita o segmento — _resolve_segment
         # devolve "Outro (texto livre)" para entradas desconhecidas e o fluxo
         # avança. Segmento é informativo para o consultor humano.
@@ -637,9 +797,6 @@ def handle(
         )
 
     if estado_atual == COLETA_ORCAMENTO_PRODUTO:
-        escape = _check_escape(faq_match)
-        if escape:
-            return escape
         # [redesign-orcamento] NUNCA rejeita o produto — texto livre é
         # preservado como veio. Casos suportados:
         # - "1" → "Camisa Polo" (numeral)
@@ -655,9 +812,6 @@ def handle(
         )
 
     if estado_atual == COLETA_ORCAMENTO_QTD:
-        escape = _check_escape(faq_match)
-        if escape:
-            return escape
         # Extrai o primeiro número da mensagem — aceita "12 peças",
         # "umas 50", "por volta de 30", "200 unidades", etc. [fix-Q1]
         import re as _re
@@ -701,9 +855,6 @@ def handle(
         )
 
     if estado_atual == COLETA_ORCAMENTO_PERSONALIZACAO:
-        escape = _check_escape(faq_match)
-        if escape:
-            return escape
         personalizacao = _resolve_choice(texto, PERSONALIZACAO_MAP)
         if personalizacao is None:
             return HandleResult(
@@ -740,9 +891,6 @@ def handle(
         )
 
     if estado_atual == COLETA_BORDADO_INFO:
-        escape = _check_escape(faq_match)
-        if escape:
-            return escape
         arte_map = {
             "1": "tem_arte",
             "sim": "tem_arte",
@@ -801,9 +949,6 @@ def handle(
         )
 
     if estado_atual == COLETA_ORCAMENTO_PRAZO:
-        escape = _check_escape(faq_match)
-        if escape:
-            return escape
         if not texto:
             return HandleResult(
                 response=_text(
@@ -818,9 +963,6 @@ def handle(
         )
 
     if estado_atual == CONFIRMACAO_ORCAMENTO:
-        escape = _check_escape(faq_match)
-        if escape:
-            return escape
         escolha = _resolve_choice(texto, CONFIRMACAO_MAP)
         if escolha == "confirmar":
             nome = session.nome_cliente or "cliente"
@@ -855,23 +997,15 @@ def handle(
         )
 
     if estado_atual == LEAD_CAPTURADO:
-        escolha = texto.lower().strip()
-        # Permite iniciar novo orçamento sem voltar manualmente ao menu
+        # Negativos / "menu" / "falar com humano" / "finalizar" / "catálogo"
+        # já foram interceptados em _global_intercept. Aqui sobra:
+        # - novo orçamento
+        # - FAQ de conhecimento (preço, prazo, etc.)
+        # - qualquer outro input → de volta ao menu
         if _is_orcamento_trigger(texto):
             return HandleResult(
                 response=_segmento_list(),
                 next_state=COLETA_ORCAMENTO_SEGMENTO,
-            )
-        if escolha in {"menu", "🏠 menu principal", "menu principal"}:
-            return HandleResult(
-                response=_menu_buttons(),
-                next_state=MENU,
-            )
-        if escolha == "falar_humano":
-            return HandleResult(
-                response=_text(HANDOFF_MESSAGE),
-                next_state=AGUARDA_RETORNO_HUMANO,
-                action="forward_to_human",
             )
         if faq_match is not None:
             return HandleResult(
@@ -882,6 +1016,22 @@ def handle(
         return HandleResult(
             response=_menu_buttons(),
             next_state=MENU,
+        )
+
+    if estado_atual == CONVERSA_FINALIZADA:
+        # Qualquer mensagem nova reabre a conversa. Negativos isolados são
+        # absorvidos pelo _global_intercept antes de chegar aqui.
+        if session.nome_cliente:
+            return HandleResult(
+                response=_menu_buttons(),
+                next_state=MENU,
+            )
+        return HandleResult(
+            response=_text(
+                "Olá de novo! 😊\n\n"
+                "Com quem tenho o prazer?"
+            ),
+            next_state=AGUARDA_NOME,
         )
 
     if estado_atual == AGUARDA_PEDIDO:
@@ -916,29 +1066,14 @@ def handle(
         )
 
     if estado_atual == AGUARDA_RETORNO_HUMANO:
+        # Negativos ("não", "tchau", "obrigado", "aff") são capturados pelo
+        # _global_intercept e levam para CONVERSA_FINALIZADA. Aqui só sobra
+        # FAQ de conhecimento (endereço, preço, etc.) ou texto livre.
         if faq_match is not None:
             return HandleResult(
                 response=faq_match.response,
                 next_state=faq_match.follow_up_state or AGUARDA_RETORNO_HUMANO,
                 matched_intent_id=faq_match.intent_id,
-            )
-        # [fix-3] Negações ("não", "tchau", "nada", "obrigado") encerram o
-        # ping-pong "Posso ajudar com mais alguma coisa?". Sem este filtro o
-        # bot insiste com o mesmo prompt indefinidamente, mesmo após o cliente
-        # já ter dito que não precisa de mais nada.
-        texto_norm = _norm(texto)
-        is_negative = (
-            texto_norm in _NEGATIVE_RESPONSES
-            or any(tok in texto_norm for tok in _NEGATIVE_TOKENS)
-        )
-        if is_negative:
-            return HandleResult(
-                response=_text(
-                    "Tudo bem! 😊 Se precisar de algo, é só me chamar.\n\n"
-                    "Um consultor entrará em contato em breve.\n"
-                    "Obrigado pela preferência — Camisart Belém! 🧵"
-                ),
-                next_state=AGUARDA_RETORNO_HUMANO,
             )
         return HandleResult(
             response=_text(AGUARDA_RETORNO_MESSAGE),

@@ -165,10 +165,14 @@ def test_menu_numeral_2(faq):
 
 
 # 5. MENU → humano
+# [state-redesign] O global interceptor captura "falar_humano" via FAQ
+# match e vai DIRETO para aguarda_retorno_humano, sem o estado intermediário
+# ENCAMINHAR_HUMANO (que era apenas um passo redundante).
 def test_menu_humano(faq):
     s = make_session("menu", nome="Maria")
     r = handle("falar_humano", s, faq)
-    assert r.next_state == "encaminhar_humano"
+    assert r.next_state == "aguarda_retorno_humano"
+    assert r.action == "forward_to_human"
 
 
 def test_menu_numeral_3(faq):
