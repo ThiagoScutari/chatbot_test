@@ -35,7 +35,9 @@
         "\\b(uniformiz[áa]r|uniformizada?|uniformizados?)\\b",
         "\\bpadronizar\\b.{0,30}\\b(equipe|time|turma|funcion[áa]rios?|pessoal|empresa)\\b",
         "\\b(equipe|time|turma|funcion[áa]rios?|pessoal)\\b.{0,30}\\bpadronizar\\b",
-        "\\b(vou|preciso)\\s+precisar\\b.{0,20}\\b(uniformes?|jalecos?|polos?|camisetas?|camisas?)\\b"
+        "\\b(vou|preciso)\\s+precisar\\b.{0,20}\\b(uniformes?|jalecos?|polos?|camisetas?|camisas?)\\b",
+        "\\buniformes?\\b.{0,20}\\b(escolar|escolares|escola|escolas|aluno|alunos|estudante|estudantes)\\b",
+        "\\b(escolar|escolares|escola|escolas)\\b.{0,20}\\b(uniformes?|camisetas?|camisas?|polos?)\\b"
       ],
       "response": {
         "type": "text",
