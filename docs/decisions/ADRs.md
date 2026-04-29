@@ -92,3 +92,35 @@ válido para essa escala futura.
 
 ### Referência
 Artigo: "RAG Está Morto?" — AkitaOnRails.com (2026-04-06)
+
+---
+
+## ADR-002 — LLM-first Pipeline (não regex-first)
+
+**Data:** 2026-04-29
+**Status:** Aceito
+**Contexto:** Sprint 11 (Flowtest) revelou que o pipeline regex-first
+não sustenta conversa multi-turn natural. Taxa de fallback de 37.4%,
+captura de dados incorreta, e incapacidade de extrair informações de
+linguagem livre.
+
+**Decisão:** Claude Haiku como motor principal de processamento. Toda
+mensagem é processada pelo LLM com system prompt contendo catálogo,
+FAQ, knowledge base e regras do funil. O regex (FAQEngine) é mantido
+apenas como fallback offline.
+
+**Trade-offs:**
+- (+) Conversa natural, extração de dados de linguagem livre
+- (+) Sem manutenção de regex para cada nova pergunta
+- (+) Adaptação automática a sotaques e abreviações
+- (-) Custo por mensagem (~$0.005 vs $0 no regex)
+- (-) Latência por mensagem (~1-2s vs 0ms no regex)
+- (-) Dependência de API externa (mitigado pelo fallback)
+
+**Consequências:**
+- LLMRouter (Camada 2) e ContextEngine (Camada 3) são deprecados
+- FAQEngine (Camada 1) mantido apenas como fallback offline
+- System prompt é a nova "base de conhecimento" — mantido em markdown
+- Guardrails em código Python validam respostas pós-LLM
+
+**Rejeitar:** Voltar para regex-first ou adicionar mais regexes.
