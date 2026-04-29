@@ -166,24 +166,42 @@ async def run_single_interaction(
 
     completed = False
     for turn_num in range(1, max_turns):
-        # Delay between turns to avoid rate limit (10 msgs/min per user)
-        await asyncio.sleep(1.5)
+        # Delay between turns to stay under rate limit (10 msgs/min per user)
+        await asyncio.sleep(7.0)
 
-        client_msg = await persona_agent.generate_message(
-            persona_doc=persona_doc,
-            flow_doc=flow_doc,
-            conversation_history=conversation_history,
-            turn_number=turn_num,
-            max_turns=max_turns,
-        )
+        # Retry up to 3 times on connection / transient errors
+        for attempt in range(3):
+            try:
+                client_msg = await persona_agent.generate_message(
+                    persona_doc=persona_doc,
+                    flow_doc=flow_doc,
+                    conversation_history=conversation_history,
+                    turn_number=turn_num,
+                    max_turns=max_turns,
+                )
+                break
+            except Exception:
+                if attempt < 2:
+                    await asyncio.sleep(10)
+                    continue
+                raise
 
         if "__END__" in client_msg:
             completed = True
             break
 
-        bot_resp = await send_to_pipeline(
-            pipeline, client_msg, channel_user_id, db
-        )
+        # Same retry policy for the pipeline call
+        for attempt in range(3):
+            try:
+                bot_resp = await send_to_pipeline(
+                    pipeline, client_msg, channel_user_id, db
+                )
+                break
+            except Exception:
+                if attempt < 2:
+                    await asyncio.sleep(10)
+                    continue
+                raise
 
         turns.append(Turn(
             number=turn_num,
