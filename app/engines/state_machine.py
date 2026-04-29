@@ -219,6 +219,16 @@ _ORCAMENTO_TRIGGERS = {
 }
 
 
+# [fix-1] Saudações comuns não devem ser aceitas como nome em AGUARDA_NOME.
+# Sem este filtro, o cliente que envia "Olá" após /start vê "Prazer, Olá! Como
+# posso te ajudar?" — confuso e quebra o onboarding.
+_GREETINGS = {
+    "oi", "ola", "ola!", "bom dia", "boa tarde", "boa noite",
+    "eae", "eai", "e ai", "e aí", "fala", "salve", "opa", "opa!",
+    "hey", "hello", "hi", "ei", "olá",
+}
+
+
 _SEGMENTO_LABELS: dict[str, str] = {
     "corporativo": "Corporativo",
     "saude": "Saúde",
@@ -391,6 +401,15 @@ def handle(
         if not texto:
             return HandleResult(
                 response=_text("Por favor, digite o seu nome."),
+                next_state=AGUARDA_NOME,
+            )
+        # [fix-1] Saudações ("Olá", "oi", "bom dia") não são nomes — re-pergunta
+        # de forma educada em vez de gravar a saudação como nome do cliente.
+        if _norm(texto) in _GREETINGS:
+            return HandleResult(
+                response=_text(
+                    "Olá! 😊 Para te atender melhor, me diz o seu nome?"
+                ),
                 next_state=AGUARDA_NOME,
             )
         session.nome_cliente = texto
