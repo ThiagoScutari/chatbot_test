@@ -76,16 +76,18 @@ class HaikuEngine:
         messages = list(conversation_history)
         messages.append({"role": "user", "content": message})
 
-        # 3. Chamar Haiku
+        # 3. Chamar Haiku — prefill com '{' força resposta em JSON
+        prefilled_messages = list(messages)
+        prefilled_messages.append({"role": "assistant", "content": "{"})
         response = await self._client.messages.create(
             model="claude-haiku-4-5-20251001",
             max_tokens=500,
             system=system,
-            messages=messages,
+            messages=prefilled_messages,
         )
 
-        # 4. Parsear resposta
-        raw_text = response.content[0].text.strip()
+        # 4. Parsear resposta — reanexar '{' do prefill
+        raw_text = "{" + response.content[0].text.strip()
         parsed = self._parse_response(raw_text)
 
         return HaikuResponse(
