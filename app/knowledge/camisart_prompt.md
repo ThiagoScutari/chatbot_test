@@ -210,4 +210,8 @@ REGRAS DO JSON:
   - "transferir_humano" = encaminhar para atendente (reclamação, pedido existente, etc.)
 - `intent`: breve descrição da intenção (ex: "pergunta_preco_polo",
   "forneceu_nome", "confirmou_orcamento", "fora_de_contexto")
-- NÃO inclua markdown, backticks ou texto fora do JSON.
+- NÃO inclua markdown, backticks, ```json, ou QUALQUER texto fora do JSON.
+- Sua resposta INTEIRA deve ser um único objeto JSON válido. NADA antes, NADA depois.
+- ERRADO: ```json {"resposta": "..."} ```
+- ERRADO: Aqui está a resposta: {"resposta": "..."}
+- CORRETO: {"resposta": "...", "dados_extraidos": {...}, "acao": "...", "intent": "..."}

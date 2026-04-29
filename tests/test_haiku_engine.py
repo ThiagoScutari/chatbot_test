@@ -159,3 +159,39 @@ async def test_transferir_humano_action(engine) -> None:
 
     result = await engine.process("o bordado veio errado!", [], {})
     assert result.acao == "transferir_humano"
+
+
+@pytest.mark.asyncio
+async def test_json_with_text_before(engine) -> None:
+    """JSON with text before it is extracted correctly."""
+    raw = (
+        'Aqui está minha resposta:\n'
+        '{"resposta": "Oi!", "dados_extraidos": {}, '
+        '"acao": "continuar", "intent": "saudacao"}'
+    )
+    mock = MagicMock()
+    mock.content = [MagicMock(text=raw)]
+    mock.usage = MagicMock(input_tokens=50, output_tokens=30)
+    engine._client.messages.create.return_value = mock
+
+    result = await engine.process("oi", [], {})
+    assert result.resposta == "Oi!"
+    assert result.intent == "saudacao"
+
+
+@pytest.mark.asyncio
+async def test_json_nested_braces(engine) -> None:
+    """Nested JSON objects are parsed correctly."""
+    raw = (
+        '{"resposta": "Polo R$42,00", '
+        '"dados_extraidos": {"nome": "Carlos", "produto": "polo"}, '
+        '"acao": "continuar", "intent": "preco"}'
+    )
+    mock = MagicMock()
+    mock.content = [MagicMock(text=raw)]
+    mock.usage = MagicMock(input_tokens=50, output_tokens=30)
+    engine._client.messages.create.return_value = mock
+
+    result = await engine.process("quanto custa polo", [], {})
+    assert result.dados_extraidos["nome"] == "Carlos"
+    assert result.dados_extraidos["produto"] == "polo"

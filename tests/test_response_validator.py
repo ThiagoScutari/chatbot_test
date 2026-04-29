@@ -23,14 +23,15 @@ def test_valid_response(validator: ResponseValidator) -> None:
 
 
 def test_unknown_price_flagged(validator: ResponseValidator) -> None:
-    """Price not in catalog is flagged."""
+    """Price not in catalog and not a multiple of any known price is flagged."""
+    # R$77 is not in catalog and not an integer multiple of any unit price
     result = validator.validate(
-        resposta="A polo custa R$99,00.",
+        resposta="A polo custa R$77,00.",
         acao="continuar",
         dados_extraidos={},
     )
     assert result.valid is False
-    assert any("99" in issue for issue in result.issues)
+    assert any("77" in issue for issue in result.issues)
 
 
 def test_known_price_passes(validator: ResponseValidator) -> None:
@@ -90,6 +91,36 @@ def test_mix_valid_invalid_prices(validator: ResponseValidator) -> None:
     """One bad price fails even if others are valid."""
     result = validator.validate(
         resposta="Polo R$42,00 e o especial R$77,00.",
+        acao="continuar",
+        dados_extraidos={},
+    )
+    assert result.valid is False
+
+
+def test_valid_total_price(validator: ResponseValidator) -> None:
+    """Computed total (8 × R$42 = R$336) passes validation."""
+    result = validator.validate(
+        resposta="O total para 8 polos fica R$336,00.",
+        acao="continuar",
+        dados_extraidos={},
+    )
+    assert result.valid is True
+
+
+def test_valid_total_jaleco(validator: ResponseValidator) -> None:
+    """6 × R$145 = R$870 passes validation."""
+    result = validator.validate(
+        resposta="6 jalecos Premium: R$870,00.",
+        acao="continuar",
+        dados_extraidos={},
+    )
+    assert result.valid is True
+
+
+def test_invalid_total_still_caught(validator: ResponseValidator) -> None:
+    """Price that is not a multiple of any known price fails."""
+    result = validator.validate(
+        resposta="O total fica R$777,00.",
         acao="continuar",
         dados_extraidos={},
     )

@@ -133,7 +133,7 @@ class HaikuEngine:
     def _parse_response(self, raw_text: str) -> dict:
         """Parseia JSON da resposta do Haiku.
 
-        Tenta múltiplas estratégias de limpeza.
+        5 estratégias de limpeza, do mais simples ao mais agressivo.
         """
         # Strategy 1: direct parse
         try:
@@ -141,9 +141,9 @@ class HaikuEngine:
         except json.JSONDecodeError:
             pass
 
-        # Strategy 2: remove ```json ... ``` fences
+        # Strategy 2: strip ```json fences (with or without language tag)
         cleaned = raw_text.strip()
-        if cleaned.startswith("```"):
+        if "```" in cleaned:
             lines = cleaned.split("\n")
             lines = [line for line in lines if not line.strip().startswith("```")]
             cleaned = "\n".join(lines).strip()
@@ -152,16 +152,43 @@ class HaikuEngine:
             except json.JSONDecodeError:
                 pass
 
-        # Strategy 3: extract first {...} block
-        match = re.search(r"\{.*\}", raw_text, re.DOTALL)
-        if match:
+        # Strategy 3: extract first complete {...} block via brace counting
+        # (handles nested objects correctly, unlike a greedy regex)
+        start = raw_text.find("{")
+        if start != -1:
+            depth = 0
+            end = start
+            for i in range(start, len(raw_text)):
+                if raw_text[i] == "{":
+                    depth += 1
+                elif raw_text[i] == "}":
+                    depth -= 1
+                    if depth == 0:
+                        end = i + 1
+                        break
+            candidate = raw_text[start:end]
             try:
-                return json.loads(match.group())
+                return json.loads(candidate)
             except json.JSONDecodeError:
                 pass
 
-        # Fallback: return raw text as response
-        logger.warning("Haiku retornou JSON inválido, usando texto raw")
+        # Strategy 4: extract value of "resposta" key via regex
+        match = re.search(
+            r'"resposta"\s*:\s*"((?:[^"\\]|\\.)*)?"',
+            raw_text,
+        )
+        if match:
+            resposta_text = match.group(1) or ""
+            resposta_text = resposta_text.replace('\\"', '"').replace("\\n", "\n")
+            return {
+                "resposta": resposta_text,
+                "dados_extraidos": {},
+                "acao": "continuar",
+                "intent": "partial_parse",
+            }
+
+        # Strategy 5: raw text fallback
+        logger.warning("Haiku JSON parse falhou todas as 5 estratégias")
         return {
             "resposta": raw_text,
             "dados_extraidos": {},

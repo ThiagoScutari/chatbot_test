@@ -109,20 +109,41 @@ class ResponseValidator:
         )
 
     def _check_prices(self, text: str) -> list[str]:
-        """Verifica se preços mencionados batem com o catálogo."""
+        """Verifica se preços mencionados batem com o catálogo.
+
+        Permite totais calculados (qty × unit_price) — qualquer múltiplo
+        inteiro de um preço conhecido até 1000× passa.
+        """
         issues: list[str] = []
         price_matches = re.findall(r"R\$\s*([\d]+[.,]?\d{0,2})", text)
         for price_str in price_matches:
             clean = price_str.replace(".", "").replace(",", ".")
             try:
                 price = float(clean)
-                if price > 0 and price not in self.KNOWN_PRICES:
-                    issues.append(
-                        f"Preço R${price_str} não encontrado no catálogo. "
-                        f"Preços válidos: {sorted(self.KNOWN_PRICES)}"
-                    )
             except ValueError:
-                pass
+                continue
+            if price <= 0:
+                continue
+
+            # Direct catalog match
+            if price in self.KNOWN_PRICES:
+                continue
+
+            # Accept if it's a valid multiple of any known price
+            is_valid_total = False
+            for known in self.KNOWN_PRICES:
+                if known <= 0:
+                    continue
+                ratio = price / known
+                if 1 < ratio <= 1000 and abs(ratio - round(ratio)) < 0.01:
+                    is_valid_total = True
+                    break
+
+            if not is_valid_total:
+                issues.append(
+                    f"Preço R${price_str} não encontrado no catálogo "
+                    f"e não é múltiplo de preço conhecido"
+                )
         return issues
 
 
