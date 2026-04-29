@@ -322,21 +322,63 @@ def test_menu_trigger_orcamento_text(faq):
 
 
 def test_segmento_valido_avanca_para_produto(faq):
+    # [redesign-orcamento] segmento agora é armazenado como rótulo de
+    # exibição ("Corporativo", não "corporativo").
     s = make_session("coleta_orcamento_segmento", nome="Maria")
     r = handle("corporativo", s, faq)
     assert r.next_state == "coleta_orcamento_produto"
-    assert s.session_data["orcamento_segmento"] == "corporativo"
+    assert s.session_data["orcamento_segmento"] == "Corporativo"
 
 
 def test_produto_valido_avanca_para_qtd(faq):
     s = make_session(
         "coleta_orcamento_produto",
         nome="Maria",
-        data={"orcamento_segmento": "corporativo"},
+        data={"orcamento_segmento": "Corporativo"},
     )
     r = handle("Camisa Polo", s, faq)
     assert r.next_state == "coleta_orcamento_qtd"
     assert s.session_data["orcamento_produto"] == "Camisa Polo"
+
+
+def test_produto_via_numeral(faq):
+    # [redesign-orcamento] "4" → "Jaleco Tradicional".
+    s = make_session(
+        "coleta_orcamento_produto",
+        nome="Maria",
+        data={"orcamento_segmento": "Saúde"},
+    )
+    r = handle("4", s, faq)
+    assert r.next_state == "coleta_orcamento_qtd"
+    assert s.session_data["orcamento_produto"] == "Jaleco Tradicional"
+
+
+def test_produto_texto_livre_aceito(faq):
+    # [redesign-orcamento] Produto fora do catálogo é armazenado como veio,
+    # sem rejeição. O consultor humano interpreta no resumo.
+    s = make_session(
+        "coleta_orcamento_produto",
+        nome="Maria",
+        data={"orcamento_segmento": "Educação"},
+    )
+    msg = "camiseta estampada com logo da escola"
+    r = handle(msg, s, faq)
+    assert r.next_state == "coleta_orcamento_qtd"
+    # Match é exato — descrição rica vira free text, preservando detalhe
+    assert s.session_data["orcamento_produto"] == msg
+
+
+def test_produto_descricao_complexa_preservada(faq):
+    # Múltiplos produtos numa frase — preserva texto livre completo.
+    s = make_session(
+        "coleta_orcamento_produto",
+        nome="Maria",
+        data={"orcamento_segmento": "Corporativo"},
+    )
+    msg = "uniforme com saia e camisa bordada"
+    r = handle(msg, s, faq)
+    assert r.next_state == "coleta_orcamento_qtd"
+    assert s.session_data["orcamento_produto"] == msg
 
 
 def test_personalizacao_valida_avanca_para_prazo(faq):
@@ -392,34 +434,48 @@ def test_segmento_saude_acentuado(faq):
     r = handle("Saúde", s, faq)
     assert r.next_state != "coleta_orcamento_segmento", \
         "Saúde com acento deve avançar o estado"
-    assert s.session_data.get("orcamento_segmento") == "saude"
+    assert s.session_data.get("orcamento_segmento") == "Saúde"
 
 
 def test_segmento_corporativo_maiusculo(faq):
     s = make_session("coleta_orcamento_segmento", nome="Maria")
     handle("Corporativo", s, faq)
-    assert s.session_data.get("orcamento_segmento") == "corporativo"
+    assert s.session_data.get("orcamento_segmento") == "Corporativo"
 
 
 def test_segmento_por_numero(faq):
+    # [redesign-orcamento] "1" → "Corporativo" (mapa numeral 1..6).
     s = make_session("coleta_orcamento_segmento", nome="Maria")
     r = handle("1", s, faq)
-    assert r is not None
+    assert r.next_state == "coleta_orcamento_produto"
+    assert s.session_data.get("orcamento_segmento") == "Corporativo"
 
 
-def test_segmento_desconhecido_repergunta(faq):
+def test_segmento_educacao_via_alias(faq):
+    # [redesign-orcamento] "escolar"/"escola" → "Educação" via alias.
     s = make_session("coleta_orcamento_segmento", nome="Maria")
-    r = handle("xablau foobar", s, faq)
-    assert r.next_state == "coleta_orcamento_segmento"
+    r = handle("escolar", s, faq)
+    assert r.next_state == "coleta_orcamento_produto"
+    assert s.session_data.get("orcamento_segmento") == "Educação"
 
 
-def test_segmento_saude_seleciona_jaleco_unico(faq):
-    """Saúde tem jaleco tradicional e premium — deve ir para PRODUTO."""
+def test_segmento_desconhecido_aceita_como_outro(faq):
+    # [redesign-orcamento] Antes a entrada desconhecida ficava presa em
+    # COLETA_ORCAMENTO_SEGMENTO. Agora vira "Outro (texto)" e avança —
+    # o consultor humano vê o que o cliente escreveu.
+    s = make_session("coleta_orcamento_segmento", nome="Maria")
+    r = handle("pet shop", s, faq)
+    assert r.next_state == "coleta_orcamento_produto"
+    assert s.session_data.get("orcamento_segmento") == "Outro (pet shop)"
+
+
+def test_segmento_saude_avanca_para_produto(faq):
+    """[redesign-orcamento] Saúde sempre vai para COLETA_ORCAMENTO_PRODUTO
+    (com lista completa de 8 produtos), nunca pula para QTD."""
     s = make_session("coleta_orcamento_segmento", nome="Maria")
     r = handle("saude", s, faq)
-    assert r.next_state in (
-        "coleta_orcamento_produto", "coleta_orcamento_qtd"
-    )
+    assert r.next_state == "coleta_orcamento_produto"
+    assert s.session_data.get("orcamento_segmento") == "Saúde"
 
 
 def test_personalizacao_bordado_livre(faq):

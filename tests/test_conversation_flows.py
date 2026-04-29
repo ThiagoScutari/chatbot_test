@@ -201,7 +201,8 @@ async def test_C12_fluxo_orcamento_completo(sim):
     lead = leads[0]
     assert lead.status == "novo"
     assert lead.quantidade == 50
-    assert lead.segmento == "corporativo"
+    # [redesign-orcamento] segmento agora é o rótulo de exibição.
+    assert lead.segmento == "Corporativo"
     assert lead.personalizacao == "bordado"
 
 
@@ -252,21 +253,27 @@ async def test_C15_lead_gravado_no_banco(sim, db):
     lead = leads[0]
     assert lead.status == "novo"
     assert lead.nome_cliente == "Thiago"
-    assert lead.segmento == "saude"
+    # [redesign-orcamento] segmento agora é o rótulo de exibição.
+    assert lead.segmento == "Saúde"
     assert lead.quantidade == 10
     assert lead.prazo_desejado == "urgente"
 
 
-async def test_C16_segmento_saude_mostra_jaleco(sim):
-    """C16: Segmento saúde → lista apenas jalecos."""
+async def test_C16_segmento_saude_mostra_lista_completa(sim):
+    """C16 [redesign-orcamento]: Segmento Saúde mostra TODOS os produtos.
+
+    Antes filtrávamos por segmento (Saúde via apenas jalecos); agora todo
+    cliente vê os 8 produtos e pode escolher ou descrever livremente.
+    """
     await sim.send("/start")
     await sim.send("Thiago")
     await sim.send("quero orçamento")
     await sim.send("Saúde")
     response = sim.last_response.lower()
-    all_text = " ".join(sim.history()).lower()
-    assert "jaleco" in all_text
-    assert "polo" not in response
+    # Lista completa: jaleco e polo aparecem juntos
+    assert "jaleco" in response
+    assert "polo" in response
+    assert "regata" in response
 
 
 # ── BLOCO 4: Handoff ─────────────────────────────────────────────────────────
