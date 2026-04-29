@@ -390,6 +390,25 @@ SUITES: dict[str, list[TestCase]] = {
         TestCase("edge", "Cliente Edge C"),
         TestCase("edge", "borgado",
                  ["bordado"], note="typo bordado — depende de LLM ou fallback"),
+        # Bloco 5 — Saudação como nome [fix-1]
+        # "Olá" não pode virar nome do cliente — bot re-pergunta o nome real.
+        TestCase("edge", "/start", is_reset=True),
+        TestCase("edge", "Olá",
+                 ["nome"], note="saudação rejeitada — bot re-pergunta o nome"),
+        TestCase("edge", "Thiago Greeting",
+                 ["ajudar"], note="agora aceita o nome real"),
+        # Bloco 6 — Negação em aguarda_retorno_humano [fix-3]
+        # Após conectar com consultor, "não" deve fechar a conversa de forma
+        # amigável, sem repetir "Posso ajudar com mais alguma coisa?".
+        TestCase("edge", "/start", is_reset=True),
+        TestCase("edge", "Thiago Negacao",
+                 ["ajudar"]),
+        TestCase("edge", "quero falar com atendente",
+                 ["consultor"]),
+        TestCase("edge", "1",
+                 ["consultor"], note="HANDOFF — confirma conexão com consultor"),
+        TestCase("edge", "não",
+                 ["obrigado"], note="negação encerra ping-pong sem loop"),
     ],
 }
 
