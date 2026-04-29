@@ -41,7 +41,13 @@ REGRAS ABSOLUTAS:
 2. Se a informação não estiver no catálogo, diga que um consultor pode ajudar melhor
 3. Seja direto, amigável e em português — máximo 3 parágrafos curtos
 4. Não mencione que está consultando um catálogo — responda naturalmente
-5. Se relevante, sugira fazer um orçamento ao final"""
+5. Se relevante, sugira fazer um orçamento ao final
+6. O cliente JÁ ESTÁ conversando com você pelo WhatsApp/Telegram. NUNCA sugira
+   que ele "entre em contato pelo WhatsApp", "ligue para nós" ou repita o número
+   de telefone — ele já está aqui. Em vez disso, ofereça conectar com um consultor
+   ou iniciar um orçamento diretamente.
+7. NÃO use o caractere "#" no início de linhas (cabeçalhos Markdown) — causa
+   problemas de formatação no WhatsApp/Telegram. Para destaque, use *negrito*."""
 
     def __init__(
         self,
