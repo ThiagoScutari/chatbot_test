@@ -423,11 +423,18 @@ def build_pipeline(mock_llm: bool) -> MessagePipeline:
 
     llm_router = None
     context_engine = None
+    haiku_engine = None
+
+    from app.engines.response_validator import ResponseValidator
+    validator = ResponseValidator(
+        products_path=Path("app/knowledge/products.json"),
+    )
 
     if not mock_llm and settings.ANTHROPIC_API_KEY:
         import anthropic  # noqa: WPS433
 
         from app.engines.context_engine import ContextEngine
+        from app.engines.haiku_engine import HaikuEngine
         from app.engines.llm_router import LLMRouter
 
         llm_client = anthropic.AsyncAnthropic(
@@ -444,9 +451,19 @@ def build_pipeline(mock_llm: bool) -> MessagePipeline:
             anthropic_client=ctx_client,
         )
 
+        haiku_client = anthropic.AsyncAnthropic(
+            api_key=settings.ANTHROPIC_API_KEY
+        )
+        haiku_engine = HaikuEngine(
+            prompt_path=Path("app/knowledge/camisart_prompt.md"),
+            client=haiku_client,
+        )
+
     return MessagePipeline(
         faq_engine=faq,
         campaign_engine=campaign,
+        haiku_engine=haiku_engine,
+        validator=validator,
         llm_router=llm_router,
         context_engine=context_engine,
     )
