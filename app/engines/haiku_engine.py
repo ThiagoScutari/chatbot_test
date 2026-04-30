@@ -110,6 +110,9 @@ class HaikuEngine:
             "personalizacao",
             "prazo",
             "observacoes",
+            "cep",
+            "endereco_completo",
+            "endereco_viacep_formatted",
         ]
 
         coletados = []

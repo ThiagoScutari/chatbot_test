@@ -58,6 +58,8 @@ FUNNEL_FIELDS = {
     "personalizacao",
     "prazo",
     "observacoes",
+    "cep",
+    "endereco_completo",
 }
 
 # Chaves de sessão que NÃO devem ser limpas no /start (rate limit, etc.)
@@ -250,6 +252,26 @@ class MessagePipeline:
 
         # Atualiza dados extraídos antes do histórico (caso erro depois)
         self._update_session_data(session, haiku_resp.dados_extraidos)
+
+        # ViaCEP: se Haiku extraiu CEP novo, buscar endereço automaticamente
+        cep_novo = haiku_resp.dados_extraidos.get("cep")
+        if cep_novo:
+            from app.services import cep_service
+            clean_cep = cep_service.normalize_cep(cep_novo)
+            if clean_cep and not (session.session_data or {}).get("endereco_viacep"):
+                endereco = await cep_service.lookup(clean_cep)
+                if endereco:
+                    data = dict(session.session_data or {})
+                    data["endereco_viacep"] = endereco
+                    data["endereco_viacep_formatted"] = cep_service.format_address(endereco)
+                    session.session_data = data
+                    flag_modified(session, "session_data")
+                    logger.info(
+                        "ViaCEP: %s → %s",
+                        clean_cep,
+                        cep_service.format_address(endereco),
+                    )
+
         self._save_to_history(session, inbound.content, haiku_resp.resposta)
 
         # Decide próximo estado a partir da ação retornada
