@@ -260,17 +260,19 @@ class MessagePipeline:
             clean_cep = cep_service.normalize_cep(cep_novo)
             if clean_cep and not (session.session_data or {}).get("endereco_viacep"):
                 endereco = await cep_service.lookup(clean_cep)
+                data = dict(session.session_data or {})
                 if endereco:
-                    data = dict(session.session_data or {})
+                    from app.services.cep_service import format_address
                     data["endereco_viacep"] = endereco
-                    data["endereco_viacep_formatted"] = cep_service.format_address(endereco)
-                    session.session_data = data
-                    flag_modified(session, "session_data")
-                    logger.info(
-                        "ViaCEP: %s → %s",
-                        clean_cep,
-                        cep_service.format_address(endereco),
-                    )
+                    data["endereco_viacep_formatted"] = format_address(endereco)
+                    data.pop("viacep_erro", None)
+                    logger.info("ViaCEP: %s → %s", clean_cep, format_address(endereco))
+                else:
+                    data["viacep_erro"] = f"CEP {clean_cep} não encontrado na base dos Correios"
+                    data.pop("endereco_viacep", None)
+                    logger.warning("ViaCEP: CEP %s não encontrado", clean_cep)
+                session.session_data = data
+                flag_modified(session, "session_data")
 
         self._save_to_history(session, inbound.content, haiku_resp.resposta)
 

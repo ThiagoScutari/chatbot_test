@@ -112,7 +112,6 @@ class HaikuEngine:
             "observacoes",
             "cep",
             "endereco_completo",
-            "endereco_viacep_formatted",
         ]
 
         coletados = []
@@ -124,14 +123,37 @@ class HaikuEngine:
             else:
                 pendentes.append(f"- {campo}")
 
-        if not coletados:
+        # Bloco ViaCEP — fora do loop de campos para garantir destaque
+        endereco_viacep = session_data.get("endereco_viacep")
+        viacep_erro = session_data.get("viacep_erro")
+        viacep_block: str | None = None
+
+        if endereco_viacep:
+            from app.services.cep_service import format_address
+            formatted = format_address(endereco_viacep)
+            viacep_block = (
+                f"\n⚠️ ENDEREÇO CONSULTADO VIA VIACEP — USE EXATAMENTE ESTE:\n"
+                f"  {formatted} — CEP {endereco_viacep.get('cep', '')}\n"
+                f"  NÃO altere, NÃO invente outro endereço.\n"
+                f"  Confirme com o cliente e peça APENAS número e complemento."
+            )
+        elif viacep_erro:
+            viacep_block = (
+                f"\n⚠️ {viacep_erro} — peça o endereço completo manualmente."
+            )
+
+        if not coletados and viacep_block is None:
             return ""
 
-        parts = ["Dados JÁ coletados (NÃO pergunte novamente):"]
-        parts.append("\n".join(coletados))
-        if pendentes:
-            parts.append("\nDados PENDENTES (coletar quando natural):")
-            parts.append("\n".join(pendentes))
+        parts: list[str] = []
+        if coletados:
+            parts.append("Dados JÁ coletados (NÃO pergunte novamente):")
+            parts.append("\n".join(coletados))
+            if pendentes:
+                parts.append("\nDados PENDENTES (coletar quando natural):")
+                parts.append("\n".join(pendentes))
+        if viacep_block:
+            parts.append(viacep_block)
 
         return "\n".join(parts)
 
