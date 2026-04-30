@@ -234,6 +234,31 @@ class MessagePipeline:
         """Caminho principal: HaikuEngine processa a mensagem."""
         assert self._haiku_engine is not None  # checked by caller
 
+        # PRE-PROCESSING: detectar CEP na mensagem bruta antes de chamar Haiku
+        # Assim o Haiku já recebe o endereço no mesmo turno
+        import re as _re
+        from app.services import cep_service as _cep_svc
+
+        _cep_match = _re.search(r'\b(\d{5}-?\d{3})\b', inbound.content)
+        if _cep_match:
+            _cep_raw = _cep_match.group(1)
+            _clean = _cep_svc.normalize_cep(_cep_raw)
+            _existing = (session.session_data or {}).get("endereco_viacep")
+            if _clean and not _existing:
+                _endereco = await _cep_svc.lookup(_clean)
+                _data = dict(session.session_data or {})
+                if _endereco:
+                    _data["endereco_viacep"] = _endereco
+                    _data["endereco_viacep_formatted"] = _cep_svc.format_address(_endereco)
+                    _data.pop("viacep_erro", None)
+                    logger.info("ViaCEP PRE: %s → %s", _clean, _cep_svc.format_address(_endereco))
+                else:
+                    _data["viacep_erro"] = f"CEP {_clean} não encontrado nos Correios"
+                    _data.pop("endereco_viacep", None)
+                    logger.warning("ViaCEP PRE: CEP %s não encontrado", _clean)
+                session.session_data = _data
+                flag_modified(session, "session_data")
+
         history = self._load_conversation_history(session)
         haiku_resp = await self._haiku_engine.process(
             message=inbound.content,
@@ -253,26 +278,8 @@ class MessagePipeline:
         # Atualiza dados extraídos antes do histórico (caso erro depois)
         self._update_session_data(session, haiku_resp.dados_extraidos)
 
-        # ViaCEP: se Haiku extraiu CEP novo, buscar endereço automaticamente
-        cep_novo = haiku_resp.dados_extraidos.get("cep")
-        if cep_novo:
-            from app.services import cep_service
-            clean_cep = cep_service.normalize_cep(cep_novo)
-            if clean_cep and not (session.session_data or {}).get("endereco_viacep"):
-                endereco = await cep_service.lookup(clean_cep)
-                data = dict(session.session_data or {})
-                if endereco:
-                    from app.services.cep_service import format_address
-                    data["endereco_viacep"] = endereco
-                    data["endereco_viacep_formatted"] = format_address(endereco)
-                    data.pop("viacep_erro", None)
-                    logger.info("ViaCEP: %s → %s", clean_cep, format_address(endereco))
-                else:
-                    data["viacep_erro"] = f"CEP {clean_cep} não encontrado na base dos Correios"
-                    data.pop("endereco_viacep", None)
-                    logger.warning("ViaCEP: CEP %s não encontrado", clean_cep)
-                session.session_data = data
-                flag_modified(session, "session_data")
+        # ViaCEP lookup movido para PRE-PROCESSING (antes do Haiku)
+        # Ver bloco acima em _process_with_haiku
 
         self._save_to_history(session, inbound.content, haiku_resp.resposta)
 
