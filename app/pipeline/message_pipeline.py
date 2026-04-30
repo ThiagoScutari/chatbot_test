@@ -20,6 +20,7 @@ from app.engines.campaign_engine import CampaignEngine
 from app.engines.rag_engine import is_product_question
 from app.engines.regex_engine import FAQEngine, FAQResponse
 from app.engines.state_machine import HandleResult, handle
+from app.models.lead import Lead
 from app.models.session import Session as SessionModel
 from app.schemas.messaging import InboundMessage, OutboundMessage
 from app.services import (
@@ -272,23 +273,35 @@ class MessagePipeline:
 
         # Captura de lead quando o Haiku indicar
         if haiku_resp.acao == "lead_completo":
-            data = session.session_data or {}
-            lead_service.capture(
-                db,
-                session=session,
-                nome_cliente=str(data.get("nome") or session.nome_cliente or "cliente"),
-                telefone=inbound.channel_user_id,
-                segmento=data.get("segmento"),
-                produto=data.get("produto"),
-                quantidade=(
-                    int(data["quantidade"])
-                    if str(data.get("quantidade", "")).isdigit()
-                    else None
-                ),
-                personalizacao=data.get("personalizacao"),
-                prazo_desejado=data.get("prazo"),
-                observacao=data.get("observacoes"),
+            # Guard: só captura se não existe lead 'novo' nesta sessão
+            existing_lead = (
+                db.query(Lead)
+                .filter_by(session_id=session.id, status="novo")
+                .first()
             )
+            if existing_lead is None:
+                data = session.session_data or {}
+                lead_service.capture(
+                    db,
+                    session=session,
+                    nome_cliente=str(data.get("nome") or session.nome_cliente or "cliente"),
+                    telefone=inbound.channel_user_id,
+                    segmento=data.get("segmento"),
+                    produto=data.get("produto"),
+                    quantidade=(
+                        int(data["quantidade"])
+                        if str(data.get("quantidade", "")).isdigit()
+                        else None
+                    ),
+                    personalizacao=data.get("personalizacao"),
+                    prazo_desejado=data.get("prazo"),
+                    observacao=data.get("observacoes"),
+                )
+            else:
+                logger.info(
+                    "Lead já existe para sessão %s — ignorando duplicata",
+                    session.id,
+                )
 
         message_service.record_outbound(
             db,

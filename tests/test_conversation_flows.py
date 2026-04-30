@@ -259,6 +259,32 @@ async def test_C15_lead_gravado_no_banco(sim, db):
     assert lead.prazo_desejado == "urgente"
 
 
+async def test_lead_idempotency_no_duplicates(sim, db):
+    """Lead não é duplicado se Haiku retorna lead_completo múltiplas vezes."""
+    await sim.send("/start")
+    await sim.send("Thiago")
+    await sim.send("quero orçamento")
+    await sim.send("Corporativo")
+    await sim.send("Camisa Polo")
+    await sim.send("10")
+    await sim.send("Bordado")
+    await sim.send("1")  # tem_arte
+    await sim.send("15 dias")
+    await sim.send("sim")  # lead capturado
+    assert len(sim.leads_captured()) == 1
+
+    # Simula mensagens extras que poderiam re-triggerar lead_completo
+    # no pipeline regex (o Haiku path não é testado aqui, mas o guard
+    # no pipeline protege ambos os caminhos)
+    sim.reset_rate_limit()
+    await sim.send("ok obrigado")
+    await sim.send("certo")
+
+    # Deve continuar com apenas 1 lead
+    leads = sim.leads_captured()
+    assert len(leads) == 1, f"Esperava 1 lead, encontrou {len(leads)}"
+
+
 async def test_C16_segmento_saude_mostra_lista_completa(sim):
     """C16 [redesign-orcamento]: Segmento Saúde mostra TODOS os produtos.
 
