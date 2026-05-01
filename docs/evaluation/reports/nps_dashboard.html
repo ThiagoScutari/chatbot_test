@@ -1,0 +1,1542 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Camisart Belém — Dashboard NPS</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: #f8fafc;
+      color: #1e293b;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-size: 15px;
+      line-height: 1.6;
+      padding: 16px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    /* ── Header ── */
+    .site-header {
+      background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+      border-radius: 16px;
+      padding: 32px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .header-brand { display: flex; flex-direction: column; gap: 4px; }
+
+    .header-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.01em;
+    }
+
+    .header-title span { color: #6ee7c0; }
+
+    .header-meta {
+      font-size: 0.82rem;
+      color: rgba(255,255,255,0.7);
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .header-meta b { color: #fff; }
+
+    .nps-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 12px;
+      padding: 10px 24px;
+      min-width: 120px;
+    }
+
+    .nps-badge-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.7); }
+    .nps-badge-value { font-size: 2rem; font-weight: 800; line-height: 1; color: #fff; }
+    .nps-badge-value.positive { color: #6ee7c0; }
+    .nps-badge-value.neutral  { color: #fde68a; }
+    .nps-badge-value.negative { color: #fca5a5; }
+    .nps-badge-zone { font-size: 0.7rem; color: rgba(255,255,255,0.65); margin-top: 2px; text-align: center; }
+
+    /* ── Layout ── */
+    .container { display: flex; flex-direction: column; gap: 24px; }
+
+    .section-title {
+      font-size: 0.67rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #64748b;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-title::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
+
+    /* ── Cards / Panels ── */
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      padding: 24px;
+      transition: box-shadow 0.2s;
+    }
+
+    .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.10); }
+
+    .card-title { font-size: 0.95rem; font-weight: 600; color: #1e293b; margin-bottom: 4px; }
+    .card-sub   { font-size: 0.8rem; color: #64748b; margin-bottom: 16px; }
+
+    /* ── Chart containers ── */
+    .chart-h-300 { position: relative; height: 300px; }
+    .chart-h-350 { position: relative; height: 350px; }
+    .chart-h-400 { position: relative; height: 400px; }
+
+    /* ── Grids ── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+
+    /* ── Section 1: NPS Hero ── */
+    .nps-hero { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+
+    .gauge-wrapper { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+
+    #gauge-svg { width: 100%; max-width: 320px; }
+
+    .gauge-legend { display: flex; gap: 16px; font-size: 0.75rem; color: #64748b; }
+
+    .gauge-legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+
+    .dist-block { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; padding: 10px 0; }
+    .dist-row   { display: flex; flex-direction: column; gap: 5px; }
+    .dist-header { display: flex; justify-content: space-between; font-size: 0.8rem; }
+    .dist-label  { color: #64748b; }
+    .dist-pct    { font-weight: 600; }
+    .dist-pct.promotor { color: #1D9E75; }
+    .dist-pct.neutro   { color: #d97706; }
+    .dist-pct.detrator { color: #dc2626; }
+
+    .dist-bar-track { background: #f1f5f9; border-radius: 4px; height: 8px; overflow: hidden; }
+    .dist-bar-fill  { height: 100%; border-radius: 4px; transition: width 1s ease; }
+    .dist-bar-fill.promotor { background: #1D9E75; }
+    .dist-bar-fill.neutro   { background: #d97706; }
+    .dist-bar-fill.detrator { background: #dc2626; }
+
+    .nps-explain {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-top: 16px;
+    }
+
+    .nps-explain h4 { font-size: 0.82rem; color: #166534; margin-bottom: 6px; font-weight: 600; }
+    .nps-explain p  { font-size: 0.78rem; color: #374151; line-height: 1.5; }
+
+    .nps-zones { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+
+    .zone-pill { font-size: 0.72rem; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
+    .zone-pill.danger  { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
+    .zone-pill.warning { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
+    .zone-pill.success { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+    .zone-pill.great   { background: #ecfdf5; color: #1D9E75; border: 1px solid #6ee7b7; }
+
+    /* ── Section 2: Radar ── */
+    .radar-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: center; }
+    .radar-insight { display: flex; flex-direction: column; gap: 12px; }
+
+    .insight-card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 14px 16px;
+    }
+
+    .insight-card h4 { font-size: 0.78rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+    .insight-card p  { font-size: 0.86rem; color: #1e293b; }
+
+    .dim-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+    .dim-table tr { border-bottom: 1px solid #f1f5f9; }
+    .dim-table tr:last-child { border-bottom: none; }
+    .dim-table td { padding: 7px 4px; font-size: 0.82rem; }
+    .dim-table td:first-child { color: #475569; }
+    .dim-table td:last-child  { text-align: right; font-weight: 600; }
+
+    .dim-ok   { color: #1D9E75 !important; }
+    .dim-warn { color: #d97706 !important; }
+    .dim-bad  { color: #dc2626 !important; }
+
+    /* ── Section 3: Distributions ── */
+    .dim-dist-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+
+    .dim-dist-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .dim-name { font-size: 0.78rem; font-weight: 600; color: #1e293b; }
+    .dim-avg  { font-size: 1.3rem; font-weight: 800; }
+
+    .mini-bars-wrap { width: 100%; }
+    .mini-bars-wrap svg { width: 100%; overflow: visible; }
+
+    /* ── Section 4: Comments ── */
+    .comments-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+    #wordcloud-svg { width: 100%; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; }
+
+    .comments-stats { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+
+    .stat-chip {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 0.75rem;
+      color: #64748b;
+    }
+
+    .stat-chip b { color: #1e293b; }
+
+    .comments-list { display: flex; flex-direction: column; gap: 8px; max-height: 420px; overflow-y: auto; padding-right: 4px; }
+    .comments-list::-webkit-scrollbar { width: 4px; }
+    .comments-list::-webkit-scrollbar-track { background: transparent; }
+    .comments-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+    .comment-item {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 10px 12px;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .comment-item:hover { border-color: #cbd5e1; background: #f1f5f9; }
+
+    .comment-avatar {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      color: #fff;
+    }
+
+    .avatar-promotor { background: #1D9E75; }
+    .avatar-neutro   { background: #d97706; }
+    .avatar-detrator { background: #dc2626; }
+
+    .comment-body { flex: 1; min-width: 0; }
+    .comment-nome { font-size: 0.8rem; font-weight: 600; color: #1e293b; }
+    .comment-text { font-size: 0.82rem; color: #475569; margin-top: 2px; line-height: 1.4; }
+
+    .comment-badge {
+      font-size: 0.65rem;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 600;
+      align-self: flex-start;
+      flex-shrink: 0;
+    }
+
+    .badge-promotor { background: #ecfdf5; color: #16a34a; border: 1px solid #bbf7d0; }
+    .badge-neutro   { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
+    .badge-detrator { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
+
+    /* ── Section 5: Actions ── */
+    .actions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+
+    .action-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .action-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.10); }
+
+    .action-header { display: flex; justify-content: space-between; align-items: flex-start; }
+    .action-dim   { font-size: 0.95rem; font-weight: 700; color: #1e293b; }
+    .action-score { font-size: 1.3rem; font-weight: 800; }
+
+    .priority-badge {
+      font-size: 0.68rem;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .priority-critical  { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
+    .priority-important { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
+    .priority-improve   { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+
+    .action-items { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+    .action-items li { font-size: 0.8rem; color: #475569; padding-left: 14px; position: relative; }
+    .action-items li::before { content: '→'; position: absolute; left: 0; color: #94a3b8; }
+
+    .action-score-bar  { height: 5px; background: #f1f5f9; border-radius: 3px; overflow: hidden; }
+    .action-score-fill { height: 100%; border-radius: 3px; }
+
+    /* ── Section 6: Comparison ── */
+    .comparison-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; align-items: start; }
+    .comparison-stats  { display: flex; flex-direction: column; gap: 10px; }
+    .comp-stat-row     { display: flex; flex-direction: column; gap: 6px; }
+    .comp-stat-title   { font-size: 0.76rem; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; }
+    .comp-dim-bars     { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }
+    .comp-bar-row      { display: flex; align-items: center; gap: 8px; font-size: 0.76rem; }
+    .comp-bar-label    { width: 80px; color: #64748b; flex-shrink: 0; font-size: 0.72rem; }
+    .comp-bar-track    { flex: 1; height: 6px; background: #f1f5f9; border-radius: 3px; overflow: hidden; }
+    .comp-bar-fill     { height: 100%; border-radius: 3px; transition: width 1s ease; }
+    .comp-bar-fill.pro { background: #1D9E75; }
+    .comp-bar-fill.det { background: #dc2626; }
+    .comp-bar-val      { width: 28px; text-align: right; font-weight: 600; }
+    .comp-bar-val.pro  { color: #1D9E75; }
+    .comp-bar-val.det  { color: #dc2626; }
+    .overflow-scroll   { overflow-x: auto; }
+
+    /* ── Animations ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .card, .dim-dist-card, .action-card { animation: fadeUp 0.35s ease both; }
+
+    /* ── Utility ── */
+    .text-teal  { color: #1D9E75; }
+    .text-red   { color: #dc2626; }
+    .text-amber { color: #d97706; }
+    .text-dim   { color: #64748b; }
+    .fw-bold    { font-weight: 700; }
+    .fs-sm      { font-size: 0.8rem; }
+
+    /* ── Responsive ── */
+    @media (max-width: 1200px) {
+      .grid-5 { grid-template-columns: repeat(4, 1fr); }
+      .comparison-layout { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 1024px) {
+      .nps-hero          { grid-template-columns: 1fr; }
+      .radar-layout      { grid-template-columns: 1fr; }
+      .comments-layout   { grid-template-columns: 1fr; }
+      .comparison-layout { grid-template-columns: 1fr; }
+      .grid-5 { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    @media (max-width: 768px) {
+      body { padding: 12px; font-size: 14px; }
+      .site-header { padding: 20px 24px; border-radius: 12px; }
+      .header-title { font-size: 1.1rem; }
+      .grid-2 { grid-template-columns: 1fr; }
+      .grid-3 { grid-template-columns: 1fr 1fr; }
+      .grid-5 { grid-template-columns: repeat(2, 1fr); }
+      .card { padding: 16px; }
+      .chart-h-300 { height: 250px; }
+      .chart-h-350 { height: 280px; }
+      .chart-h-400 { height: 320px; }
+    }
+
+    @media (max-width: 480px) {
+      body { padding: 8px; font-size: 13px; }
+      .site-header { padding: 16px; flex-direction: column; }
+      .header-meta { flex-direction: column; gap: 4px; }
+      .nps-badge { width: 100%; }
+      .grid-2, .grid-3, .grid-5 { grid-template-columns: 1fr; }
+      .card { padding: 12px; }
+      .comments-layout { grid-template-columns: 1fr; }
+      .actions-grid { grid-template-columns: 1fr; }
+      .comparison-layout { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<header class="site-header">
+  <div class="header-brand">
+    <div class="header-title"><span>Camisart</span> Belém — Análise de Satisfação</div>
+    <div class="header-meta">
+      <span>Período: <b id="h-period">—</b></span>
+      <span>Respondentes: <b id="h-total">—</b></span>
+      <span>Engajamento comentários: <b id="h-engagement">—</b></span>
+    </div>
+  </div>
+  <div class="nps-badge">
+    <span class="nps-badge-label">NPS Score</span>
+    <span class="nps-badge-value" id="h-nps-value">—</span>
+    <span class="nps-badge-zone" id="h-nps-zone">—</span>
+  </div>
+</header>
+
+<!-- ══ MAIN ══ -->
+<div class="container">
+
+  <!-- ── SEÇÃO 01: NPS HERO ── -->
+  <div>
+    <div class="section-title">01 — NPS Score</div>
+    <div class="card">
+      <div class="nps-hero">
+        <div class="gauge-wrapper">
+          <svg id="gauge-svg" viewBox="0 0 300 175" xmlns="http://www.w3.org/2000/svg"></svg>
+          <div class="gauge-legend">
+            <span><span class="gauge-legend-dot" style="background:#e55353"></span>Crítico &lt;0</span>
+            <span><span class="gauge-legend-dot" style="background:#f59e0b"></span>Bom 0-49</span>
+            <span><span class="gauge-legend-dot" style="background:#1D9E75"></span>Excelente ≥50</span>
+          </div>
+        </div>
+        <div>
+          <div class="card-title">Distribuição dos Respondentes</div>
+          <div class="card-sub">Classificação pela pergunta de indicação (P5)</div>
+          <div class="dist-block" id="dist-block"></div>
+          <div class="nps-explain">
+            <h4>O que é o NPS?</h4>
+            <p>O <b>Net Promoter Score</b> mede a lealdade dos clientes com uma única pergunta: "De 0 a 10, o quanto você recomendaria nossa empresa?" <b>Promotores</b> (9-10) são clientes entusiastas. <b>Detratores</b> (0-6) podem prejudicar a reputação. <b>Neutros</b> (7-8) não influenciam o resultado.</p>
+            <div class="nps-zones">
+              <span class="zone-pill danger">Crítico: abaixo de 0</span>
+              <span class="zone-pill warning">Melhorando: 0 a 29</span>
+              <span class="zone-pill success">Bom: 30 a 49</span>
+              <span class="zone-pill great">Excelente: 50 a 100</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SEÇÃO 02: RADAR ── -->
+  <div>
+    <div class="section-title">02 — Radar por Dimensão</div>
+    <div class="card">
+      <div class="radar-layout">
+        <div class="chart-h-350">
+          <canvas id="radar-chart"></canvas>
+        </div>
+        <div class="radar-insight">
+          <div class="card-title">Análise por Dimensão</div>
+          <div class="card-sub">Meta de qualidade: 8,0 em todas as dimensões</div>
+          <table class="dim-table" id="dim-table"></table>
+          <div class="insight-card" id="insight-texto"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SEÇÃO 03: DISTRIBUIÇÃO DAS NOTAS ── -->
+  <div>
+    <div class="section-title">03 — Distribuição das Notas por Dimensão</div>
+    <div class="grid-5" id="dist-cards"></div>
+  </div>
+
+  <!-- ── SEÇÃO 04: COMENTÁRIOS ── -->
+  <div>
+    <div class="section-title">04 — Análise dos Comentários</div>
+    <div class="card">
+      <div class="comments-stats" id="comments-stats"></div>
+      <div class="comments-layout">
+        <div>
+          <div class="card-sub" style="margin-bottom:10px">Palavras mais frequentes nos comentários</div>
+          <svg id="wordcloud-svg" viewBox="0 0 500 280" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
+        <div>
+          <div class="card-sub" style="margin-bottom:10px">Comentários completos</div>
+          <div class="comments-list" id="comments-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SEÇÃO 05: AÇÕES RECOMENDADAS ── -->
+  <div>
+    <div class="section-title">05 — Ações Recomendadas</div>
+    <p style="font-size:0.82rem;color:#64748b;margin-bottom:12px">
+      Dimensões com média abaixo de 8,0 — priorize em ordem decrescente de impacto no NPS
+    </p>
+    <div class="actions-grid" id="actions-grid"></div>
+  </div>
+
+  <!-- ── SEÇÃO 06: PROMOTORES VS DETRATORES ── -->
+  <div>
+    <div class="section-title">06 — Promotores vs Detratores</div>
+    <div class="card">
+      <div class="card-title">O que diferencia quem indica de quem não indica?</div>
+      <div class="card-sub">Nota média por dimensão — comparativo entre os dois grupos extremos</div>
+      <div class="comparison-layout">
+        <div class="overflow-scroll">
+          <div class="chart-h-300">
+            <canvas id="comparison-chart"></canvas>
+          </div>
+        </div>
+        <div id="comparison-stats"></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+// ══════════════════════════════════════════════
+// MOCK DATA — 20 registros (fallback sem servidor)
+// ══════════════════════════════════════════════
+const MOCK_DATA = [
+  {
+    user_id: 10000001, nome: "Benedita", perfil: "promotor_entusiasmado",
+    inicio: "2026-04-02T09:15:00", fim: "2026-04-02T09:18:22",
+    respostas: {
+      logistica:           { nota: 9,  classificacao: "promotor" },
+      produto_qualidade:   { nota: 10, classificacao: "promotor" },
+      produto_expectativa: { nota: 9,  classificacao: "promotor" },
+      atendimento:         { nota: 10, classificacao: "promotor" },
+      indicacao:           { nota: 9,  classificacao: "promotor" }
+    },
+    comentario: "Jaleco ficou perfeito, todo mundo da clínica adorou.",
+    media_geral: 9.4, nps_classificacao: "promotor"
+  },
+  {
+    user_id: 10000002, nome: "José Eduardo", perfil: "promotor_entusiasmado",
+    inicio: "2026-04-05T14:30:00", fim: "2026-04-05T14:33:45",
+    respostas: {
+      logistica:           { nota: 10, classificacao: "promotor" },
+      produto_qualidade:   { nota: 9,  classificacao: "promotor" },
+      produto_expectativa: { nota: 10, classificacao: "promotor" },
+      atendimento:         { nota: 9,  classificacao: "promotor" },
+      indicacao:           { nota: 10, classificacao: "promotor" }
+    },
+    comentario: "Bordado caprichado, superou as expectativas.",
+    media_geral: 9.6, nps_classificacao: "promotor"
+  },
+  {
+    user_id: 10000003, nome: "Rosa", perfil: "promotor_fiel",
+    inicio: "2026-04-07T10:05:00", fim: "2026-04-07T10:08:30",
+    respostas: {
+      logistica:           { nota: 8,  classificacao: "neutro" },
+      produto_qualidade:   { nota: 9,  classificacao: "promotor" },
+      produto_expectativa: { nota: 8,  classificacao: "neutro" },
+      atendimento:         { nota: 9,  classificacao: "promotor" },
+      indicacao:           { nota: 9,  classificacao: "promotor" }
+    },
+    comentario: "Qualidade do tecido surpreendeu positivamente!",
+    media_geral: 8.6, nps_classificacao: "promotor"
+  },
+  {
+    user_id: 10000004, nome: "Wilson", perfil: "neutro_satisfeito",
+    inicio: "2026-04-08T16:20:00", fim: "2026-04-08T16:24:10",
+    respostas: {
+      logistica:           { nota: 7,  classificacao: "neutro" },
+      produto_qualidade:   { nota: 8,  classificacao: "neutro" },
+      produto_expectativa: { nota: 7,  classificacao: "neutro" },
+      atendimento:         { nota: 8,  classificacao: "neutro" },
+      indicacao:           { nota: 7,  classificacao: "neutro" }
+    },
+    comentario: "No geral foi ok. A entrega atrasou um dia.",
+    media_geral: 7.4, nps_classificacao: "neutro"
+  },
+  {
+    user_id: 10000005, nome: "Marcos", perfil: "detrator_logistica",
+    inicio: "2026-04-10T11:45:00", fim: "2026-04-10T11:49:20",
+    respostas: {
+      logistica:           { nota: 3,  classificacao: "detrator" },
+      produto_qualidade:   { nota: 8,  classificacao: "neutro" },
+      produto_expectativa: { nota: 7,  classificacao: "neutro" },
+      atendimento:         { nota: 6,  classificacao: "detrator" },
+      indicacao:           { nota: 5,  classificacao: "detrator" }
+    },
+    comentario: "Pedido atrasou 5 dias, precisava para evento corporativo.",
+    media_geral: 5.8, nps_classificacao: "detrator"
+  },
+  {
+    user_id: 10000006, nome: "Raimunda", perfil: "promotor_entusiasmado",
+    inicio: "2026-04-12T09:00:00", fim: "2026-04-12T09:03:15",
+    respostas: {
+      logistica:           { nota: 9,  classificacao: "promotor" },
+      produto_qualidade:   { nota: 10, classificacao: "promotor" },
+      produto_expectativa: { nota: 9,  classificacao: "promotor" },
+      atendimento:         { nota: 10, classificacao: "promotor" },
+      indicacao:           { nota: 9,  classificacao: "promotor" }
+    },
+    comentario: "Produto chegou antes do prazo, excelente qualidade!",
+    media_geral: 9.4, nps_classificacao: "promotor"
+  },
+  {
+    user_id: 10000007, nome: "Francisco", perfil: "promotor_fiel",
+    inicio: "2026-04-13T13:30:00", fim: "2026-04-13T13:33:50",
+    respostas: {
+      logistica:           { nota: 7,  classificacao: "neutro" },
+      produto_qualidade:   { nota: 9,  classificacao: "promotor" },
+      produto_expectativa: { nota: 9,  classificacao: "promotor" },
+      atendimento:         { nota: 8,  classificacao: "neutro" },
+      indicacao:           { nota: 9,  classificacao: "promotor" }
+    },
+    comentario: "Bom atendimento e produto de qualidade.",
+    media_geral: 8.4, nps_classificacao: "promotor"
+  },
+  {
+    user_id: 10000008, nome: "Sandra", perfil: "neutro_satisfeito",
+    inicio: "2026-04-14T15:10:00", fim: "2026-04-14T15:14:25",
+    respostas: {
+      logistica:           { nota: 6,  classificacao: "detrator" },
+      produto_qualidade:   { nota: 8,  classificacao: "neutro" },
+      produto_expectativa: { nota: 8,  classificacao: "neutro" },
+      atendimento:         { nota: 9,  classificacao: "promotor" },
+      indicacao:           { nota: 8,  classificacao: "neutro" }
+    },
+    comentario: "Produto bom, mas esperava mais variedade de cores.",
+    media_geral: 7.8, nps_classificacao: "neutro"
+  },
+  {
+    user_id: 10000009, nome: "Carlos Alberto", perfil: "promotor_entusiasmado",
+    inicio: "2026-04-15T08:45:00", fim: "2026-04-15T08:48:30",
+    respostas: {
+      logistica:           { nota: 10, classificacao: "promotor" },
+      produto_qualidade:   { nota: 9,  classificacao: "promotor" },
+      produto_expectativa: { nota: 10, classificacao: "promotor" },
+      atendimento:         { nota: 9,  classificacao: "promotor" },
+      indicacao:           { nota: 10, classificacao: "promotor" }
+    },
+    comentario: "Atendimento incrível, vou indicar para minha empresa.",
+    media_geral: 9.6, nps_classificacao: "promotor"
+  },
+  {
+    user_id: 10000010, nome: "Ana Paula", perfil: "detrator_atendimento",
+    inicio: "2026-04-17T14:00:00", fim: "2026-04-17T14:05:10",
+    respostas: {
+      logistica:           { nota: 7,  classificacao: "neutro" },
+      produto_qualidade:   { nota: 7,  classificacao: "neutro" },
+      produto_expectativa: { nota: 6,  classificacao: "detrator" },
+      atendimento:         { nota: 3,  classificacao: "detrator" },
+      indicacao:           { nota: 4,  classificacao: "detrator" }
+    },
+    comentario: "Demorei muito para ser atendido, fiquei sem resposta por 3 dias.",
+    media_geral: 5.4, nps_classificacao: "detrator"
+  },
+  {
+    user_id: 10000011, nome: "Sebastião", perfil: "neutro_satisfeito",
+    inicio: "2026-04-19T10:30:00", fim: "2026-04-19T10:34:15",
+    respostas: {
+      logistica:           { nota: 8,  classificacao: "neutro" },
+      produto_qualidade:   { nota: 7,  classificacao: "neutro" },
+      produto_expectativa: { nota: 6,  classificacao: "detrator" },
+      atendimento:         { nota: 8,  classificacao: "neutro" },
+      indicacao:           { nota: 7,  classificacao: "neutro" }
+    },
+    comentario: "Atendimento poderia ser mais ágil.",
+    media_geral: 7.2, nps_classificacao: "neutro"
+  },
+  {
+    user_id: 10000012, nome: "Natália", perfil: "promotor_fiel",
+    inicio: "2026-04-20T11:15:00", fim: "2026-04-20T11:18:40",
+    respostas: {
+      logistica:           { nota: 8,  classificacao: "neutro" },
+      produto_qualidade:   { nota: 10, classificacao: "promotor" },
+      produto_expectativa: { nota: 9,  classificacao: "promotor" },
+      atendimento:         { nota: 9,  classificacao: "promotor" },
+      indicacao:           { nota: 9,  classificacao: "promotor" }
+    },
+    comentario: "",
+    media_geral: 9.0, nps_classificacao: "promotor"
+  },
+  {
+    user_id: 10000013, nome: "Aldenir", perfil: "detrator_logistica",
+    inicio: "2026-04-21T16:45:00", fim: "2026-04-21T16:50:20",
+    respostas: {
+      logistica:           { nota: 4,  classificacao: "detrator" },
+      produto_qualidade:   { nota: 9,  classificacao: "promotor" },
+      produto_expectativa: { nota: 7,  classificacao: "neutro" },
+      atendimento:         { nota: 5,  classificacao: "detrator" },
+      indicacao:           { nota: 4,  classificacao: "detrator" }
+    },
+    comentario: "Entrega muito demorada. O produto em si é bom.",
+    media_geral: 5.8, nps_classificacao: "detrator"
+  },
+  {
+    user_id: 10000014, nome: "João Batista", perfil: "promotor_entusiasmado",
+    inicio: "2026-04-23T09:00:00", fim: "2026-04-23T09:03:30",
+    respostas: {
+      logistica:           { nota: 9,  classificacao: "promotor" },
+      produto_qualidade:   { nota: 10, classificacao: "promotor" },
+      produto_expectativa: { nota: 9,  classificacao: "promotor" },
+      atendimento:         { nota: 10, classificacao: "promotor" },
+      indicacao:           { nota: 9,  classificacao: "promotor" }
+    },
+    comentario: "Super satisfeita, entrega rápida e produto igual ao da foto.",
+    media_geral: 9.4, nps_classificacao: "promotor"
+  },
+  {
+    user_id: 10000015, nome: "Antônio", perfil: "detrator_atendimento",
+    inicio: "2026-04-24T13:20:00", fim: "2026-04-24T13:25:45",
+    respostas: {
+      logistica:           { nota: 7,  classificacao: "neutro" },
+      produto_qualidade:   { nota: 7,  classificacao: "neutro" },
+      produto_expectativa: { nota: 6,  classificacao: "detrator" },
+      atendimento:         { nota: 4,  classificacao: "detrator" },
+      indicacao:           { nota: 5,  classificacao: "detrator" }
+    },
+    comentario: "Atendimento deixou muito a desejar. Produto razoável.",
+    media_geral: 5.8, nps_classificacao: "detrator"
+  },
+  {
+    user_id: 10000016, nome: "Lúcia", perfil: "neutro_satisfeito",
+    inicio: "2026-04-25T10:00:00", fim: "2026-04-25T10:04:20",
+    respostas: {
+      logistica:           { nota: 7,  classificacao: "neutro" },
+      produto_qualidade:   { nota: 8,  classificacao: "neutro" },
+      produto_expectativa: { nota: 7,  classificacao: "neutro" },
+      atendimento:         { nota: 7,  classificacao: "neutro" },
+      indicacao:           { nota: 8,  classificacao: "neutro" }
+    },
+    comentario: "",
+    media_geral: 7.4, nps_classificacao: "neutro"
+  },
+  {
+    user_id: 10000017, nome: "Priscila", perfil: "promotor_fiel",
+    inicio: "2026-04-26T14:30:00", fim: "2026-04-26T14:33:50",
+    respostas: {
+      logistica:           { nota: 9,  classificacao: "promotor" },
+      produto_qualidade:   { nota: 8,  classificacao: "neutro" },
+      produto_expectativa: { nota: 9,  classificacao: "promotor" },
+      atendimento:         { nota: 8,  classificacao: "neutro" },
+      indicacao:           { nota: 9,  classificacao: "promotor" }
+    },
+    comentario: "Produto muito bom, entrega um pouco demorada mas compensou.",
+    media_geral: 8.6, nps_classificacao: "promotor"
+  },
+  {
+    user_id: 10000018, nome: "Maria das Graças", perfil: "promotor_entusiasmado",
+    inicio: "2026-04-27T08:30:00", fim: "2026-04-27T08:33:10",
+    respostas: {
+      logistica:           { nota: 8,  classificacao: "neutro" },
+      produto_qualidade:   { nota: 10, classificacao: "promotor" },
+      produto_expectativa: { nota: 9,  classificacao: "promotor" },
+      atendimento:         { nota: 10, classificacao: "promotor" },
+      indicacao:           { nota: 10, classificacao: "promotor" }
+    },
+    comentario: "",
+    media_geral: 9.4, nps_classificacao: "promotor"
+  },
+  {
+    user_id: 10000019, nome: "Manoel", perfil: "promotor_fiel",
+    inicio: "2026-04-28T11:00:00", fim: "2026-04-28T11:03:40",
+    respostas: {
+      logistica:           { nota: 8,  classificacao: "neutro" },
+      produto_qualidade:   { nota: 9,  classificacao: "promotor" },
+      produto_expectativa: { nota: 8,  classificacao: "neutro" },
+      atendimento:         { nota: 9,  classificacao: "promotor" },
+      indicacao:           { nota: 9,  classificacao: "promotor" }
+    },
+    comentario: "",
+    media_geral: 8.6, nps_classificacao: "promotor"
+  },
+  {
+    user_id: 10000020, nome: "Cláudia", perfil: "detrator_geral",
+    inicio: "2026-04-30T15:00:00", fim: "2026-04-30T15:06:20",
+    respostas: {
+      logistica:           { nota: 2,  classificacao: "detrator" },
+      produto_qualidade:   { nota: 3,  classificacao: "detrator" },
+      produto_expectativa: { nota: 2,  classificacao: "detrator" },
+      atendimento:         { nota: 3,  classificacao: "detrator" },
+      indicacao:           { nota: 2,  classificacao: "detrator" }
+    },
+    comentario: "Produto veio com defeito no bordado e a entrega atrasou muito.",
+    media_geral: 2.4, nps_classificacao: "detrator"
+  }
+];
+
+// ══════════════════════════════════════════════
+// CONSTANTS
+// ══════════════════════════════════════════════
+const DIMS = [
+  { key: 'logistica',           label: 'Logística',   icon: '📦' },
+  { key: 'produto_qualidade',   label: 'Qualidade',   icon: '🧵' },
+  { key: 'produto_expectativa', label: 'Expectativa', icon: '🎯' },
+  { key: 'atendimento',         label: 'Atendimento', icon: '🤝' },
+  { key: 'indicacao',           label: 'Indicação',   icon: '💬' },
+];
+
+const ACTION_CONFIG = {
+  logistica: {
+    label: 'Logística',
+    actions: [
+      'Renegociar SLA com transportadora parceira',
+      'Implementar rastreamento em tempo real via bot',
+      'Adicionar alerta proativo de atraso ao cliente',
+    ]
+  },
+  produto_qualidade: {
+    label: 'Qualidade do Produto',
+    actions: [
+      'Revisão do processo de controle de qualidade pré-envio',
+      'Treinamento de bordadeiros — padrão Camisart',
+      'Criar checklist fotográfico antes da expedição',
+    ]
+  },
+  produto_expectativa: {
+    label: 'Produto × Expectativa',
+    actions: [
+      'Ampliar catálogo de fotos reais por modelo e cor',
+      'Vídeo demonstrativo dos produtos no site/WhatsApp',
+      'Amostras de tecido disponíveis para clientes corporativos',
+    ]
+  },
+  atendimento: {
+    label: 'Atendimento',
+    actions: [
+      'Meta de resposta em até 2 horas no horário comercial',
+      'Script de boas-vindas e confirmação de pedido automatizado',
+      'Treinamento de comunicação empática para a equipe',
+    ]
+  },
+  indicacao: {
+    label: 'Indicação (NPS)',
+    actions: [
+      'Programa de indicação: desconto para cliente e indicado',
+      'Follow-up pós-entrega automatizado via WhatsApp',
+      'Solicitar avaliação Google / redes sociais após compra',
+    ]
+  },
+};
+
+const COLORS = {
+  teal:  '#1D9E75',
+  red:   '#dc2626',
+  amber: '#d97706',
+  green: '#16a34a',
+  dim:   '#e2e8f0',
+};
+
+// ══════════════════════════════════════════════
+// DATA LOADING
+// ══════════════════════════════════════════════
+async function loadData() {
+  try {
+    const resp = await fetch('../../data/nps_results.json');
+    if (resp.ok) {
+      const data = await resp.json();
+      if (Array.isArray(data) && data.length > 0) return data;
+    }
+  } catch (_) {}
+  console.info('Dashboard: usando dados embutidos (MOCK_DATA)');
+  return MOCK_DATA;
+}
+
+// ══════════════════════════════════════════════
+// CALCULATIONS
+// ══════════════════════════════════════════════
+function calcNPS(data) {
+  const total     = data.length;
+  const promotores = data.filter(r => r.respostas.indicacao.nota >= 9).length;
+  const detratores = data.filter(r => r.respostas.indicacao.nota <= 6).length;
+  const neutros    = total - promotores - detratores;
+  const score      = Math.round((promotores / total - detratores / total) * 100);
+  return { score, promotores, detratores, neutros, total };
+}
+
+function calcDimAvgs(data) {
+  const avgs = {};
+  for (const d of DIMS) {
+    const sum = data.reduce((acc, r) => acc + r.respostas[d.key].nota, 0);
+    avgs[d.key] = Math.round((sum / data.length) * 10) / 10;
+  }
+  return avgs;
+}
+
+function calcDimAvgsForGroup(records) {
+  const avgs = {};
+  if (!records.length) return avgs;
+  for (const d of DIMS) {
+    const sum = records.reduce((acc, r) => acc + r.respostas[d.key].nota, 0);
+    avgs[d.key] = Math.round((sum / records.length) * 10) / 10;
+  }
+  return avgs;
+}
+
+function calcNoteDist(data, dimKey) {
+  const counts = Array(11).fill(0);
+  for (const r of data) counts[r.respostas[dimKey].nota]++;
+  return counts;
+}
+
+function npsZoneLabel(score) {
+  if (score >= 75) return 'Excelente (zona de encantamento)';
+  if (score >= 50) return 'Muito Bom';
+  if (score >= 0)  return 'Bom (zona de aperfeiçoamento)';
+  return 'Crítico (zona de risco)';
+}
+
+function npsColorClass(score) {
+  if (score >= 50) return 'positive';
+  if (score >= 0)  return 'neutral';
+  return 'negative';
+}
+
+function dimColorClass(avg) {
+  if (avg >= 8.0) return 'dim-ok';
+  if (avg >= 7.0) return 'dim-warn';
+  return 'dim-bad';
+}
+
+function priorityForScore(avg) {
+  if (avg < 6) return { label: 'Crítico 🔴', cls: 'priority-critical' };
+  if (avg < 7) return { label: 'Importante 🟡', cls: 'priority-important' };
+  return { label: 'Melhorar 🟢', cls: 'priority-improve' };
+}
+
+function noteColor(note) {
+  if (note <= 6) return '#dc2626';
+  if (note <= 8) return '#d97706';
+  return '#1D9E75';
+}
+
+function formatDate(isoStr) {
+  const d = new Date(isoStr);
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+}
+
+function initials(nome) {
+  const parts = nome.trim().split(' ');
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  return parts[0].slice(0, 2).toUpperCase();
+}
+
+// ══════════════════════════════════════════════
+// SVG HELPERS
+// ══════════════════════════════════════════════
+function polarToXY(cx, cy, r, deg) {
+  const rad = (deg - 90) * Math.PI / 180;
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+}
+
+function arcPath(cx, cy, outerR, innerR, startDeg, endDeg, sweep) {
+  const o1 = polarToXY(cx, cy, outerR, startDeg);
+  const o2 = polarToXY(cx, cy, outerR, endDeg);
+  const i1 = polarToXY(cx, cy, innerR, endDeg);
+  const i2 = polarToXY(cx, cy, innerR, startDeg);
+  const large = Math.abs(endDeg - startDeg) >= 180 ? 1 : 0;
+  const s = sweep ?? 0;
+  return [
+    `M ${o1.x.toFixed(2)} ${o1.y.toFixed(2)}`,
+    `A ${outerR} ${outerR} 0 ${large} ${s} ${o2.x.toFixed(2)} ${o2.y.toFixed(2)}`,
+    `L ${i1.x.toFixed(2)} ${i1.y.toFixed(2)}`,
+    `A ${innerR} ${innerR} 0 ${large} ${1 - s} ${i2.x.toFixed(2)} ${i2.y.toFixed(2)}`,
+    'Z'
+  ].join(' ');
+}
+
+function svgEl(tag, attrs) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+}
+
+// ══════════════════════════════════════════════
+// SECTION 0 — HEADER
+// ══════════════════════════════════════════════
+function renderHeader(data, nps) {
+  const dates = data.map(r => r.inicio).sort();
+  const from  = formatDate(dates[0]);
+  const to    = formatDate(dates[dates.length - 1]);
+  document.getElementById('h-period').textContent = `${from} a ${to}`;
+  document.getElementById('h-total').textContent  = nps.total;
+
+  const withComment = data.filter(r => r.comentario && r.comentario.trim()).length;
+  const pct = Math.round(withComment / nps.total * 100);
+  document.getElementById('h-engagement').textContent = `${pct}% (${withComment}/${nps.total})`;
+
+  const val  = document.getElementById('h-nps-value');
+  const zone = document.getElementById('h-nps-zone');
+  val.textContent  = nps.score >= 0 ? `+${nps.score}` : `${nps.score}`;
+  val.className    = `nps-badge-value ${npsColorClass(nps.score)}`;
+  zone.textContent = npsZoneLabel(nps.score);
+}
+
+// ══════════════════════════════════════════════
+// SECTION 1 — GAUGE + DISTRIBUTION
+// ══════════════════════════════════════════════
+function renderGauge(nps) {
+  const svg = document.getElementById('gauge-svg');
+  const cx = 150, cy = 152, oR = 118, iR = 78;
+
+  const valToAngle = v => (v / 100) * 90;
+
+  const zones = [
+    { from: -90,              to: valToAngle(0),  color: '#e55353' },
+    { from: valToAngle(0),   to: valToAngle(50), color: '#f59e0b' },
+    { from: valToAngle(50),  to: 90,             color: '#1D9E75' },
+  ];
+
+  // Background track
+  svg.appendChild(svgEl('path', {
+    d: arcPath(cx, cy, oR + 4, iR - 4, -90, 90, 0),
+    fill: '#f1f5f9',
+  }));
+
+  // Colored zones
+  for (const z of zones) {
+    svg.appendChild(svgEl('path', {
+      d: arcPath(cx, cy, oR, iR, z.from, z.to, 0),
+      fill: z.color,
+      opacity: '0.85',
+    }));
+  }
+
+  // End-cap dots
+  for (const deg of [-90, 90]) {
+    const p = polarToXY(cx, cy, oR, deg);
+    svg.appendChild(svgEl('circle', { cx: p.x, cy: p.y, r: 4, fill: '#e2e8f0' }));
+  }
+
+  // Tick marks + labels
+  for (let v = -100; v <= 100; v += 25) {
+    const deg    = valToAngle(v);
+    const pOuter = polarToXY(cx, cy, oR + 12, deg);
+    const pInner = polarToXY(cx, cy, oR + 5,  deg);
+    svg.appendChild(svgEl('line', {
+      x1: pInner.x.toFixed(1), y1: pInner.y.toFixed(1),
+      x2: pOuter.x.toFixed(1), y2: pOuter.y.toFixed(1),
+      stroke: '#cbd5e1', 'stroke-width': '1.5',
+    }));
+    const pLabel = polarToXY(cx, cy, oR + 22, deg);
+    const label  = svgEl('text', {
+      x: pLabel.x.toFixed(1), y: pLabel.y.toFixed(1),
+      'text-anchor': 'middle', 'dominant-baseline': 'middle',
+      'font-size': '9', fill: '#64748b',
+    });
+    label.textContent = v;
+    svg.appendChild(label);
+  }
+
+  // Needle — fixed dark gray, independent of score
+  const needleDeg   = valToAngle(Math.max(-100, Math.min(100, nps.score)));
+  const needleTip   = polarToXY(cx, cy, oR - 6, needleDeg);
+  const needleBase1 = polarToXY(cx, cy, 10, needleDeg + 90);
+  const needleBase2 = polarToXY(cx, cy, 10, needleDeg - 90);
+
+  svg.appendChild(svgEl('path', {
+    d: `M ${needleBase1.x.toFixed(1)} ${needleBase1.y.toFixed(1)} L ${needleTip.x.toFixed(1)} ${needleTip.y.toFixed(1)} L ${needleBase2.x.toFixed(1)} ${needleBase2.y.toFixed(1)} Z`,
+    fill: '#374151',
+    opacity: '0.95',
+  }));
+
+  // Center hub — #475569
+  svg.appendChild(svgEl('circle', { cx, cy, r: 12, fill: '#fff', stroke: '#475569', 'stroke-width': '2' }));
+  svg.appendChild(svgEl('circle', { cx, cy, r: 4,  fill: '#475569' }));
+
+  // Score text inside gauge (colored by zone)
+  const scoreColor = nps.score >= 50 ? COLORS.teal : nps.score >= 0 ? COLORS.amber : COLORS.red;
+  const scoreText  = svgEl('text', {
+    x: cx, y: cy - 38,
+    'text-anchor': 'middle', 'dominant-baseline': 'middle',
+    'font-size': '26', 'font-weight': '800', fill: scoreColor,
+  });
+  scoreText.textContent = nps.score >= 0 ? `+${nps.score}` : `${nps.score}`;
+  svg.appendChild(scoreText);
+
+  const zoneText = svgEl('text', {
+    x: cx, y: cy - 16,
+    'text-anchor': 'middle', 'font-size': '9', fill: '#64748b',
+  });
+  zoneText.textContent = npsZoneLabel(nps.score).split('(')[0].trim();
+  svg.appendChild(zoneText);
+
+  // Distribution bars
+  const dist = document.getElementById('dist-block');
+  const rows = [
+    { cls: 'promotor', label: 'Promotores (9-10)', count: nps.promotores, total: nps.total },
+    { cls: 'neutro',   label: 'Neutros (7-8)',     count: nps.neutros,    total: nps.total },
+    { cls: 'detrator', label: 'Detratores (0-6)',  count: nps.detratores, total: nps.total },
+  ];
+
+  dist.innerHTML = rows.map(r => {
+    const pct = Math.round(r.count / r.total * 100);
+    return `
+      <div class="dist-row">
+        <div class="dist-header">
+          <span class="dist-label">${r.label}</span>
+          <span class="dist-pct ${r.cls}">${r.count} resp. (${pct}%)</span>
+        </div>
+        <div class="dist-bar-track">
+          <div class="dist-bar-fill ${r.cls}" style="width:${pct}%"></div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
+// SECTION 2 — RADAR CHART
+// ══════════════════════════════════════════════
+function renderRadar(avgs) {
+  const labels = DIMS.map(d => d.label);
+  const values = DIMS.map(d => avgs[d.key]);
+  const meta   = DIMS.map(() => 8.0);
+
+  const ctx = document.getElementById('radar-chart').getContext('2d');
+  new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Média atual',
+          data: values,
+          backgroundColor: 'rgba(29,158,117,0.15)',
+          borderColor: '#1D9E75',
+          borderWidth: 2.5,
+          pointBackgroundColor: values.map(v => v >= 8 ? '#1D9E75' : v >= 7 ? '#d97706' : '#dc2626'),
+          pointRadius: 5,
+          pointHoverRadius: 7,
+        },
+        {
+          label: 'Meta (8,0)',
+          data: meta,
+          backgroundColor: 'rgba(217,119,6,0.06)',
+          borderColor: 'rgba(217,119,6,0.5)',
+          borderWidth: 1.5,
+          borderDash: [5, 4],
+          pointRadius: 0,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        r: {
+          min: 0, max: 10,
+          ticks: {
+            stepSize: 2,
+            color: '#64748b',
+            backdropColor: 'transparent',
+            font: { size: 10 },
+          },
+          grid:        { color: 'rgba(0,0,0,0.08)' },
+          angleLines:  { color: 'rgba(0,0,0,0.08)' },
+          pointLabels: { color: '#334155', font: { size: 11 } },
+        },
+      },
+      plugins: {
+        legend: { labels: { color: '#334155', font: { size: 11 }, boxWidth: 14 } },
+        tooltip: {
+          backgroundColor: '#fff',
+          titleColor: '#1e293b',
+          bodyColor: '#64748b',
+          borderColor: '#e2e8f0',
+          borderWidth: 1,
+          callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.r.toFixed(1)}` },
+        },
+      },
+    },
+  });
+
+  const bestDim  = DIMS.reduce((a, d) => avgs[d.key] > avgs[a.key] ? d : a);
+  const worstDim = DIMS.reduce((a, d) => avgs[d.key] < avgs[a.key] ? d : a);
+
+  document.getElementById('dim-table').innerHTML = DIMS.map(d => {
+    const avg = avgs[d.key];
+    const cc  = dimColorClass(avg);
+    const ok  = avg >= 8 ? '✓' : avg >= 7 ? '~' : '✗';
+    return `<tr><td>${d.icon} ${d.label}</td><td class="${cc}">${ok} ${avg.toFixed(1)}</td></tr>`;
+  }).join('');
+
+  document.getElementById('insight-texto').innerHTML = `
+    <h4>Insight Automático</h4>
+    <p>
+      <b class="text-teal">Maior força:</b> ${bestDim.icon} ${bestDim.label}
+      (${avgs[bestDim.key].toFixed(1)}) — ponto de excelência percebido pelos clientes.<br><br>
+      <b class="text-${avgs[worstDim.key] < 7 ? 'red' : 'amber'}">Atenção:</b>
+      ${worstDim.icon} ${worstDim.label} (${avgs[worstDim.key].toFixed(1)}) está abaixo da meta —
+      priorize ação corretiva nessa dimensão.
+    </p>
+  `;
+}
+
+// ══════════════════════════════════════════════
+// SECTION 3 — NOTE DISTRIBUTIONS
+// ══════════════════════════════════════════════
+function renderDistributions(data, avgs) {
+  const container = document.getElementById('dist-cards');
+  container.innerHTML = '';
+
+  for (const dim of DIMS) {
+    const counts  = calcNoteDist(data, dim.key);
+    const avg     = avgs[dim.key];
+    const maxCnt  = Math.max(...counts, 1);
+    const avgColor = avg >= 8 ? '#1D9E75' : avg >= 7 ? '#d97706' : '#dc2626';
+
+    // Reduced bar height: max 42px (was 52), baseline at y=47
+    const bars = counts.map((cnt, note) => {
+      if (cnt === 0) return '';
+      const h   = Math.max(3, Math.round((cnt / maxCnt) * 42));
+      const col = noteColor(note);
+      return `
+        <g transform="translate(${note * 22 + 4}, 0)">
+          <rect x="0" y="${47 - h}" width="16" height="${h}" rx="2" fill="${col}" opacity="0.85"/>
+          <text x="8" y="58" text-anchor="middle" font-size="9" fill="#94a3b8">${note}</text>
+          <text x="8" y="${47 - h - 3}" text-anchor="middle" font-size="8" fill="${col}">${cnt}</text>
+        </g>
+      `;
+    }).join('');
+
+    const detPct = Math.round(counts.slice(0, 7).reduce((a,b) => a+b, 0) / data.length * 100);
+    const neuPct = Math.round(counts.slice(7, 9).reduce((a,b) => a+b, 0) / data.length * 100);
+    const proPct = Math.round(counts.slice(9).reduce((a,b) => a+b, 0)    / data.length * 100);
+
+    const card = document.createElement('div');
+    card.className = 'dim-dist-card';
+    card.innerHTML = `
+      <div class="dim-dist-header">
+        <div>
+          <div class="dim-name">${dim.icon} ${dim.label}</div>
+          <div style="font-size:0.7rem;color:#64748b;margin-top:2px">
+            <span style="color:#1D9E75">${proPct}% prom</span> ·
+            <span style="color:#d97706">${neuPct}% neu</span> ·
+            <span style="color:#dc2626">${detPct}% det</span>
+          </div>
+        </div>
+        <div class="dim-avg" style="color:${avgColor}">${avg.toFixed(1)}</div>
+      </div>
+      <div class="mini-bars-wrap">
+        <svg viewBox="0 0 246 66" xmlns="http://www.w3.org/2000/svg" style="width:100%">
+          ${bars}
+          <line x1="0" y1="47" x2="242" y2="47" stroke="#e2e8f0" stroke-width="1"/>
+        </svg>
+      </div>
+    `;
+    container.appendChild(card);
+  }
+}
+
+// ══════════════════════════════════════════════
+// SECTION 4 — COMMENTS + WORD CLOUD
+// ══════════════════════════════════════════════
+const STOP_WORDS = new Set([
+  'a','ao','aos','as','com','da','das','de','do','dos','e','em','foi','mas',
+  'muito','no','não','num','o','ok','os','para','por','que','se','um','uma',
+  'mais','tem','isso','todo','tudo','bem','geral','pelo','pela','ficou','fiquei',
+  'si','todo','toda','todos','todas','minha','meu','super','seu','sua','só',
+  'já','na','né','pra','bom','boa','mas','mas',
+]);
+
+function tokenize(comments) {
+  const freq = {};
+  for (const c of comments) {
+    if (!c || !c.trim()) continue;
+    const words = c.toLowerCase()
+      .normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z\s]/g, ' ')
+      .split(/\s+/);
+    for (const w of words) {
+      if (w.length < 3 || STOP_WORDS.has(w)) continue;
+      freq[w] = (freq[w] || 0) + 1;
+    }
+  }
+  return Object.entries(freq).sort((a,b) => b[1] - a[1]).slice(0, 30);
+}
+
+function renderWordCloud(comments) {
+  const svg   = document.getElementById('wordcloud-svg');
+  const words = tokenize(comments);
+  if (!words.length) return;
+
+  const maxFreq = words[0][1];
+  const W = 500, H = 280;
+  const cx = W / 2, cy = H / 2;
+
+  const placed = [];
+
+  function estWidth(text, fs)  { return text.length * fs * 0.58; }
+  function estHeight(fs)       { return fs * 1.2; }
+
+  function intersects(x, y, w, h) {
+    const pad = 7;
+    for (const p of placed) {
+      if (x - w/2 < p.x + p.w/2 + pad &&
+          x + w/2 > p.x - p.w/2 - pad &&
+          y - h/2 < p.y + p.h/2 + pad &&
+          y + h/2 > p.y - p.h/2 - pad) return true;
+    }
+    return false;
+  }
+
+  let svgContent = '';
+
+  for (const [word, freq] of words) {
+    // max font-size 22px (was 32px)
+    const fs    = Math.round(9 + (freq / maxFreq) * 13);
+    const tw    = estWidth(word, fs);
+    const th    = estHeight(fs);
+    const color = freq === maxFreq       ? '#1D9E75' :
+                  freq >= maxFreq * 0.6  ? '#0369a1' :
+                  freq >= maxFreq * 0.3  ? '#475569' : '#94a3b8';
+
+    let px = cx, py = cy, found = false;
+    let a = 0, r = 0;
+
+    for (let step = 0; step < 500; step++) {
+      px = cx + r * Math.cos(a);
+      py = cy + r * Math.sin(a) * 0.7;
+      if (px - tw/2 > 6 && px + tw/2 < W - 6 &&
+          py - th/2 > 8 && py + th/2 < H - 8) {
+        if (!intersects(px, py, tw, th)) { found = true; break; }
+      }
+      a += 0.5;
+      r += 1.5;
+    }
+
+    if (!found) continue;
+    placed.push({ x: px, y: py, w: tw, h: th });
+
+    svgContent += `<text x="${px.toFixed(1)}" y="${py.toFixed(1)}"
+      text-anchor="middle" dominant-baseline="middle"
+      font-size="${fs}" fill="${color}" opacity="0.9"
+      font-weight="${freq >= maxFreq * 0.5 ? '700' : '400'}">${word}</text>`;
+  }
+
+  svg.innerHTML = svgContent;
+}
+
+function renderComments(data) {
+  const comments = data.map(r => r.comentario).filter(c => c && c.trim());
+  const total    = data.length;
+
+  document.getElementById('comments-stats').innerHTML = `
+    <div class="stat-chip">Total de respostas: <b>${total}</b></div>
+    <div class="stat-chip">Com comentário: <b>${comments.length}</b></div>
+    <div class="stat-chip">Engajamento: <b>${Math.round(comments.length/total*100)}%</b></div>
+    <div class="stat-chip">Promotores c/ comentário: <b>${data.filter(r=>r.nps_classificacao==='promotor'&&r.comentario?.trim()).length}</b></div>
+    <div class="stat-chip">Detratores c/ comentário: <b>${data.filter(r=>r.nps_classificacao==='detrator'&&r.comentario?.trim()).length}</b></div>
+  `;
+
+  renderWordCloud(data.map(r => r.comentario));
+
+  const list         = document.getElementById('comments-list');
+  const withComments = data.filter(r => r.comentario && r.comentario.trim());
+  list.innerHTML = withComments.map(r => {
+    const cls  = r.nps_classificacao;
+    const init = initials(r.nome);
+    return `
+      <div class="comment-item">
+        <div class="comment-avatar avatar-${cls}">${init}</div>
+        <div class="comment-body">
+          <div class="comment-nome">${r.nome}</div>
+          <div class="comment-text">"${r.comentario}"</div>
+        </div>
+        <span class="comment-badge badge-${cls}">${cls}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
+// SECTION 5 — RECOMMENDED ACTIONS
+// ══════════════════════════════════════════════
+function renderActions(avgs) {
+  const container = document.getElementById('actions-grid');
+  container.innerHTML = '';
+
+  const belowMeta = DIMS
+    .filter(d => avgs[d.key] < 8)
+    .sort((a, b) => avgs[a.key] - avgs[b.key]);
+
+  if (!belowMeta.length) {
+    container.innerHTML = `
+      <div class="card" style="grid-column:1/-1;text-align:center;padding:32px">
+        <div style="font-size:2rem;margin-bottom:8px">🎉</div>
+        <div class="card-title">Todas as dimensões acima de 8,0!</div>
+        <div class="card-sub">Mantenha o padrão e busque superar 9,0 para entrar na zona de encantamento.</div>
+      </div>
+    `;
+    return;
+  }
+
+  for (const dim of belowMeta) {
+    const avg   = avgs[dim.key];
+    const cfg   = ACTION_CONFIG[dim.key];
+    const pri   = priorityForScore(avg);
+    const color = avg < 6 ? '#dc2626' : avg < 7 ? '#d97706' : '#1D9E75';
+    const pct   = Math.round(avg / 10 * 100);
+
+    const card = document.createElement('div');
+    card.className = 'action-card';
+    card.innerHTML = `
+      <div class="action-header">
+        <div>
+          <span class="priority-badge ${pri.cls}">${pri.label}</span>
+          <div class="action-dim" style="margin-top:8px">${dim.icon} ${cfg.label}</div>
+        </div>
+        <div class="action-score" style="color:${color}">${avg.toFixed(1)}</div>
+      </div>
+      <div class="action-score-bar">
+        <div class="action-score-fill" style="width:${pct}%;background:${color}"></div>
+      </div>
+      <div style="font-size:0.75rem;color:#94a3b8">Meta: 8,0 · Gap: ${(8 - avg).toFixed(1)} pontos</div>
+      <ul class="action-items">
+        ${cfg.actions.map(a => `<li>${a}</li>`).join('')}
+      </ul>
+    `;
+    container.appendChild(card);
+  }
+}
+
+// ══════════════════════════════════════════════
+// SECTION 6 — PROMOTERS VS DETRACTORS
+// ══════════════════════════════════════════════
+function renderComparison(data) {
+  const promotores = data.filter(r => r.nps_classificacao === 'promotor');
+  const detratores = data.filter(r => r.nps_classificacao === 'detrator');
+
+  const proAvgs = calcDimAvgsForGroup(promotores);
+  const detAvgs = calcDimAvgsForGroup(detratores);
+
+  const labels  = DIMS.map(d => d.label);
+  const proData = DIMS.map(d => proAvgs[d.key]);
+  const detData = DIMS.map(d => detAvgs[d.key]);
+
+  const ctx = document.getElementById('comparison-chart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: `Promotores (n=${promotores.length})`,
+          data: proData,
+          backgroundColor: 'rgba(29,158,117,0.7)',
+          borderColor: '#1D9E75',
+          borderWidth: 1.5,
+          borderRadius: 6,
+        },
+        {
+          label: `Detratores (n=${detratores.length})`,
+          data: detData,
+          backgroundColor: 'rgba(220,38,38,0.65)',
+          borderColor: '#dc2626',
+          borderWidth: 1.5,
+          borderRadius: 6,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: {
+          grid:  { color: 'rgba(0,0,0,0.06)' },
+          ticks: { color: '#64748b', font: { size: 11 } },
+        },
+        y: {
+          min: 0, max: 10,
+          grid:  { color: 'rgba(0,0,0,0.06)' },
+          ticks: { color: '#64748b', font: { size: 11 }, stepSize: 2 },
+        },
+      },
+      plugins: {
+        legend: { labels: { color: '#334155', font: { size: 11 }, boxWidth: 14 } },
+        tooltip: {
+          backgroundColor: '#fff',
+          titleColor: '#1e293b',
+          bodyColor: '#64748b',
+          borderColor: '#e2e8f0',
+          borderWidth: 1,
+          callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}` },
+        },
+      },
+    },
+  });
+
+  const statsEl = document.getElementById('comparison-stats');
+  const rows = DIMS.map(d => ({
+    dim:  d,
+    proA: proAvgs[d.key] || 0,
+    detA: detAvgs[d.key] || 0,
+    diff: (proAvgs[d.key] || 0) - (detAvgs[d.key] || 0),
+  })).sort((a,b) => b.diff - a.diff);
+
+  statsEl.innerHTML = `
+    <div class="comp-stat-row">
+      <div class="comp-stat-title">Maior diferença (impacto no NPS)</div>
+      <div class="comp-dim-bars">
+        ${rows.map(r => `
+          <div style="margin-bottom:10px">
+            <div style="display:flex;justify-content:space-between;font-size:0.76rem;margin-bottom:4px">
+              <span style="color:#475569">${r.dim.icon} ${r.dim.label}</span>
+              <span style="color:#d97706;font-size:0.72rem">Δ +${r.diff.toFixed(1)}</span>
+            </div>
+            <div class="comp-bar-row">
+              <span class="comp-bar-label" style="color:#1D9E75">Prom.</span>
+              <div class="comp-bar-track">
+                <div class="comp-bar-fill pro" style="width:${r.proA/10*100}%"></div>
+              </div>
+              <span class="comp-bar-val pro">${r.proA.toFixed(1)}</span>
+            </div>
+            <div class="comp-bar-row" style="margin-top:2px">
+              <span class="comp-bar-label" style="color:#dc2626">Det.</span>
+              <div class="comp-bar-track">
+                <div class="comp-bar-fill det" style="width:${r.detA/10*100}%"></div>
+              </div>
+              <span class="comp-bar-val det">${r.detA.toFixed(1)}</span>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// ══════════════════════════════════════════════
+// MAIN
+// ══════════════════════════════════════════════
+async function main() {
+  const data = await loadData();
+  const nps  = calcNPS(data);
+  const avgs = calcDimAvgs(data);
+
+  renderHeader(data, nps);
+  renderGauge(nps);
+  renderRadar(avgs);
+  renderDistributions(data, avgs);
+  renderComments(data);
+  renderActions(avgs);
+  renderComparison(data);
+}
+
+main();
+</script>
+</body>
+</html>

@@ -24,7 +24,8 @@ fix_state.py
 # Artefatos gerados pela pipeline de avaliação (S08)
 docs/evaluation/reports/*.json
 docs/evaluation/reports/*.html
+!docs/evaluation/reports/nps_dashboard.html
 docs/evaluation/qualitative/*.json
 
 # Telemetria local de áudio (feat-T) — não versionar dados de execução
-docs/evaluation/audio_metrics.jsonl
+docs/evaluation/audio_metrics.jsonl!docs/evaluation/reports/nps_dashboard.html
