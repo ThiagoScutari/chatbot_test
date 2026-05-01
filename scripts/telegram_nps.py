@@ -307,24 +307,47 @@ async def processar_update(update: dict) -> None:
 
     # /start or /nps — begin flow
     if text in ("/start", "/nps"):
-        nome_tg = message.get("from", {}).get("first_name", "")
-        _conversas[chat_id] = {
-            "state":     AGUARDA_NOME,
-            "user_id":   chat_id,
-            "nome":      nome_tg,
-            "respostas": {},
-            "inicio":    datetime.now().isoformat(),
-        }
-        saudacao = f", {nome_tg}" if nome_tg else ""
-        await send_message(
-            chat_id,
-            f"Olá{saudacao}! 👋\n\n"
-            "Sou o assistente da *Camisart Belém* e gostaria de saber\n"
-            "o que você achou da sua experiência conosco.\n\n"
-            "São apenas *5 perguntas rápidas* — menos de 2 minutos! 🚀\n\n"
-            "Para começar, qual é o seu nome?",
-            reply_markup=teclado_remover(),
-        )
+        from_data  = message.get("from", {})
+        first_name = (from_data.get("first_name") or "").strip()
+        last_name  = (from_data.get("last_name")  or "").strip()
+        nome_telegram = f"{first_name} {last_name}".strip()
+
+        if nome_telegram:
+            # Nome disponível via Telegram — salvar e avançar direto
+            _conversas[chat_id] = {
+                "state":     LOGISTICA,
+                "user_id":   chat_id,
+                "nome":      nome_telegram,
+                "respostas": {},
+                "inicio":    datetime.now().isoformat(),
+            }
+            await send_message(
+                chat_id,
+                f"Olá, *{nome_telegram}*! 👋\n\n"
+                "Sou o assistente da *Camisart Belém* e gostaria de saber\n"
+                "o que você achou da sua experiência conosco.\n\n"
+                "São apenas *5 perguntas rápidas* — menos de 2 minutos! 🚀\n\n"
+                + PERGUNTAS[LOGISTICA]["texto"],
+                reply_markup=teclado_notas(),
+            )
+        else:
+            # Nome não disponível — perguntar
+            _conversas[chat_id] = {
+                "state":     AGUARDA_NOME,
+                "user_id":   chat_id,
+                "nome":      "",
+                "respostas": {},
+                "inicio":    datetime.now().isoformat(),
+            }
+            await send_message(
+                chat_id,
+                "Olá! 👋\n\n"
+                "Sou o assistente da *Camisart Belém* e gostaria de saber\n"
+                "o que você achou da sua experiência conosco.\n\n"
+                "São apenas *5 perguntas rápidas* — menos de 2 minutos! 🚀\n\n"
+                "Para começar, qual é o seu nome?",
+                reply_markup=teclado_remover(),
+            )
         return
 
     # No active conversation
