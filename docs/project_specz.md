@@ -1,11 +1,12 @@
 # Camisart AI — Especificação Técnica Oficial
 
 **Projeto:** Camisart AI — Chatbot de atendimento via WhatsApp para Camisart Belém
-**Status:** Spec ativa da Fase 1 — pedra angular do projeto
-**Versão:** 1.0
-**Data:** 2026-04-20
+**Status:** Spec ativa — Fase 1 concluída, Sprint NPS entregue
+**Versão:** 1.1
+**Data:** 2026-05-01
 **Autor:** Thiago Scutari
-**Escopo desta versão:** Fase 1 especificada em profundidade. Fases 2–4 apenas como roadmap arquitetural.
+**Escopo desta versão:** Fase 1 especificada em profundidade. Sprint NPS adicionado (§4.8 e §9.0). Fases 2–4 apenas como roadmap arquitetural.
+**Changelog v1.1:** Sprint NPS — bot de pesquisa de satisfação, tabela `nps_responses`, dashboard HTML de análise. Ver `docs/sprint_13/02_PRD.md`.
 
 ---
 
@@ -40,11 +41,16 @@
      - 4.7.6. Inicialização via lifespan
      - 4.7.7. Testes
      - 4.7.8. Guia operacional
+   - 4.8. [NPS Bot — Pesquisa de Satisfação](#48-nps-bot--pesquisa-de-satisfação) ← **v1.1**
 5. [Integração WhatsApp Cloud API — Onboarding](#5-integração-whatsapp-cloud-api--onboarding)
 6. [Ambientes e Deploy](#6-ambientes-e-deploy)
 7. [Qualidade — Testes, Logs e Observabilidade](#7-qualidade--testes-logs-e-observabilidade)
 8. [Workflow de Desenvolvimento](#8-workflow-de-desenvolvimento)
 9. [Roadmap — Fases 2, 3 e 4](#9-roadmap--fases-2-3-e-4)
+   - 9.0. [Sprint NPS — Feedback Loop](#90-sprint-nps--feedback-loop) ← **v1.1**
+   - 9.1. Fase 2 — LLM Router
+   - 9.2. Fase 3 — RAG
+   - 9.3. Fase 4 — Integrações Externas
 10. [Critérios de Aceite da Fase 1](#10-critérios-de-aceite-da-fase-1)
 11. [Glossário e Referências](#11-glossário-e-referências)
 
@@ -78,6 +84,7 @@ O campo `segmento` na tabela `leads` (§4.4.3) aceita valores como `"cop30"`, `"
 | % de perguntas de preço respondidas sozinho | 0% | ≥ 80% |
 | Leads estruturados capturados/semana | 0 | ≥ 10 |
 | Disponibilidade do bot | — | ≥ 99% (VPS) |
+| **NPS Score** (Sprint NPS) | não medido | baseline coletado | ← v1.1
 
 ### 1.4. Fora do Escopo da Fase 1
 
@@ -957,6 +964,40 @@ CREATE INDEX idx_audit_action   ON audit_logs(action_type, created_at DESC);
 
 Arquivo: `app/migrations/migrate_sprint_01.py` — idempotente, com rollback em `rollback_sprint_01.py`. Padrão estabelecido em `confexai-sprint-workflow`.
 
+#### 4.4.6. `nps_responses` — pesquisas de satisfação ← v1.1
+
+Criada no Sprint NPS. Armazena cada resposta completa do bot de NPS. Não referencia
+`sessions` porque o NPS opera como script standalone sem o pipeline principal.
+
+```sql
+CREATE TABLE IF NOT EXISTS nps_responses (
+    id                       UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    telegram_user_id         BIGINT NOT NULL,
+    nome                     TEXT NOT NULL,
+    nota_logistica           INTEGER CHECK (nota_logistica BETWEEN 0 AND 10),
+    nota_produto_qualidade   INTEGER CHECK (nota_produto_qualidade BETWEEN 0 AND 10),
+    nota_produto_expectativa INTEGER CHECK (nota_produto_expectativa BETWEEN 0 AND 10),
+    nota_atendimento         INTEGER CHECK (nota_atendimento BETWEEN 0 AND 10),
+    nota_indicacao           INTEGER CHECK (nota_indicacao BETWEEN 0 AND 10),
+    comentario               TEXT,
+    media_geral              NUMERIC(4,2),
+    nps_classificacao        TEXT CHECK (nps_classificacao IN ('promotor', 'neutro', 'detrator')),
+    raw_data                 JSONB NOT NULL DEFAULT '{}',
+    created_at               TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_nps_classificacao ON nps_responses (nps_classificacao);
+CREATE INDEX IF NOT EXISTS idx_nps_created_at    ON nps_responses (created_at DESC);
+```
+
+**Design decisions:**
+- Sem FK para `sessions` — o NPS é um canal paralelo ao bot de vendas, não usa `SessionLocal`.
+- `raw_data JSONB` preserva o payload completo para análise futura e alimentação de dashboards.
+- `telegram_user_id BIGINT` (não UUID) — usa o chat_id nativo do Telegram para identificação.
+- Mock de dados: `telegram_user_id` no range `10000001–10000099` identifica registros gerados pelo `generate_nps_mock.py` e pode ser limpo sem risco.
+
+Migration: `app/migrations/migrate_sprint_nps.py` | Rollback: `app/migrations/rollback_sprint_nps.py`
+
 ### 4.5. Máquina de Estados — Evolução do core/
 
 O `core/` do protótipo (states.py, handlers.py, database.py) **é o ponto de partida, não o produto final.** Evolui assim:
@@ -1621,6 +1662,109 @@ Arquivo: `tests/test_campaign_engine.py`. Suite completa em [confexai-testing-st
 
 ---
 
+## 4.8. NPS Bot — Pesquisa de Satisfação ← v1.1
+
+Sprint entregue na preparação para reunião com o cliente Matheus. PRD completo em
+`docs/sprint_13/02_PRD.md`.
+
+### 4.8.1. Visão Geral
+
+Um segundo script de long-polling (`scripts/telegram_nps.py`) que roda **em paralelo e
+de forma completamente independente** do bot de vendas (`scripts/telegram_polling.py`).
+Não usa `MessagePipeline`, `FAQEngine`, `SessionService` nem qualquer engine do núcleo
+— é um bot dedicado à coleta de feedback estruturado.
+
+```
+Terminal 1                     Terminal 2
+──────────────────────         ──────────────────────
+python scripts/                python scripts/
+  telegram_polling.py            telegram_nps.py
+  (bot de vendas)                (bot NPS)
+       │                                │
+       │ MessagePipeline                │ state machine própria
+       │ FAQEngine                      │ 6 estados simples
+       │ SessionService                 │ sem pipeline
+       │ PostgreSQL sessions            │ PostgreSQL nps_responses
+       └─────────────────              └──────────────────────
+```
+
+### 4.8.2. As 5 Perguntas e Classificação
+
+| # | Dimensão | Classificação da nota |
+|---|---|---|
+| 1 | Logística | promotor (9-10) / neutro (7-8) / detrator (0-6) |
+| 2 | Produto — Qualidade | idem |
+| 3 | Produto — Expectativa | idem |
+| 4 | Atendimento | idem |
+| 5 | Indicação (NPS clássico) | **base do NPS Score** |
+
+**Fórmula NPS:** `NPS = % Promotores(nota ≥ 9) − % Detratores(nota ≤ 6)` da pergunta 5.
+
+### 4.8.3. Arquitetura do Script
+
+```
+/start ou /nps
+      │
+AGUARDA_NOME
+      │ nome coletado
+LOGISTICA         ← pergunta + teclado 0-10
+      │ nota validada (0-10 obrigatório)
+PRODUTO_QUALIDADE ← pergunta + teclado
+      │
+PRODUTO_EXPECTATIVA
+      │
+ATENDIMENTO
+      │
+INDICACAO
+      │
+COMENTARIO        ← texto livre ("pular" aceito)
+      │
+   dual-write
+   ├── PostgreSQL: INSERT INTO nps_responses (§4.4.6)
+   └── JSON: append data/nps_results.json
+      │
+   Agradecimento + média calculada exibida ao cliente
+```
+
+**Padrões obrigatórios:** raw `httpx.AsyncClient` (sem `python-telegram-bot`);
+`sys.path.insert` + `load_dotenv()`; `settings.TELEGRAM_BOT_TOKEN`; logging igual
+ao `telegram_polling.py`; `/cancelar` universal sem salvar parcialmente.
+
+### 4.8.4. Persistência Dual-Write
+
+```python
+def salvar_resultado(registro: dict) -> None:
+    try:
+        salvar_postgres(registro)   # primário — nps_responses
+    except Exception:
+        logger.exception("Falha PostgreSQL — salvando apenas JSON")
+    salvar_json(registro)           # secundário — data/nps_results.json (dashboard)
+```
+
+PostgreSQL é o primário. O JSON é mantido como secundário para alimentar o dashboard
+HTML standalone sem depender de servidor.
+
+### 4.8.5. Gerador de Dados Mock
+
+`scripts/generate_nps_mock.py` popula 20 registros realistas com 6 perfis de cliente
+(promotor entusiasmado 30%, promotor fiel 25%, neutro satisfeito 20%, detrator por
+logística 10%, detrator por atendimento 10%, detrator geral 5%). Usa `random.seed(42)`
+para reprodutibilidade. Identifica registros mock por `telegram_user_id` 10000001–10000099.
+
+### 4.8.6. Dashboard de Análise (`nps_dashboard.html`)
+
+Arquivo HTML standalone (sem servidor) em `docs/evaluation/reports/nps_dashboard.html`.
+7 seções didáticas: NPS Score com gauge SVG, radar por dimensão, distribuição das
+notas, análise de comentários, mapa de calor temporal, ações recomendadas por dimensão
+com badge de prioridade, comparativo promotores vs detratores. Usa Chart.js via CDN.
+Fallback para dados mock hardcoded quando `fetch()` falha (arquivo aberto diretamente).
+
+### 4.8.7. Variáveis de Ambiente
+
+Nenhuma nova. Usa apenas `TELEGRAM_BOT_TOKEN` e `DATABASE_URL` já existentes.
+
+---
+
 ## 5. Integração WhatsApp Cloud API — Onboarding
 
 Guia prático para ativar a integração **quando chegar o momento**. Não precisa ser executado agora.
@@ -1933,6 +2077,30 @@ Todo desvio do spec ou decisão arquitetural relevante vira um ADR em `docs/deci
 
 **Fora do escopo desta versão do spec.** Documentado apenas para garantir que a Fase 1 não bloqueie as fases seguintes.
 
+### 9.0. Sprint NPS — Feedback Loop ← v1.1
+
+**Status: entregue.** Sprint intercalado entre a conclusão da Fase 1 e o início da Fase 2.
+Motivação: demonstração para o cliente Matheus da capacidade analítica do sistema.
+
+**O que foi entregue:**
+
+| Entregável | Arquivo | Status |
+|---|---|---|
+| Migration `nps_responses` | `app/migrations/migrate_sprint_nps.py` | ✅ |
+| Bot NPS (long-polling) | `scripts/telegram_nps.py` | ✅ |
+| Gerador de mock | `scripts/generate_nps_mock.py` | ✅ |
+| Dashboard HTML standalone | `docs/evaluation/reports/nps_dashboard.html` | ✅ |
+
+**Impacto arquitetural:** zero. O Sprint NPS é completamente aditivo — não toca no
+`MessagePipeline`, `FAQEngine`, `StateMachine` nem em nenhum model existente. A única
+adição ao banco é a tabela `nps_responses` (§4.4.6), sem FK para as tabelas core.
+
+**Próximo passo natural:** usar os dados coletados pelo NPS para calibrar o `faq.json`
+com as dimensões mais críticas apontadas pelos detratores — fechando o loop
+vendas → feedback → melhoria.
+
+---
+
 ### Fase 2 — LLM Router: Classificador de Intenções em Linguagem Livre
 
 **Papel exato:** quando `FAQEngine.match()` retorna `None` (fallback), o `LLMRouter` recebe a mensagem + contexto da sessão e classifica a intenção em um dos `intent_id`s conhecidos do `faq.json` — ou retorna `"fora_do_escopo"`. **Não gera texto livre** — apenas classifica. A resposta ao cliente ainda vem do template do `faq.json` correspondente. Isso elimina risco de alucinação e preserva tom de voz.
@@ -2087,6 +2255,13 @@ O MVP da Fase 1 é considerado **pronto para piloto** quando:
 - [ ] Campanha com `enabled: false` não injeta intents nem `greeting_override`, mesmo dentro da janela de datas.
 - [ ] Campanha com `active_until` no passado não injeta intents mesmo com `enabled: true`.
 
+**Sprint NPS (v1.1):** ← v1.1
+
+- [ ] `python app/migrations/migrate_sprint_nps.py` executa sem erro; segunda execução também (idempotente).
+- [ ] `python scripts/generate_nps_mock.py` insere 20 registros em `nps_responses` e grava `data/nps_results.json`.
+- [ ] `python scripts/telegram_nps.py` responde `/start` no Telegram, percorre as 5 perguntas e grava resultado em `nps_responses`.
+- [ ] `nps_dashboard.html` abre no browser sem servidor e exibe NPS Score, radar e ações recomendadas.
+
 ---
 
 ## 11. Glossário e Referências
@@ -2111,6 +2286,7 @@ O MVP da Fase 1 é considerado **pronto para piloto** quando:
 
 - [relatorio_instagram_camisart.md](relatorio_instagram_camisart.md) — análise de 190 posts e 427 comentários
 - [Camisart_AI_Blueprint.pdf](Camisart_AI_Blueprint.pdf) — deck estratégico
+- [docs/sprint_13/02_PRD.md](sprint_13/02_PRD.md) — PRD Sprint NPS (v1.1) ← v1.1
 - `.claude/skills/` — padrões operacionais herdados dos projetos ConfexAI e SGP
   - `confexai-architecture-decisions/SKILL.md`
   - `confexai-sprint-workflow/SKILL.md`
