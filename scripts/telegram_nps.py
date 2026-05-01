@@ -21,6 +21,7 @@ from datetime import datetime
 from pathlib import Path
 
 import httpx
+import anthropic
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -29,6 +30,7 @@ load_dotenv()
 
 from app.config import settings
 from app.database import engine
+from app.services.audio_service import AudioService
 from sqlalchemy import text
 
 logging.basicConfig(
@@ -108,6 +110,45 @@ PROXIMO = {
     INDICACAO:          COMENTARIO,
 }
 
+# ── LLM + Audio services (inicializados em main()) ───────────────────────────
+
+_haiku_client: anthropic.AsyncAnthropic | None = None
+_audio_service: AudioService | None = None
+
+_SYSTEM_NOTA = (
+    "Você é um assistente que extrai notas numéricas de mensagens em português. "
+    "O usuário deveria responder com um número de 0 a 10. "
+    "Analise a mensagem e:\n"
+    "- Se contiver uma nota clara (ex: 'oito', 'nota 9', 'dou 7'), "
+    "responda APENAS com o número inteiro (ex: 8, 9, 7).\n"
+    "- Se não for possível extrair uma nota, responda APENAS com: INVALIDO"
+)
+
+
+async def _extrair_nota_haiku(texto: str) -> int | None:
+    """Usa Haiku para extrair nota 0-10 de texto livre. Retorna None se inválido."""
+    if _haiku_client is None:
+        return None
+    try:
+        resp = await _haiku_client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=10,
+            system=_SYSTEM_NOTA,
+            messages=[{"role": "user", "content": texto}],
+        )
+        resultado = resp.content[0].text.strip()
+        if resultado.upper() == "INVALIDO":
+            return None
+        if resultado.isdigit():
+            n = int(resultado)
+            if 0 <= n <= 10:
+                return n
+        return None
+    except Exception:
+        logger.exception("Haiku NPS nota extraction failed")
+        return None
+
+
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def classificar_nps(nota: int) -> str:
@@ -127,6 +168,34 @@ def teclado_notas() -> dict:
 
 def teclado_remover() -> dict:
     return {"remove_keyboard": True}
+
+_PALAVRAS_FRASE = frozenset(
+    "por que como quando você voce não nao porque mas que "
+    "quero gostaria preciso tenho queria seria".split()
+)
+
+def _validar_nome(text: str) -> str | None:
+    """
+    Retorna o nome extraído (máx. 2 tokens) ou None se inválido.
+
+    Rejeita quando:
+    - mais de 40 caracteres
+    - nenhuma palavra começa com letra maiúscula
+    - contém palavras-gatilho de frase
+    """
+    if len(text) > 40:
+        return None
+
+    tokens = text.split()
+    lower_tokens = [t.lower() for t in tokens]
+
+    if _PALAVRAS_FRASE.intersection(lower_tokens):
+        return None
+
+    if not any(t[0].isupper() for t in tokens if t):
+        return None
+
+    return " ".join(tokens[:2])
 
 # ── Persistence ───────────────────────────────────────────────────────────────
 
@@ -221,7 +290,8 @@ async def processar_update(update: dict) -> None:
 
     chat_id = message["chat"]["id"]
     text    = (message.get("text") or "").strip()
-    if not text:
+    voice   = message.get("voice") or message.get("audio")
+    if not text and not voice:
         return
 
     # /cancelar — universal escape
@@ -270,29 +340,40 @@ async def processar_update(update: dict) -> None:
 
     # ── AGUARDA_NOME ──────────────────────────────────────────────────────────
     if state == AGUARDA_NOME:
-        if len(text) < 2:
-            await send_message(chat_id, "Por favor, me diga seu nome para começar. 😊")
+        nome = _validar_nome(text)
+        if nome is None:
+            await send_message(
+                chat_id,
+                "Não consegui identificar seu nome. 😅\n"
+                "Por favor, digite apenas seu nome (ex: João, Maria, Carlos).",
+            )
             return
-        conv["nome"]  = text
+        conv["nome"]  = nome
         conv["state"] = LOGISTICA
         await send_message(
             chat_id,
-            f"Prazer, *{text}*! Vamos começar.\n\n" + PERGUNTAS[LOGISTICA]["texto"],
+            f"Prazer, *{nome}*! Vamos começar.\n\n" + PERGUNTAS[LOGISTICA]["texto"],
             reply_markup=teclado_notas(),
         )
         return
 
     # ── NOTE STATES ───────────────────────────────────────────────────────────
     if state in (LOGISTICA, PRODUTO_QUALIDADE, PRODUTO_EXPECTATIVA, ATENDIMENTO, INDICACAO):
-        if not text.isdigit() or not (0 <= int(text) <= 10):
-            await send_message(
-                chat_id,
-                "Por favor, escolha uma nota de *0 a 10* usando o teclado abaixo. 😊",
-                reply_markup=teclado_notas(),
-            )
-            return
+        # Entrada numérica direta (teclado ou digitado)
+        if text.isdigit() and 0 <= int(text) <= 10:
+            nota = int(text)
+        else:
+            # Texto livre — Haiku tenta extrair a nota
+            nota = await _extrair_nota_haiku(text) if text else None
+            if nota is None:
+                await send_message(
+                    chat_id,
+                    "Não consegui identificar uma nota. 😅\n"
+                    "Por favor, use o teclado abaixo ou digite um número de 0 a 10.",
+                    reply_markup=teclado_notas(),
+                )
+                return
 
-        nota      = int(text)
         categoria = PERGUNTAS[state]["categoria"]
         conv["respostas"][categoria] = {
             "nota":          nota,
@@ -319,6 +400,30 @@ async def processar_update(update: dict) -> None:
 
     # ── COMENTARIO — finalize ─────────────────────────────────────────────────
     if state == COMENTARIO:
+        # Transcrever áudio se necessário
+        if voice and not text:
+            if _audio_service is None:
+                await send_message(
+                    chat_id,
+                    "Não consegui transcrever o áudio. 😕\n"
+                    "Pode digitar seu comentário? Ou envie 'pular' para finalizar.",
+                )
+                return
+            file_id = voice.get("file_id")
+            transcribed = await _audio_service.transcribe(file_id)
+            if not transcribed:
+                await send_message(
+                    chat_id,
+                    "Não consegui transcrever o áudio. 😕\n"
+                    "Pode digitar seu comentário? Ou envie 'pular' para finalizar.",
+                )
+                return
+            logger.info(
+                "Comentário NPS transcrito (%d chars): %s",
+                len(transcribed), transcribed[:60],
+            )
+            text = transcribed
+
         comentario = "" if text.lower() in ("pular", "skip", "-", "não", "nao") else text
 
         respostas      = conv["respostas"]
@@ -360,6 +465,23 @@ async def main() -> None:
         return
 
     os.makedirs("data", exist_ok=True)
+
+    global _haiku_client, _audio_service
+    if settings.ANTHROPIC_API_KEY:
+        _haiku_client = anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
+        logger.info("Haiku inicializado — extração de notas por texto ativa.")
+    else:
+        logger.info("ANTHROPIC_API_KEY não configurada — Haiku desativado.")
+
+    if settings.OPENAI_API_KEY and TOKEN:
+        _audio_service = AudioService(
+            telegram_token=TOKEN,
+            openai_api_key=settings.OPENAI_API_KEY,
+        )
+        logger.info("AudioService inicializado — transcrição de áudio ativa.")
+    else:
+        logger.info("AudioService desativado — OPENAI_API_KEY não configurada.")
+
     logger.info("Bot NPS iniciado. Envie /start para começar. (Ctrl+C para parar)")
     logger.info("JSON  → %s", DATA_FILE)
     logger.info("DB   → tabela nps_responses")
